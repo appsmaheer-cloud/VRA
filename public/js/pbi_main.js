@@ -257,7 +257,8 @@ async function loadApiData(type, endpoint) {
     const isStaticHost = window.location.hostname.includes('github.io') || 
                          window.location.protocol === 'file:' || 
                          (!window.location.hostname.includes('localhost') && !window.location.hostname.includes('127.0.0.1'));
-    const customGasUrl = localStorage.getItem('pns_gas_endpoint_url');
+    const DEFAULT_GAS_URL = "https://script.google.com/macros/s/AKfycby1NCzSID7xuPB9AwIdFfPJ5pXPtlbW0SJIA5r29wmYkRMDv-8C5gdDyA5UBwuvsezWtA/exec";
+    const customGasUrl = DEFAULT_GAS_URL || localStorage.getItem('pns_gas_endpoint_url');
 
     // 1. Prioritize Google Apps Script Web App for Live VRA if configured
     if (type === 'vra' && customGasUrl) {
