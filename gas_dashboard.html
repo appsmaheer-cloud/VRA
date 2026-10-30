@@ -1,0 +1,1802 @@
+<!DOCTYPE html>
+<html lang="id" class="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PNS Enterprise - VRA, BBM & Maintenance Intelligence</title>
+  
+  <!-- Favicon & Touch Icons -->
+  <link rel="icon" type="image/png" sizes="32x32" href="https://raw.githubusercontent.com/miftahulkhoiry/pns_vra/main/img/logo-mark.png">
+  
+  <!-- Modern Enterprise Typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'Segoe UI', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace']
+          },
+          colors: {
+            pns: {
+              50: '#f0f9ff',
+              100: '#e0f2fe',
+              500: '#0ea5e9',
+              600: '#0284c7',
+              700: '#0369a1',
+              800: '#075985',
+              900: '#0c4a6e'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  
+  <!-- Phosphor Icons -->
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  
+  <!-- ApexCharts CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      letter-spacing: -0.01em;
+    }
+    
+    .pns-bg-wallpaper {
+      background-color: #f8fafc;
+      background-image: radial-gradient(at 0% 0%, rgba(14, 165, 233, 0.08) 0px, transparent 50%),
+                        radial-gradient(at 100% 100%, rgba(16, 185, 129, 0.08) 0px, transparent 50%),
+                        linear-gradient(135deg, rgba(241, 245, 249, 0.95) 0%, rgba(248, 250, 252, 0.98) 100%);
+      background-attachment: fixed;
+    }
+    html.dark .pns-bg-wallpaper {
+      background-color: #020617;
+      background-image: radial-gradient(at 0% 0%, rgba(14, 165, 233, 0.12) 0px, transparent 50%),
+                        radial-gradient(at 100% 100%, rgba(16, 185, 129, 0.10) 0px, transparent 50%),
+                        linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(2, 6, 23, 0.98) 100%);
+      background-attachment: fixed;
+    }
+    
+    .custom-scroll::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scroll::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 9999px;
+    }
+    html.dark .custom-scroll::-webkit-scrollbar-thumb {
+      background: #334155;
+    }
+
+    .pns-card, .pns-kpi-card {
+      background-color: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 1rem;
+      transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease, border-color 0.2s ease;
+    }
+    html.dark .pns-card, html.dark .pns-kpi-card {
+      background-color: #0f172a;
+      border-color: #1e293b;
+    }
+
+    .pns-card:hover, .pns-kpi-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
+      border-color: rgba(14, 165, 233, 0.35);
+    }
+    html.dark .pns-card:hover, html.dark .pns-kpi-card:hover {
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.45);
+      border-color: rgba(56, 189, 248, 0.35);
+    }
+    @media (max-width: 768px) {
+      main {
+        padding-bottom: 5.5rem !important;
+      }
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col pns-bg-wallpaper text-slate-800 dark:text-slate-100 transition-colors duration-200">
+
+  <!-- ==================================================== -->
+  <!-- TOPBAR HEADER -->
+  <!-- ==================================================== -->
+  <header class="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-40 shadow-xs">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-3">
+      
+      <!-- Brand Logo & Title -->
+      <div class="flex items-center space-x-3 min-w-0">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-sky-600 to-pns-900 p-1 flex items-center justify-center shrink-0 shadow-sm">
+          <img src="https://raw.githubusercontent.com/miftahulkhoiry/pns_vra/main/img/logo-mark.png" onerror="this.onerror=null; this.src='./img/logo-mark.png';" alt="Logo PT Pratama Nusantara Sakti" class="w-8 h-8 object-contain">
+        </div>
+        <div class="min-w-0">
+          <div class="flex items-center space-x-2">
+            <span class="font-extrabold tracking-wide text-sm sm:text-base text-slate-900 dark:text-white truncate">PT PRATAMA NUSANTARA SAKTI</span>
+            <span class="hidden sm:inline-block bg-sky-100 dark:bg-sky-950/70 text-sky-700 dark:text-sky-300 text-[10px] font-bold px-2 py-0.5 rounded-full border border-sky-200 dark:border-sky-800">GAS LIVE ENGINE</span>
+          </div>
+          <p class="text-[11px] font-medium text-slate-500 dark:text-slate-400 truncate">VRA Fleet, Fuel & Maintenance Intelligence</p>
+        </div>
+      </div>
+
+      <!-- Right Header Actions: Theme, Config, Refresh -->
+      <div class="flex items-center space-x-2 shrink-0">
+        <div class="text-right hidden md:block mr-2">
+          <div class="text-[10px] text-slate-400 dark:text-slate-500 font-semibold uppercase">Status Sinkronisasi:</div>
+          <div id="last-sync-time" class="text-xs font-mono font-bold text-slate-700 dark:text-slate-200">Memuat...</div>
+        </div>
+
+        <!-- Dark/Light Switcher -->
+        <button type="button" onclick="toggleTheme()" class="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition border border-slate-200/80 dark:border-slate-700" title="Ganti Mode Gelap / Terang">
+          <i id="theme-icon" class="ph-bold ph-moon text-base text-sky-500"></i>
+        </button>
+
+        <!-- Config Modal Button -->
+        <button type="button" onclick="openGasConfigModal()" class="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition border border-slate-200/80 dark:border-slate-700" title="Pengaturan URL Web App">
+          <i class="ph-bold ph-gear text-base text-slate-600 dark:text-slate-300"></i>
+        </button>
+
+        <!-- Refresh Button -->
+        <button id="btn-refresh" onclick="applySlicers(true)" class="flex items-center space-x-1.5 px-3 py-2 bg-pns-600 hover:bg-pns-700 active:scale-95 text-white text-xs font-bold rounded-xl shadow-xs transition">
+          <i id="btn-refresh-icon" class="ph-bold ph-arrows-clockwise text-sm"></i>
+          <span class="hidden sm:inline">Refresh Data</span>
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- ==================================================== -->
+  <!-- SLICER FILTER BAR & NAVIGATION TABS -->
+  <!-- ==================================================== -->
+  <section class="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 sticky top-16 z-30 shadow-xs">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 space-y-3">
+      
+      <!-- Slicers Row -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-2.5 items-center">
+        <!-- Tahun -->
+        <div>
+          <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Tahun:</label>
+          <select id="slicer-year" onchange="applySlicers(false)" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-pns-500">
+            <option value="2026" selected>Tahun 2026</option>
+            <option value="2025">Tahun 2025</option>
+            <option value="ALL">Semua Tahun</option>
+          </select>
+        </div>
+
+        <!-- Bulan -->
+        <div>
+          <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Bulan:</label>
+          <select id="slicer-month" onchange="applySlicers(false)" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-pns-500">
+            <option value="ALL" selected>Semua Bulan (Jan - Des)</option>
+            <option value="01">Januari</option>
+            <option value="02">Februari</option>
+            <option value="03">Maret</option>
+            <option value="04">April</option>
+            <option value="05">Mei</option>
+            <option value="06">Juni</option>
+            <option value="07">Juli</option>
+            <option value="08">Agustus</option>
+            <option value="09">September</option>
+            <option value="10">Oktober</option>
+            <option value="11">November</option>
+            <option value="12">Desember</option>
+          </select>
+        </div>
+
+        <!-- Kategori Fleet -->
+        <div>
+          <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Kategori Fleet:</label>
+          <select id="slicer-category" onchange="applySlicers(false)" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-pns-500">
+            <option value="ALL" selected>Semua Kategori Fleet</option>
+            <option value="EXCAVATOR">Excavator</option>
+            <option value="DUMP TRUCK">Dump Truck</option>
+            <option value="GENSET">Genset</option>
+            <option value="MOBIL">Mobil & Ranmor</option>
+            <option value="POMPA AIR">Pompa Air / Alkon</option>
+            <option value="POTONG RUMPUT">Potong Rumput</option>
+            <option value="SEPEDA MOTOR">Sepeda Motor</option>
+            <option value="SPEEDBOAT">Speedboat</option>
+            <option value="TRUCK">Truck</option>
+            <option value="TUGBOAT">Tugboat</option>
+            <option value="TANGKI">Tangki Air / Minyak</option>
+            <option value="ALAT OPERASIONAL LAIN">Lain-lain</option>
+          </select>
+        </div>
+
+        <!-- Unit Armada -->
+        <div>
+          <label class="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Pilih Unit:</label>
+          <select id="slicer-unit" onchange="applySlicers(false)" class="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-pns-500">
+            <option value="ALL" selected>Semua Unit Armada</option>
+          </select>
+        </div>
+
+        <!-- Reset Button -->
+        <div class="col-span-2 sm:col-span-4 lg:col-span-1 flex items-end">
+          <button type="button" onclick="resetFilters()" class="w-full py-1.5 px-3 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold transition flex items-center justify-center gap-1.5 shadow-2xs">
+            <i class="ph-bold ph-arrow-counter-clockwise"></i>
+            <span>Reset Filter</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Main Navigation Modules (PNS 4 Core Systems) -->
+      <div class="flex items-center gap-1.5 overflow-x-auto custom-scroll pb-1 border-t border-slate-200/60 dark:border-slate-800/60 pt-2.5">
+        <button type="button" onclick="switchMainTab('overview')" id="tab-btn-overview" class="main-tab-btn px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 bg-pns-600 text-white shadow-xs shrink-0">
+          <i class="ph-bold ph-chart-polar text-sm"></i>
+          <span>📊 Executive Overview</span>
+        </button>
+        <button type="button" onclick="switchMainTab('vra')" id="tab-btn-vra" class="main-tab-btn px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 shrink-0">
+          <i class="ph-bold ph-steering-wheel text-sm"></i>
+          <span>🚜 VRA Operasional</span>
+        </button>
+        <button type="button" onclick="switchMainTab('fuel')" id="tab-btn-fuel" class="main-tab-btn px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 shrink-0">
+          <i class="ph-bold ph-gas-pump text-sm"></i>
+          <span>⛽ Sistem BBM (Fuel Intelligence)</span>
+        </button>
+        <button type="button" onclick="switchMainTab('maintenance')" id="tab-btn-maintenance" class="main-tab-btn px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 shrink-0">
+          <i class="ph-bold ph-wrench text-sm"></i>
+          <span>🛠️ Sistem Maintenance (Pemeliharaan)</span>
+        </button>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ==================================================== -->
+  <!-- MAIN DASHBOARD CONTENT AREA -->
+  <!-- ==================================================== -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="pns-card p-12 text-center space-y-4 shadow-sm">
+      <div class="inline-flex p-4 rounded-full bg-sky-50 dark:bg-sky-950/60 text-sky-600 dark:text-sky-400 animate-spin">
+        <i class="ph-bold ph-arrows-clockwise text-3xl"></i>
+      </div>
+      <div>
+        <h3 class="text-base font-bold text-slate-800 dark:text-white">Memuat Data Analitik PNS Enterprise...</h3>
+        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Mengagregasi VRA Operasional, Konsumsi BBM, dan Riwayat Maintenance...</p>
+      </div>
+    </div>
+
+    <!-- Error Banner -->
+    <div id="error-banner" class="hidden pns-card p-4 bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-900 text-rose-800 dark:text-rose-200 flex items-center space-x-3">
+      <i class="ph-bold ph-warning-circle text-2xl shrink-0 text-rose-500"></i>
+      <div class="flex-1 text-xs font-medium" id="error-message">Terjadi kesalahan saat memuat data.</div>
+      <button type="button" onclick="applySlicers(true)" class="px-3 py-1 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold transition">Coba Lagi</button>
+    </div>
+
+    <div id="dashboard-content" class="hidden space-y-6">
+
+      <!-- ==================================================== -->
+      <!-- MODULE 1: EXECUTIVE OVERVIEW (VRA + BBM + MAINT) -->
+      <!-- ==================================================== -->
+      <div id="panel-overview" class="module-panel space-y-6">
+        
+        <!-- 5 Hero Scorecards -->
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
+          <!-- Total Jam Kerja -->
+          <div class="pns-kpi-card p-4 border-t-4 border-t-sky-500">
+            <div class="flex items-center justify-between text-slate-500 text-xs mb-1">
+              <span class="font-semibold text-[11px] uppercase">Jam Kerja VRA</span>
+              <i class="ph-bold ph-clock text-sky-600 text-base"></i>
+            </div>
+            <div class="text-xl sm:text-2xl font-black font-mono text-slate-900 dark:text-white" id="kpi-hours">0</div>
+            <div class="text-[10px] text-slate-400 mt-1">Total jam operasi armada</div>
+          </div>
+
+          <!-- Total Armada Aktif -->
+          <div class="pns-kpi-card p-4 border-t-4 border-t-emerald-500">
+            <div class="flex items-center justify-between text-slate-500 text-xs mb-1">
+              <span class="font-semibold text-[11px] uppercase">Armada Aktif</span>
+              <i class="ph-bold ph-truck text-emerald-600 text-base"></i>
+            </div>
+            <div class="text-xl sm:text-2xl font-black font-mono text-slate-900 dark:text-white" id="kpi-units">0</div>
+            <div class="text-[10px] text-slate-400 mt-1">Unit beroperasi valid</div>
+          </div>
+
+          <!-- Total BBM Liter -->
+          <div class="pns-kpi-card p-4 border-t-4 border-t-amber-500">
+            <div class="flex items-center justify-between text-slate-500 text-xs mb-1">
+              <span class="font-semibold text-[11px] uppercase">Konsumsi BBM</span>
+              <i class="ph-bold ph-gas-pump text-amber-600 text-base"></i>
+            </div>
+            <div class="text-xl sm:text-2xl font-black font-mono text-slate-900 dark:text-white" id="kpi-fuel">0</div>
+            <div class="text-[10px] text-slate-400 mt-1 flex justify-between">
+              <span>Solar: <b id="kpi-fuel-solar">0 L</b></span>
+              <span>Bensin: <b id="kpi-fuel-bensin">0 L</b></span>
+            </div>
+          </div>
+
+          <!-- Total Biaya BBM -->
+          <div class="pns-kpi-card p-4 border-t-4 border-t-rose-500">
+            <div class="flex items-center justify-between text-slate-500 text-xs mb-1">
+              <span class="font-semibold text-[11px] uppercase">Biaya BBM (Rp)</span>
+              <i class="ph-bold ph-money text-rose-600 text-base"></i>
+            </div>
+            <div class="text-xl sm:text-2xl font-black font-mono text-rose-600 dark:text-rose-400" id="kpi-cost">Rp 0</div>
+            <div class="text-[10px] text-slate-400 mt-1">Estimasi biaya bahan bakar</div>
+          </div>
+
+          <!-- Total Biaya Maintenance -->
+          <div class="pns-kpi-card p-4 border-t-4 border-t-purple-500 col-span-2 md:col-span-1">
+            <div class="flex items-center justify-between text-slate-500 text-xs mb-1">
+              <span class="font-semibold text-[11px] uppercase">Biaya Maintenance</span>
+              <i class="ph-bold ph-wrench text-purple-600 text-base"></i>
+            </div>
+            <div class="text-xl sm:text-2xl font-black font-mono text-purple-600 dark:text-purple-400" id="kpi-maint-cost">Rp 0</div>
+            <div class="text-[10px] text-slate-400 mt-1"><b id="kpi-maint-events">0</b> Servis tercatat</div>
+          </div>
+        </div>
+
+        <!-- Charts Row 1: Fleet Distribution & Dual Axis Fuel vs Hours -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <!-- Chart Jam Kerja per Kategori -->
+          <div class="pns-card p-5 space-y-3">
+            <div class="flex items-center justify-between">
+              <div>
+                <h4 class="font-bold text-sm text-slate-900 dark:text-white">Distribusi Jam Kerja per Kategori</h4>
+                <p class="text-[11px] text-slate-500">Beban operasional tertinggi menurut tipe alat</p>
+              </div>
+              <span class="px-2 py-0.5 rounded bg-sky-50 dark:bg-sky-950/70 text-sky-700 dark:text-sky-300 font-mono text-[10px] font-bold">TOP FLEET</span>
+            </div>
+            <div id="chart-overview-categories" class="h-64"></div>
+          </div>
+
+          <!-- Chart Tren Bulanan Jam Kerja vs Solar -->
+          <div class="pns-card p-5 space-y-3">
+            <div class="flex items-center justify-between">
+              <div>
+                <h4 class="font-bold text-sm text-slate-900 dark:text-white">Tren Operasional & Konsumsi BBM</h4>
+                <p class="text-[11px] text-slate-500">Korelasi jam kerja VRA (Jam) dan volume BBM (Liter)</p>
+              </div>
+              <span class="px-2 py-0.5 rounded bg-amber-50 dark:bg-amber-950/70 text-amber-700 dark:text-amber-300 font-mono text-[10px] font-bold">DUAL-AXIS</span>
+            </div>
+            <div id="chart-overview-dual-axis" class="h-64"></div>
+          </div>
+        </div>
+
+        <!-- Quick Top Priority Units Table -->
+        <div class="pns-card p-5 space-y-3">
+          <div class="flex items-center justify-between">
+            <div>
+              <h4 class="font-bold text-sm text-slate-900 dark:text-white">🏆 10 Armada Teraktif & Prioritas</h4>
+              <p class="text-[11px] text-slate-500">Perbandingan jam kerja, konsumsi BBM, dan biaya pemeliharaan</p>
+            </div>
+            <button type="button" onclick="switchMainTab('vra')" class="text-xs font-bold text-sky-600 hover:text-sky-700 flex items-center gap-1">
+              <span>Lihat Semua VRA</span>
+              <i class="ph-bold ph-arrow-right"></i>
+            </button>
+          </div>
+          <div class="overflow-x-auto custom-scroll border border-slate-100 dark:border-slate-800 rounded-xl">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-slate-50 dark:bg-slate-800/80 text-slate-500 uppercase font-bold text-[10px]">
+                <tr>
+                  <th class="py-2.5 px-3">Kode Unit</th>
+                  <th class="py-2.5 px-3">Kategori</th>
+                  <th class="py-2.5 px-3 text-right">Jam VRA</th>
+                  <th class="py-2.5 px-3 text-right">BBM (Liter)</th>
+                  <th class="py-2.5 px-3 text-right">Biaya BBM (Rp)</th>
+                  <th class="py-2.5 px-3 text-right">Biaya Maint (Rp)</th>
+                  <th class="py-2.5 px-3 text-center">Status</th>
+                </tr>
+              </thead>
+              <tbody id="table-overview-top-units" class="divide-y divide-slate-100 dark:divide-slate-800/60 font-mono">
+                <!-- Injected via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ==================================================== -->
+      <!-- MODULE 2: VRA OPERASIONAL -->
+      <!-- ==================================================== -->
+      <div id="panel-vra" class="module-panel hidden space-y-5">
+        
+        <!-- VRA Daily Activity Trend Chart -->
+        <div class="pns-card p-5 space-y-3">
+          <div class="flex items-center justify-between">
+            <div>
+              <h4 class="font-bold text-sm text-slate-900 dark:text-white">Tren Aktivitas Operasi Harian</h4>
+              <p class="text-[11px] text-slate-500">Fluktuasi jam jalan armada dalam 15 hari aktif terakhir</p>
+            </div>
+            <span class="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">VRA HARIAN</span>
+          </div>
+          <div id="chart-vra-trend" class="h-64"></div>
+        </div>
+
+        <!-- VRA Log Activity Table -->
+        <div class="pns-card p-5 space-y-3">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <h4 class="font-bold text-sm text-slate-900 dark:text-white">Log Transaksi VRA Operasional</h4>
+              <p class="text-[11px] text-slate-500">Daftar lengkap rekaman aktivitas, jam operasi, dan keterangan</p>
+            </div>
+            <div class="w-full sm:w-72 relative">
+              <i class="ph-bold ph-magnifying-glass absolute left-3 top-2.5 text-slate-400"></i>
+              <input type="text" id="search-input-vra" onkeyup="filterVraTable()" placeholder="Cari kode unit atau aktivitas..." class="w-full pl-9 pr-3 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-pns-600">
+            </div>
+          </div>
+
+          <div class="overflow-x-auto custom-scroll border border-slate-100 dark:border-slate-800 rounded-xl">
+            <table class="w-full text-left text-xs" id="table-gas-vra">
+              <thead class="bg-slate-50 dark:bg-slate-800/80 text-slate-500 uppercase font-bold text-[10px]">
+                <tr>
+                  <th class="py-2.5 px-3 cursor-pointer">Tanggal <span class="sort-indicator"></span></th>
+                  <th class="py-2.5 px-3 cursor-pointer">Kode Unit <span class="sort-indicator"></span></th>
+                  <th class="py-2.5 px-3 cursor-pointer">Kategori <span class="sort-indicator"></span></th>
+                  <th class="py-2.5 px-3">Jam Operasi</th>
+                  <th class="py-2.5 px-3 text-right cursor-pointer">Jam Kerja <span class="sort-indicator"></span></th>
+                  <th class="py-2.5 px-3">Aktivitas & Keterangan</th>
+                  <th class="py-2.5 px-3 text-right">BBM</th>
+                  <th class="py-2.5 px-3 text-center">Status</th>
+                </tr>
+              </thead>
+              <tbody id="table-vra-body" class="divide-y divide-slate-100 dark:divide-slate-800/60 font-mono">
+                <!-- Injected via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ==================================================== -->
+      <!-- MODULE 3: SISTEM BBM (FUEL INTELLIGENCE) -->
+      <!-- ==================================================== -->
+      <div id="panel-fuel" class="module-panel hidden space-y-5">
+        
+        <!-- Fuel KPIs & Benchmark Cards -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div class="pns-kpi-card p-4 border-t-4 border-t-amber-500">
+            <div class="text-[11px] font-semibold text-slate-500 uppercase">Rata-rata Rasio BBM</div>
+            <div class="text-2xl font-black font-mono text-amber-600 dark:text-amber-400" id="fuel-kpi-avg-ratio">0.00</div>
+            <div class="text-[10px] text-slate-400 mt-1">Liter per Jam Kerja (L/HM)</div>
+          </div>
+          <div class="pns-kpi-card p-4 border-t-4 border-t-sky-500">
+            <div class="text-[11px] font-semibold text-slate-500 uppercase">Biaya per Jam Kerja</div>
+            <div class="text-2xl font-black font-mono text-slate-900 dark:text-white" id="fuel-kpi-cost-hm">Rp 0</div>
+            <div class="text-[10px] text-slate-400 mt-1">Rata-rata pengeluaran/HM</div>
+          </div>
+          <div class="pns-kpi-card p-4 border-t-4 border-t-rose-500">
+            <div class="text-[11px] font-semibold text-slate-500 uppercase">Estimasi Pemborosan (Waste)</div>
+            <div class="text-2xl font-black font-mono text-rose-600 dark:text-rose-400" id="fuel-kpi-waste-l">0 L</div>
+            <div class="text-[10px] text-rose-500 font-bold mt-1" id="fuel-kpi-waste-rp">Rp 0</div>
+          </div>
+          <div class="pns-kpi-card p-4 border-t-4 border-t-emerald-500">
+            <div class="text-[11px] font-semibold text-slate-500 uppercase">Proporsi Solar / Bensin</div>
+            <div class="text-2xl font-black font-mono text-slate-900 dark:text-white" id="fuel-kpi-solar-pct">0%</div>
+            <div class="text-[10px] text-slate-400 mt-1">Dominasi bahan bakar solar</div>
+          </div>
+        </div>
+
+        <!-- 4 Kuadran Benchmarking & Filter Chips -->
+        <div class="pns-card p-5 space-y-4">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <h4 class="font-bold text-sm text-slate-900 dark:text-white">Matriks Benchmarking 4 Kuadran Efisiensi Armada</h4>
+              <p class="text-[11px] text-slate-500">Klasifikasi unit berdasarkan rasio konsumsi riil terhadap batas benchmark resmi PNS</p>
+            </div>
+            <!-- Quadrant Filter Chips -->
+            <div class="flex items-center gap-1.5 overflow-x-auto custom-scroll pb-1">
+              <button type="button" onclick="setGasQuadrantFilter('ALL')" id="gas-quad-chip-ALL" class="gas-quad-chip px-2.5 py-1 rounded-full text-xs font-bold transition bg-sky-600 text-white shadow-xs shrink-0">
+                Semua (<span id="gas-quad-count-ALL">0</span>)
+              </button>
+              <button type="button" onclick="setGasQuadrantFilter('PRIMA_EFISIEN')" id="gas-quad-chip-PRIMA_EFISIEN" class="gas-quad-chip px-2.5 py-1 rounded-full text-xs font-bold transition bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 shrink-0">
+                🟢 Prima (<span id="gas-quad-count-PRIMA_EFISIEN">0</span>)
+              </button>
+              <button type="button" onclick="setGasQuadrantFilter('KRITIS_BOROS')" id="gas-quad-chip-KRITIS_BOROS" class="gas-quad-chip px-2.5 py-1 rounded-full text-xs font-bold transition bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 shrink-0">
+                🔴 Kritis Boros (<span id="gas-quad-count-KRITIS_BOROS">0</span>)
+              </button>
+              <button type="button" onclick="setGasQuadrantFilter('HEAVY_WORKLOAD')" id="gas-quad-chip-HEAVY_WORKLOAD" class="gas-quad-chip px-2.5 py-1 rounded-full text-xs font-bold transition bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 shrink-0">
+                🟡 Beban Tinggi (<span id="gas-quad-count-HEAVY_WORKLOAD">0</span>)
+              </button>
+              <button type="button" onclick="setGasQuadrantFilter('STANDBY_IDLE')" id="gas-quad-chip-STANDBY_IDLE" class="gas-quad-chip px-2.5 py-1 rounded-full text-xs font-bold transition bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 shrink-0">
+                ⚪ Standby Idle (<span id="gas-quad-count-STANDBY_IDLE">0</span>)
+              </button>
+            </div>
+          </div>
+
+          <!-- Quadrant Matrix Table -->
+          <div class="overflow-x-auto custom-scroll border border-slate-100 dark:border-slate-800 rounded-xl">
+            <table class="w-full text-left text-xs" id="table-gas-fuel-vra">
+              <thead class="bg-slate-50 dark:bg-slate-800/80 text-slate-500 uppercase font-bold text-[10px]">
+                <tr>
+                  <th class="py-2.5 px-3 cursor-pointer">Kode Unit</th>
+                  <th class="py-2.5 px-3 cursor-pointer">Kategori</th>
+                  <th class="py-2.5 px-3 text-right cursor-pointer">Jam VRA</th>
+                  <th class="py-2.5 px-3 text-right cursor-pointer">BBM (L)</th>
+                  <th class="py-2.5 px-3 text-right cursor-pointer">Rasio Aktual</th>
+                  <th class="py-2.5 px-3 text-right">Target</th>
+                  <th class="py-2.5 px-3 text-right cursor-pointer">Deviasi %</th>
+                  <th class="py-2.5 px-3 text-right cursor-pointer">Biaya/HM</th>
+                  <th class="py-2.5 px-3 text-center">Status Kuadran</th>
+                </tr>
+              </thead>
+              <tbody id="table-gas-fuel-vra-body" class="divide-y divide-slate-100 dark:divide-slate-800/60 font-mono">
+                <!-- Injected via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- BKB Fuel Log Detail Table -->
+        <div class="pns-card p-5 space-y-3">
+          <div class="flex items-center justify-between">
+            <div>
+              <h4 class="font-bold text-sm text-slate-900 dark:text-white">Log Transaksi Pengisian BBM (BKB)</h4>
+              <p class="text-[11px] text-slate-500">Rincian bon pengeluaran bahan bakar solar dan bensin</p>
+            </div>
+            <button type="button" onclick="exportFuelCsv()" class="px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs transition flex items-center gap-1.5 shadow-2xs">
+              <i class="ph-bold ph-download-simple"></i>
+              <span>Export CSV</span>
+            </button>
+          </div>
+          <div class="overflow-x-auto custom-scroll border border-slate-100 dark:border-slate-800 rounded-xl">
+            <table class="w-full text-left text-xs" id="table-fuel-log">
+              <thead class="bg-slate-50 dark:bg-slate-800/80 text-slate-500 uppercase font-bold text-[10px]">
+                <tr>
+                  <th class="py-2.5 px-3">Tanggal</th>
+                  <th class="py-2.5 px-3">No. BKB</th>
+                  <th class="py-2.5 px-3">Kode Unit</th>
+                  <th class="py-2.5 px-3">Jenis BBM</th>
+                  <th class="py-2.5 px-3 text-right">Volume (Liter)</th>
+                  <th class="py-2.5 px-3 text-right">Total Biaya (Rp)</th>
+                  <th class="py-2.5 px-3">Section</th>
+                  <th class="py-2.5 px-3">Aktivitas Terkait</th>
+                </tr>
+              </thead>
+              <tbody id="table-fuel-log-body" class="divide-y divide-slate-100 dark:divide-slate-800/60 font-mono">
+                <!-- Injected via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ==================================================== -->
+      <!-- MODULE 4: SISTEM MAINTENANCE (PEMELIHARAAN FLEET) -->
+      <!-- ==================================================== -->
+      <div id="panel-maintenance" class="module-panel hidden space-y-5">
+        
+        <!-- Maintenance KPIs -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div class="pns-kpi-card p-4 border-t-4 border-t-purple-500">
+            <div class="text-[11px] font-semibold text-slate-500 uppercase">Total Biaya Servis</div>
+            <div class="text-2xl font-black font-mono text-purple-600 dark:text-purple-400" id="maint-kpi-total-cost">Rp 0</div>
+            <div class="text-[10px] text-slate-400 mt-1">Akumulasi pengeluaran bengkel</div>
+          </div>
+          <div class="pns-kpi-card p-4 border-t-4 border-t-sky-500">
+            <div class="text-[11px] font-semibold text-slate-500 uppercase">Total Event Pemeliharaan</div>
+            <div class="text-2xl font-black font-mono text-slate-900 dark:text-white" id="maint-kpi-total-events">0</div>
+            <div class="text-[10px] text-slate-400 mt-1">Servis berkala & perbaikan</div>
+          </div>
+          <div class="pns-kpi-card p-4 border-t-4 border-t-emerald-500">
+            <div class="text-[11px] font-semibold text-slate-500 uppercase">Biaya Suku Cadang (Part)</div>
+            <div class="text-2xl font-black font-mono text-emerald-600 dark:text-emerald-400" id="maint-kpi-sparepart-cost">Rp 0</div>
+            <div class="text-[10px] text-slate-400 mt-1" id="maint-kpi-sparepart-pct">0% dari total biaya</div>
+          </div>
+          <div class="pns-kpi-card p-4 border-t-4 border-t-rose-500">
+            <div class="text-[11px] font-semibold text-slate-500 uppercase">Biaya Jasa Bengkel</div>
+            <div class="text-2xl font-black font-mono text-rose-600 dark:text-rose-400" id="maint-kpi-jasa-cost">Rp 0</div>
+            <div class="text-[10px] text-slate-400 mt-1">Ongkos perbaikan mekanik</div>
+          </div>
+        </div>
+
+        <!-- Charts: Material Breakdown & Top 10 High Cost Units -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <!-- Material Breakdown -->
+          <div class="pns-card p-5 space-y-3">
+            <div class="flex items-center justify-between">
+              <div>
+                <h4 class="font-bold text-sm text-slate-900 dark:text-white">Pengeluaran per Kategori Material</h4>
+                <p class="text-[11px] text-slate-500">Komposisi suku cadang, oli, filter & undercarriage</p>
+              </div>
+              <span class="px-2 py-0.5 rounded bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-300 font-mono text-[10px] font-bold">MATERIAL</span>
+            </div>
+            <div id="chart-maint-material" class="h-64"></div>
+          </div>
+
+          <!-- Top Units Maintenance Cost -->
+          <div class="pns-card p-5 space-y-3">
+            <div class="flex items-center justify-between">
+              <div>
+                <h4 class="font-bold text-sm text-slate-900 dark:text-white">Top 10 Unit Biaya Servis Tertinggi</h4>
+                <p class="text-[11px] text-slate-500">Armada yang membutuhkan biaya perawatan paling intensif</p>
+              </div>
+              <span class="px-2 py-0.5 rounded bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300 font-mono text-[10px] font-bold">HIGH TCO</span>
+            </div>
+            <div id="chart-maint-top-units" class="h-64"></div>
+          </div>
+        </div>
+
+        <!-- Maintenance Log Records Detail Table -->
+        <div class="pns-card p-5 space-y-3">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <div class="flex items-center gap-2">
+                <h4 class="font-bold text-sm text-slate-900 dark:text-white">Log Riwayat Pemeliharaan & Penggantian Sparepart</h4>
+                <span class="px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-300 font-bold text-[10px]">9 Kolom Standard</span>
+              </div>
+              <p class="text-[11px] text-slate-500">Daftar rekaman servis suku cadang armada selaras VRA & Google Spreadsheet</p>
+            </div>
+            <div class="flex flex-wrap items-center gap-2">
+              <input type="text" id="search-input-maint" onkeyup="filterMaintTable()" placeholder="Cari nama part / kode unit..." class="w-full sm:w-48 pl-3 pr-3 py-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-purple-600">
+              <button type="button" onclick="copyMaintToClipboard()" id="btn-copy-gas-maint" class="px-3 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-700 text-white font-bold text-xs transition flex items-center gap-1 shadow-2xs shrink-0" title="Salin seluruh data untuk dipaste ke Google Sheet (Ctrl+V)">
+                <i class="ph-bold ph-copy"></i>
+                <span class="hidden sm:inline">Salin Google Sheet</span>
+              </button>
+              <button type="button" onclick="exportMaintCsv()" class="px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs transition flex items-center gap-1 shadow-2xs shrink-0" title="Download data maintenance dalam format CSV">
+                <i class="ph-bold ph-download-simple"></i>
+                <span class="hidden sm:inline">Export CSV</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="overflow-x-auto custom-scroll border border-slate-100 dark:border-slate-800 rounded-xl">
+            <table class="w-full text-left text-xs" id="table-maint-log">
+              <thead class="bg-slate-50 dark:bg-slate-800/80 text-slate-500 uppercase font-bold text-[10px]">
+                <tr>
+                  <th class="py-2.5 px-3">Tanggal</th>
+                  <th class="py-2.5 px-3">Kode Unit</th>
+                  <th class="py-2.5 px-3">Kategori Fleet</th>
+                  <th class="py-2.5 px-3">Kategori Material</th>
+                  <th class="py-2.5 px-3">Sub Kategori</th>
+                  <th class="py-2.5 px-3">Nama Sparepart / Jasa</th>
+                  <th class="py-2.5 px-3 text-right">Biaya (Rp)</th>
+                  <th class="py-2.5 px-3 text-center">Section</th>
+                </tr>
+              </thead>
+              <tbody id="table-maint-log-body" class="divide-y divide-slate-100 dark:divide-slate-800/60 font-mono">
+                <!-- Injected via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- ==================================================== -->
+  <!-- MODAL CONFIG GOOGLE APPS SCRIPT URL -->
+  <!-- ==================================================== -->
+  <div id="modal-gas-config" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+    <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-4">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center space-x-2">
+          <div class="p-2 bg-sky-100 dark:bg-sky-950/70 text-sky-600 dark:text-sky-400 rounded-xl">
+            <i class="ph-bold ph-plugs-connected text-xl"></i>
+          </div>
+          <h3 class="font-bold text-base text-slate-800 dark:text-white">Pengaturan Endpoint Google Apps Script</h3>
+        </div>
+        <button type="button" onclick="closeGasConfigModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+          <i class="ph-bold ph-x text-lg"></i>
+        </button>
+      </div>
+
+      <p class="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+        Web App URL yang digunakan untuk mengambil data sinkronisasi VRA, BBM, dan Maintenance:
+      </p>
+
+      <div>
+        <label class="block text-[11px] font-bold text-slate-500 uppercase mb-1">Web App URL:</label>
+        <input id="input-gas-url" type="url" placeholder="https://script.google.com/macros/s/AKfycb.../exec" class="w-full px-3 py-2 text-xs font-mono rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-sky-500">
+      </div>
+
+      <div class="flex items-center justify-end space-x-2 pt-2">
+        <button type="button" onclick="closeGasConfigModal()" class="px-4 py-2 text-xs font-semibold rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800">Tutup</button>
+        <button type="button" onclick="saveGasConfigUrl()" class="px-4 py-2 text-xs font-bold rounded-xl bg-sky-600 hover:bg-sky-700 text-white shadow-xs">Simpan & Refresh</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================================================== -->
+  <!-- CLIENT JAVASCRIPT ENGINE -->
+  <!-- ==================================================== -->
+  <script>
+    const DEFAULT_GAS_URL = "https://script.google.com/macros/s/AKfycby1NCzSID7xuPB9AwIdFfPJ5pXPtlbW0SJIA5r29wmYkRMDv-8C5gdDyA5UBwuvsezWtA/exec";
+        
+    let currentPayload = null;
+    let currentGasQuadrantFilter = 'ALL';
+    let chartOverviewCatInstance = null;
+    let chartOverviewDualAxisInstance = null;
+    let chartVraTrendInstance = null;
+    let chartMaintMaterialInstance = null;
+    let chartMaintTopUnitsInstance = null;
+
+    let rawVraRecords = [];
+    let rawFuelRecords = [];
+    let rawMaintRecords = [];
+    let _cachedMaintRaw = null;
+
+    window.addEventListener('DOMContentLoaded', function() {
+      const savedTheme = localStorage.getItem('pns_gas_theme') || 'light';
+      applyTheme(savedTheme);
+      initGasTableSorter();
+      applySlicers(false);
+    });
+
+    // Theme Switcher
+    function toggleTheme() {
+      const isDark = document.documentElement.classList.contains('dark');
+      const newTheme = isDark ? 'light' : 'dark';
+      applyTheme(newTheme);
+      localStorage.setItem('pns_gas_theme', newTheme);
+      if (currentPayload) renderCharts(currentPayload);
+    }
+
+    function applyTheme(theme) {
+      const icon = document.getElementById('theme-icon');
+      if (theme === 'dark') {
+        document.documentElement.classList.add('dark');
+        document.documentElement.classList.remove('light');
+        if (icon) icon.className = 'ph-bold ph-sun text-base text-amber-400';
+      } else {
+        document.documentElement.classList.remove('dark');
+        document.documentElement.classList.add('light');
+        if (icon) icon.className = 'ph-bold ph-moon text-base text-sky-500';
+      }
+    }
+
+    // Main Navigation Tabs
+    function switchMainTab(tabKey) {
+      document.querySelectorAll('.module-panel').forEach(p => p.classList.add('hidden'));
+      const activePanel = document.getElementById('panel-' + tabKey);
+      if (activePanel) activePanel.classList.remove('hidden');
+
+      document.querySelectorAll('.main-tab-btn').forEach(btn => {
+        btn.className = 'main-tab-btn px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 shrink-0';
+      });
+
+      const activeBtn = document.getElementById('tab-btn-' + tabKey);
+      if (activeBtn) {
+        activeBtn.className = 'main-tab-btn px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 bg-pns-600 text-white shadow-xs shrink-0';
+      }
+
+      setTimeout(() => {
+        if (currentPayload) renderCharts(currentPayload);
+        window.dispatchEvent(new Event('resize'));
+      }, 60);
+    }
+
+    // =========================================================================
+    // CLIENT-SIDE MAINTENANCE INTELLIGENCE ENGINE & FALLBACK DECOMPRESSOR
+    // =========================================================================
+    function inferFleetCategoryClient(kodeUnit) {
+      const u = String(kodeUnit || '').toUpperCase().trim();
+      if (u.includes('EXC') || u.includes('EXCAVATOR') || u.includes('HITACHI') || u.includes('KOMATSU') || u.includes('CAT')) return 'EXCAVATOR';
+      if (u.includes('DT') || u.includes('DUMP') || u.includes('TRUCK-HINO')) return 'DUMP TRUCK';
+      if (u.includes('TRUCK') || u.includes('HINO') || u.includes('CANTER') || u.includes('FUSO')) return 'TRUCK';
+      if (u.includes('GENSET') || u.includes('GNS') || u.includes('GENERATOR') || u.startsWith('GS-') || u.includes('YANMAR')) return 'GENSET';
+      if (u.includes('SPEED') || u.includes('BOAT') || u.includes('SB-') || u.includes('SBF') || u.includes('SBFA')) return 'SPEEDBOAT';
+      if (u.includes('TUGBOAT') || u.includes('TB-') || u.includes('KAPAL')) return 'TUGBOAT';
+      if (u.includes('POMPA') || u.includes('ALKON') || u.includes('PMP')) return 'POMPA AIR';
+      if (u.includes('RUMPUT') || u.includes('POTONG') || u.includes('MPR') || u.includes('KNAPSACK')) return 'POTONG RUMPUT';
+      if (u.includes('MOBIL') || u.includes('AVANZA') || u.includes('HILUX') || u.includes('STRADA') || u.includes('TRITON') || u.includes('MBL')) return 'MOBIL';
+      if (u.includes('MOTOR LISTRIK') || u.includes('MTR-E') || u.includes('MTR-L')) return 'MOTOR LISTRIK';
+      if (u.includes('MOTOR') || u.includes('MTR') || u.includes('SEPEDA')) return 'SEPEDA MOTOR';
+      if (u.includes('TANGKI') || u.includes('WATER TANK')) return 'TANGKI';
+      return 'ALAT OPERASIONAL LAIN';
+    }
+
+    async function getOrDecompressMaintData() {
+      if (_cachedMaintRaw && _cachedMaintRaw.length > 0) return _cachedMaintRaw;
+
+      // 1. Relative JSON cache fallback for localhost / web server
+      const localUrls = [
+        './cache/maint_vra_cache.json',
+        '../cache/maint_vra_cache.json',
+        'api/maintenance/index.php',
+        'https://raw.githubusercontent.com/miftahulkhoiry/pns_vra/main/cache/maint_vra_cache.json'
+      ];
+      for (const url of localUrls) {
+        try {
+          const res = await fetch(url);
+          if (res.ok) {
+            const json = await res.json();
+            const raw = json.data || (Array.isArray(json) ? json : []);
+            if (raw.length > 0) {
+              _cachedMaintRaw = raw.map(r => [
+                String(r.tanggal || '').slice(0, 10),
+                String(r.kode_unit || '').trim(),
+                r.kategori_fleet || inferFleetCategoryClient(r.kode_unit),
+                r.kategori_barang_jasa || 'MAINTENANT ASSET - KENDARAAN',
+                r.kategori_material || 'Consumable & Fast Moving Umum',
+                r.sub_kategori_material || 'Umum',
+                r.nama_spare_part_jasa || '-',
+                parseFloat(r.nominal) || 0,
+                r.kode_section || 'WKS'
+              ]);
+              return _cachedMaintRaw;
+            }
+          }
+        } catch (err) {}
+      }
+
+      return [];
+    }
+
+    function filterAndEnrichMaintenance(rawList, filters) {
+      const year = filters.year || '2026';
+      const month = filters.month || 'ALL';
+      const category = filters.category || 'ALL';
+      const unit = filters.unit || 'ALL';
+
+      const filtered = (rawList || []).filter(r => {
+        const tgl = String(r[0] || '');
+        if (year !== 'ALL' && tgl && !tgl.startsWith(year)) return false;
+        if (month !== 'ALL' && tgl && tgl.length >= 7) {
+          const parts = tgl.split('-');
+          if (parts.length >= 2 && parts[1] !== month) return false;
+        }
+        const cat = r[2] || inferFleetCategoryClient(r[1]);
+        if (category !== 'ALL' && cat !== category) return false;
+        const u = String(r[1] || '').trim();
+        if (unit !== 'ALL' && u !== unit) return false;
+        return true;
+      });
+
+      let totalCost = 0;
+      let totalSparepartCost = 0;
+      let totalJasaCost = 0;
+      const catMap = {};
+      const unitMap = {};
+      const monthMap = {};
+
+      filtered.forEach(r => {
+        const nom = parseFloat(r[7]) || 0;
+        totalCost += nom;
+
+        const isJasa = /JASA|SERVICE|ONGKOS|PERBAIKAN/i.test(r[6] || '') || /JASA/i.test(r[4] || '');
+        if (isJasa) totalJasaCost += nom;
+        else totalSparepartCost += nom;
+
+        const mat = r[4] || 'Consumable & Fast Moving Umum';
+        catMap[mat] = (catMap[mat] || 0) + nom;
+
+        const u = r[1] || 'UNKNOWN';
+        unitMap[u] = (unitMap[u] || 0) + nom;
+
+        const tgl = String(r[0] || '');
+        if (tgl.length >= 7) {
+          const mKey = tgl.slice(0, 7);
+          monthMap[mKey] = (monthMap[mKey] || 0) + nom;
+        }
+      });
+
+      const byMaterial = Object.keys(catMap).map(k => ({ name: k, cost: catMap[k] })).sort((a, b) => b.cost - a.cost);
+      const topUnits = Object.keys(unitMap).map(k => ({ unit: k, cost: unitMap[k] })).sort((a, b) => b.cost - a.cost).slice(0, 10);
+      const months = Object.keys(monthMap).sort();
+      const monthlyTrend = months.slice(-12).map(m => ({ month: m, cost: monthMap[m] }));
+
+      const mappedRecords = filtered.map((r, idx) => ({
+        id: idx + 1,
+        tanggal: r[0],
+        kode_unit: r[1],
+        kategori_fleet: r[2] || inferFleetCategoryClient(r[1]),
+        kategori_barang_jasa: r[3] || 'MAINTENANT ASSET - KENDARAAN',
+        kategori_material: r[4] || 'Consumable & Fast Moving Umum',
+        sub_kategori_material: r[5] || 'Umum',
+        nama_spare_part_jasa: r[6] || '-',
+        nominal: parseFloat(r[7]) || 0,
+        kode_section: r[8] || 'WKS'
+      }));
+
+      return {
+        summary: {
+          total_cost: totalCost,
+          total_events: filtered.length,
+          sparepart_cost: totalSparepartCost,
+          jasa_cost: totalJasaCost,
+          sparepart_pct: totalCost > 0 ? Math.round((totalSparepartCost / totalCost) * 100) : 0
+        },
+        by_material: byMaterial,
+        top_units: topUnits,
+        monthly_trend: monthlyTrend,
+        records: mappedRecords
+      };
+    }
+
+    let _cachedVraRaw = null;
+
+    async function getOrLoadVraDataClient() {
+      if (_cachedVraRaw && _cachedVraRaw.length > 0) return _cachedVraRaw;
+      const urls = [
+        './cache/vra_live_cache.json',
+        '../cache/vra_live_cache.json',
+        'api/vra/index.php',
+        'https://raw.githubusercontent.com/miftahulkhoiry/pns_vra/main/cache/vra_live_cache.json'
+      ];
+      for (const url of urls) {
+        try {
+          const res = await fetch(url);
+          if (res.ok) {
+            const json = await res.json();
+            const raw = json.data || (Array.isArray(json) ? json : []);
+            if (raw && raw.length > 0) {
+              _cachedVraRaw = normalizeClientVraRows(raw);
+              return _cachedVraRaw;
+            }
+          }
+        } catch (err) {}
+      }
+      return [];
+    }
+
+    function normalizeClientVraRows(rawList) {
+      return (rawList || []).filter(row => row && (row.kode_unit || row.unit)).map(row => {
+        const kodeUnit = String(row.kode_unit || row.unit || '').trim();
+        const rawTgl = String(row.tanggal || row.tgl || '').split(' ')[0] || '';
+        const jamAwal = String(row.jam_awal || '').trim();
+        const jamSelesai = String(row.jam_selesai || '').trim();
+        let tahun = row.tahun || '';
+        let bulan = row.bulan || '';
+        if (rawTgl.length >= 7) {
+          const parts = rawTgl.split('-');
+          if (parts.length >= 2) {
+            tahun = parts[0];
+            bulan = parts[1];
+          }
+        }
+        const hmAwal = parseFloat(row.hm_awal) || 0;
+        const hmAkhir = parseFloat(row.hm_akhir) || 0;
+        let hmTerpakai = parseFloat(row.hm_terpakai) || 0;
+        if (hmTerpakai <= 0 && hmAkhir > hmAwal) {
+          hmTerpakai = Math.round((hmAkhir - hmAwal) * 100) / 100;
+        }
+        let jamKerja = parseFloat(row.jam_kerja) || hmTerpakai;
+        if (jamKerja <= 0 && jamAwal && jamSelesai) {
+          const sP = jamAwal.split(':'), eP = jamSelesai.split(':');
+          if (sP.length >= 2 && eP.length >= 2) {
+            let diff = (parseInt(eP[0], 10) * 60 + parseInt(eP[1], 10)) - (parseInt(sP[0], 10) * 60 + parseInt(sP[1], 10));
+            if (diff < 0) diff += 1440;
+            jamKerja = Math.round((diff / 60) * 100) / 100;
+          }
+        }
+        const kategoriFleet = row.kategori_fleet || inferFleetCategoryClient(kodeUnit);
+        const fuelQty = parseFloat(row.bbm_liter !== undefined ? row.bbm_liter : row.quantity_bahan_bakar) || 0;
+        let jenisBbm = 'SOLAR';
+        if (/MTR|ALKON|MPR|KNAPSACK|AVANZA|GRAN MAX|MOTOR|SPEEDBOAT/i.test(kodeUnit.toUpperCase())) {
+          jenisBbm = 'BENSIN';
+        }
+        const pricePerLiter = (jenisBbm === 'BENSIN') ? 10000 : 6800;
+        const estimasiBiayaBbm = parseFloat(row.bbm_estimasi_rp) || Math.round(fuelQty * pricePerLiter);
+        const isAktif = (row.aktif === undefined || row.aktif === null || Number(row.aktif) === 1 || String(row.aktif) === '1');
+        return {
+          kode_unit: kodeUnit,
+          kategori_fleet: kategoriFleet,
+          tanggal: rawTgl,
+          tahun: tahun,
+          bulan: bulan,
+          jam_awal: jamAwal,
+          jam_selesai: jamSelesai,
+          hm_awal: hmAwal,
+          hm_akhir: hmAkhir,
+          hm_terpakai: hmTerpakai,
+          jam_kerja: jamKerja,
+          aktivitas: String(row.aktivitas || row.nama_aktivitas || row.nama_kegiatan || 'Operasional').trim(),
+          kegiatan: String(row.kegiatan || row.nama_kegiatan || '-').trim(),
+          keterangan: String(row.keterangan || row.keterangan_tambahan || '-').trim(),
+          tujuan: String(row.tujuan || '-').trim(),
+          section: String(row.section || row.cost_section || 'OPERASIONAL').trim(),
+          no_bkb: String(row.no_bkb || '-').trim(),
+          bbm_liter: fuelQty,
+          bbm_jenis: fuelQty > 0 ? jenisBbm : '-',
+          bbm_estimasi_rp: estimasiBiayaBbm,
+          status: String(row.status || '0') === '0' || String(row.status) === 'Selesai' ? 'Selesai' : 'Aktif',
+          aktif: isAktif ? 1 : 0
+        };
+      });
+    }
+
+    function buildClientDashboardPayload(rawVraList, rawMaintList, filters, sourceLabel) {
+      const year = filters.year || '2026';
+      const month = filters.month || 'ALL';
+      const category = filters.category || 'ALL';
+      const unit = filters.unit || 'ALL';
+
+      const allUnitsSet = new Set();
+      (rawVraList || []).forEach(r => { if (r.kode_unit) allUnitsSet.add(r.kode_unit); });
+      (rawMaintList || []).forEach(r => { if (r[1]) allUnitsSet.add(r[1]); });
+
+      const filteredVra = (rawVraList || []).filter(r => {
+        if (r.aktif === 0) return false;
+        if (year !== 'ALL' && r.tahun && r.tahun !== String(year)) return false;
+        if (month !== 'ALL' && r.bulan !== month) return false;
+        if (category !== 'ALL' && r.kategori_fleet !== category) return false;
+        if (unit !== 'ALL' && r.kode_unit !== unit) return false;
+        return true;
+      });
+
+      let totalJamKerja = 0;
+      const catMap = {};
+      const unitSet = new Set();
+      const timelineMap = {};
+      const filteredFuel = [];
+      let totalFuelLiter = 0, totalFuelCost = 0, totalBensinLiter = 0, totalSolarLiter = 0;
+
+      filteredVra.forEach(r => {
+        totalJamKerja += r.jam_kerja || 0;
+        unitSet.add(r.kode_unit);
+        const cat = r.kategori_fleet || 'LAINNYA';
+        catMap[cat] = (catMap[cat] || 0) + (r.jam_kerja || 0);
+        if (r.tanggal) {
+          timelineMap[r.tanggal] = (timelineMap[r.tanggal] || 0) + (r.jam_kerja || 0);
+        }
+        if (r.bbm_liter > 0 || (r.no_bkb && r.no_bkb !== '-')) {
+          const jns = r.bbm_jenis && r.bbm_jenis !== '-' ? r.bbm_jenis : 'SOLAR';
+          totalFuelLiter += r.bbm_liter;
+          totalFuelCost += r.bbm_estimasi_rp;
+          if (jns === 'BENSIN') totalBensinLiter += r.bbm_liter;
+          else totalSolarLiter += r.bbm_liter;
+          filteredFuel.push({
+            tanggal: r.tanggal,
+            no_bkb: r.no_bkb,
+            kode_unit: r.kode_unit,
+            kategori_fleet: r.kategori_fleet,
+            jenis_bbm: jns,
+            jumlah_liter: r.bbm_liter,
+            total_biaya: r.bbm_estimasi_rp,
+            section: r.section,
+            aktivitas: r.aktivitas
+          });
+        }
+      });
+
+      const categories = Object.keys(catMap).map(k => ({
+        name: k,
+        hours: Math.round(catMap[k] * 10) / 10
+      })).sort((a, b) => b.hours - a.hours);
+
+      const dates = Object.keys(timelineMap).sort();
+      const trend = dates.slice(-15).map(d => ({
+        date: d,
+        hours: Math.round(timelineMap[d] * 10) / 10
+      }));
+
+      // Fuel 4-Quadrant Comparison
+      const benchmarks = {
+        'EXCAVATOR': 18.0, 'BULLDOZER': 20.0, 'DUMP TRUCK': 3.5, 'TRUCK': 3.0,
+        'GENSET': 12.0, 'SPEEDBOAT': 25.0, 'TUGBOAT': 35.0, 'POMPA AIR': 8.0,
+        'POTONG RUMPUT': 1.5, 'MOBIL': 0.12, 'SEPEDA MOTOR': 0.04
+      };
+      const uMap = {}, mMap = {};
+      filteredVra.forEach(r => {
+        const u = r.kode_unit || 'UNKNOWN';
+        const cat = (r.kategori_fleet || 'LAINNYA').toUpperCase();
+        const hm = Number(r.jam_kerja || 0);
+        const liter = Number(r.bbm_liter || 0);
+        const cost = Number(r.bbm_estimasi_rp || 0);
+        if (!uMap[u]) uMap[u] = { unit: u, category: cat, vra_hours: 0, fuel_liters: 0, total_cost: 0 };
+        uMap[u].vra_hours += hm;
+        uMap[u].fuel_liters += liter;
+        uMap[u].total_cost += cost;
+        const m = r.bulan || 'ALL';
+        if (!mMap[m]) mMap[m] = { month: m, hours: 0, fuel: 0, cost: 0 };
+        mMap[m].hours += hm;
+        mMap[m].fuel += liter;
+        mMap[m].cost += cost;
+      });
+      const uList = Object.values(uMap);
+      const totHm = uList.reduce((a, u) => a + u.vra_hours, 0);
+      const totFl = uList.reduce((a, u) => a + u.fuel_liters, 0);
+      const totCs = uList.reduce((a, u) => a + u.total_cost, 0);
+      const avgHm = uList.length > 0 ? (totHm / uList.length) : 0;
+      let totalWasteL = 0, totalWasteRp = 0;
+      const qCounts = { PRIMA_EFISIEN: 0, KRITIS_BOROS: 0, HEAVY_WORKLOAD: 0, STANDBY_IDLE: 0 };
+      const procUnits = uList.map(u => {
+        let target = 5.0;
+        for (const k in benchmarks) { if (u.category.includes(k)) { target = benchmarks[k]; break; } }
+        const ratio = u.vra_hours > 0 ? (u.fuel_liters / u.vra_hours) : 0;
+        const devPct = target > 0 ? Math.round(((ratio - target) / target) * 1000) / 10 : 0;
+        const uCostHm = u.vra_hours > 0 ? Math.round(u.total_cost / u.vra_hours) : 0;
+        const wasteL = (ratio > target && u.vra_hours > 0) ? Math.max(0, u.fuel_liters - (u.vra_hours * target)) : 0;
+        const wasteRp = Math.round(wasteL * 6800);
+        totalWasteL += wasteL;
+        totalWasteRp += wasteRp;
+        let quad = 'STANDBY_IDLE', status = 'STANDBY IDLE';
+        if (u.vra_hours >= avgHm && ratio <= target) { quad = 'PRIMA_EFISIEN'; status = 'PRIMA EFISIEN'; }
+        else if (u.vra_hours < avgHm && ratio > target) { quad = 'KRITIS_BOROS'; status = 'BOROS KRITIS'; }
+        else if (u.vra_hours >= avgHm && ratio > target) { quad = 'HEAVY_WORKLOAD'; status = 'BEBAN TINGGI'; }
+        qCounts[quad] = (qCounts[quad] || 0) + 1;
+        return {
+          unit: u.unit, category: u.category,
+          vra_hours: Math.round(u.vra_hours * 10) / 10,
+          fuel_liters: Math.round(u.fuel_liters * 10) / 10,
+          actual_ratio: Math.round(ratio * 100) / 100,
+          target_ratio: target, deviation_pct: devPct,
+          cost_per_hm: uCostHm,
+          waste_liters: Math.round(wasteL * 10) / 10,
+          waste_cost: wasteRp, quadrant: quad, status: status
+        };
+      }).sort((a, b) => b.waste_liters - a.waste_liters);
+
+      const mOrder = ['01','02','03','04','05','06','07','08','09','10','11','12'];
+      const mNames = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+      const monthlyComparison = mOrder.map((mKey, idx) => {
+        const dM = mMap[mKey] || { hours: 0, fuel: 0, cost: 0 };
+        return {
+          month_num: mKey, month_name: mNames[idx],
+          vra_hours: Math.round(dM.hours * 10) / 10,
+          fuel_liters: Math.round(dM.fuel * 10) / 10,
+          ratio_l_hm: dM.hours > 0 ? Math.round((dM.fuel / dM.hours) * 100) / 100 : 0,
+          cost_per_hm: dM.hours > 0 ? Math.round(dM.cost / dM.hours) : 0
+        };
+      });
+
+      const maintObj = filterAndEnrichMaintenance(rawMaintList || [], filters);
+
+      return {
+        success: true,
+        last_updated: sourceLabel || 'Git / Hybrid Live Engine',
+        active_filters: filters,
+        available_units: Array.from(allUnitsSet).sort(),
+        kpis: {
+          total_jam_kerja: Math.round(totalJamKerja * 10) / 10,
+          total_units: unitSet.size || new Set(maintObj.records.map(r => r.kode_unit)).size,
+          total_records: filteredVra.length,
+          total_bbm_liter: Math.round(totalFuelLiter * 10) / 10,
+          total_bbm_solar: Math.round(totalSolarLiter * 10) / 10,
+          total_bbm_bensin: Math.round(totalBensinLiter * 10) / 10,
+          total_biaya_bbm: totalFuelCost,
+          total_biaya_maint: maintObj.summary.total_cost,
+          total_maint_events: maintObj.summary.total_events,
+          avg_fuel_ratio: totalJamKerja > 0 ? Math.round((totalFuelLiter / totalJamKerja) * 100) / 100 : 0
+        },
+        categories: categories,
+        trend: trend,
+        fuel_vra: {
+          summary: {
+            total_hm: Math.round(totHm * 10) / 10,
+            total_fuel_liter: Math.round(totFl * 10) / 10,
+            overall_ratio_l_hm: totHm > 0 ? Math.round((totFl / totHm) * 100) / 100 : 0,
+            cost_per_hm: totHm > 0 ? Math.round(totCs / totHm) : 0,
+            total_waste_liter: Math.round(totalWasteL * 10) / 10,
+            total_waste_cost: totalWasteRp,
+            quadrant_counts: qCounts
+          },
+          monthly_comparison: monthlyComparison,
+          units: procUnits
+        },
+        fuel_records: filteredFuel.slice(0, 50),
+        maintenance: maintObj,
+        recent_activities: filteredVra.slice(0, 50)
+      };
+    }
+
+    // Data Fetcher & Slicers
+    function applySlicers(forceRefresh = false) {
+      const year = document.getElementById('slicer-year').value;
+      const month = document.getElementById('slicer-month').value;
+      const category = document.getElementById('slicer-category').value;
+      const unit = document.getElementById('slicer-unit').value;
+
+      const loader = document.getElementById('loading-overlay');
+      const content = document.getElementById('dashboard-content');
+      const errorBanner = document.getElementById('error-banner');
+      const refreshIcon = document.getElementById('btn-refresh-icon');
+
+      loader.classList.remove('hidden');
+      content.classList.add('hidden');
+      errorBanner.classList.add('hidden');
+      refreshIcon.classList.add('animate-spin');
+
+      const filterPayload = {
+        year: year,
+        month: month,
+        category: category,
+        unit: unit,
+        forceRefresh: forceRefresh
+      };
+
+      // Mode 1: Google Apps Script Native RPC (Inside Google Sheets / GAS Web App)
+      if (typeof google !== 'undefined' && google.script && google.script.run) {
+        google.script.run
+          .withSuccessHandler(async function(res) {
+            refreshIcon.classList.remove('animate-spin');
+            loader.classList.add('hidden');
+            if (res && res.success && res.kpis) {
+              currentPayload = res;
+              await renderAllDashboardData(res);
+            } else {
+              const rawVra = await getOrLoadVraDataClient();
+              const rawMaint = await getOrDecompressMaintData();
+              const built = buildClientDashboardPayload(rawVra, rawMaint, filterPayload, 'Fallback Cache Engine');
+              currentPayload = built;
+              await renderAllDashboardData(built);
+            }
+          })
+          .withFailureHandler(async function(err) {
+            refreshIcon.classList.remove('animate-spin');
+            loader.classList.add('hidden');
+            const rawVra = await getOrLoadVraDataClient();
+            const rawMaint = await getOrDecompressMaintData();
+            if ((rawVra && rawVra.length > 0) || (rawMaint && rawMaint.length > 0)) {
+              const built = buildClientDashboardPayload(rawVra, rawMaint, filterPayload, 'Fallback Cache Engine');
+              currentPayload = built;
+              await renderAllDashboardData(built);
+            } else {
+              showError(err.message || 'Gagal menghubungi Google Apps Script');
+            }
+          })
+          .getDashboardPayload(filterPayload);
+      } else {
+        // Mode 2: Git / Browser / AJAX REST API Engine
+        const endpointUrl = localStorage.getItem('pns_gas_endpoint_url') || DEFAULT_GAS_URL || "";
+        if (endpointUrl) {
+          const fetchUrl = `${endpointUrl}${endpointUrl.includes('?') ? '&' : '?'}action=payload&format=json&tahun=${encodeURIComponent(year)}&bulan=${encodeURIComponent(month)}&kategori=${encodeURIComponent(category)}&unit=${encodeURIComponent(unit)}`;
+          fetch(fetchUrl)
+            .then(res => res.json())
+            .then(async res => {
+              refreshIcon.classList.remove('animate-spin');
+              loader.classList.add('hidden');
+              if (res && res.success && res.kpis) {
+                currentPayload = res;
+                await renderAllDashboardData(res);
+              } else if (res && Array.isArray(res.data) && res.data.length > 0) {
+                // Jika endpoint GAS mengembalikan raw VRA records (?format=json)
+                _cachedVraRaw = normalizeClientVraRows(res.data);
+                const rawMaint = await getOrDecompressMaintData();
+                const built = buildClientDashboardPayload(_cachedVraRaw, rawMaint, filterPayload, 'GAS Live Gateway');
+                currentPayload = built;
+                await renderAllDashboardData(built);
+              } else {
+                const rawVra = await getOrLoadVraDataClient();
+                const rawMaint = await getOrDecompressMaintData();
+                const built = buildClientDashboardPayload(rawVra, rawMaint, filterPayload, 'Git Static Cache');
+                currentPayload = built;
+                await renderAllDashboardData(built);
+              }
+            })
+            .catch(async err => {
+              console.warn('[PNS] Server fetch fallback to Git/Local cache...', err);
+              refreshIcon.classList.remove('animate-spin');
+              loader.classList.add('hidden');
+              const rawVra = await getOrLoadVraDataClient();
+              const rawMaint = await getOrDecompressMaintData();
+              if ((rawVra && rawVra.length > 0) || (rawMaint && rawMaint.length > 0)) {
+                const built = buildClientDashboardPayload(rawVra, rawMaint, filterPayload, 'Git Static Cache (Live)');
+                currentPayload = built;
+                await renderAllDashboardData(built);
+              } else {
+                showError(`Gagal menghubungi server GAS (${err.message}). Periksa koneksi atau URL Web App.`);
+              }
+            });
+        } else {
+          (async () => {
+            refreshIcon.classList.remove('animate-spin');
+            loader.classList.add('hidden');
+            const rawVra = await getOrLoadVraDataClient();
+            const rawMaint = await getOrDecompressMaintData();
+            const built = buildClientDashboardPayload(rawVra, rawMaint, filterPayload, 'Git Static Cache');
+            currentPayload = built;
+            await renderAllDashboardData(built);
+          })();
+        }
+      }
+    }
+
+    function resetFilters() {
+      document.getElementById('slicer-year').value = '2026';
+      document.getElementById('slicer-month').value = 'ALL';
+      document.getElementById('slicer-category').value = 'ALL';
+      document.getElementById('slicer-unit').value = 'ALL';
+      applySlicers(false);
+    }
+
+    async function renderAllDashboardData(data) {
+      document.getElementById('dashboard-content').classList.remove('hidden');
+      document.getElementById('last-sync-time').textContent = data.last_updated || 'Baru Saja';
+
+      const activeFilters = data.active_filters || {
+        year: document.getElementById('slicer-year').value,
+        month: document.getElementById('slicer-month').value,
+        category: document.getElementById('slicer-category').value,
+        unit: document.getElementById('slicer-unit').value
+      };
+
+      // 1. Validate & Hydrate Maintenance Data
+      const needsMaintHydration = !data.maintenance || 
+        !data.maintenance.records || 
+        data.maintenance.records.length === 0 || 
+        Number(data.maintenance.summary?.total_cost || 0) === 0;
+
+      if (needsMaintHydration) {
+        const rawMaint = await getOrDecompressMaintData();
+        if (rawMaint && rawMaint.length > 0) {
+          data.maintenance = filterAndEnrichMaintenance(rawMaint, activeFilters);
+          data.kpis.total_biaya_maint = data.maintenance.summary.total_cost;
+          data.kpis.total_maint_events = data.maintenance.summary.total_events;
+        }
+      }
+
+      // 2. Client-side fuel filter safety net (recalculate if server returned all-year fuel)
+      if (data.fuel_records && data.fuel_records.length > 0 && activeFilters.year !== 'ALL') {
+        const sampleDate = data.fuel_records[0].tanggal || '';
+        if (sampleDate && !sampleDate.startsWith(activeFilters.year)) {
+          data.fuel_records = data.fuel_records.filter(r => r.tanggal && r.tanggal.startsWith(activeFilters.year));
+          let flTotal = 0, flCost = 0, flSolar = 0, flBensin = 0;
+          data.fuel_records.forEach(f => {
+            flTotal += f.jumlah_liter || 0;
+            flCost += f.total_biaya || 0;
+            if (f.jenis_bbm === 'BENSIN') flBensin += f.jumlah_liter || 0;
+            else flSolar += f.jumlah_liter || 0;
+          });
+          data.kpis.total_bbm_liter = Math.round(flTotal * 10) / 10;
+          data.kpis.total_biaya_bbm = flCost;
+          data.kpis.total_bbm_solar = Math.round(flSolar * 10) / 10;
+          data.kpis.total_bbm_bensin = Math.round(flBensin * 10) / 10;
+        }
+      }
+
+      // 1. Render Overview KPIs
+      document.getElementById('kpi-hours').textContent = Number(data.kpis.total_jam_kerja || 0).toLocaleString('id-ID') + ' Jam';
+      document.getElementById('kpi-units').textContent = Number(data.kpis.total_units || 0).toLocaleString('id-ID') + ' Unit';
+      document.getElementById('kpi-fuel').textContent = Number(data.kpis.total_bbm_liter || 0).toLocaleString('id-ID') + ' L';
+      document.getElementById('kpi-fuel-solar').textContent = Number(data.kpis.total_bbm_solar || 0).toLocaleString('id-ID') + ' L';
+      document.getElementById('kpi-fuel-bensin').textContent = Number(data.kpis.total_bbm_bensin || 0).toLocaleString('id-ID') + ' L';
+      document.getElementById('kpi-cost').textContent = 'Rp ' + Number(data.kpis.total_biaya_bbm || 0).toLocaleString('id-ID');
+      document.getElementById('kpi-maint-cost').textContent = 'Rp ' + Number(data.kpis.total_biaya_maint || 0).toLocaleString('id-ID');
+      document.getElementById('kpi-maint-events').textContent = Number(data.kpis.total_maint_events || 0).toLocaleString('id-ID');
+
+      // 2. Render Fuel Module KPIs
+      const fvSummary = (data.fuel_vra && data.fuel_vra.summary) || {};
+      document.getElementById('fuel-kpi-avg-ratio').textContent = Number(fvSummary.overall_ratio_l_hm || data.kpis.avg_fuel_ratio || 0).toFixed(2);
+      document.getElementById('fuel-kpi-cost-hm').textContent = 'Rp ' + Number(fvSummary.cost_per_hm || 0).toLocaleString('id-ID');
+      document.getElementById('fuel-kpi-waste-l').textContent = Number(fvSummary.total_waste_liter || 0).toLocaleString('id-ID') + ' L';
+      document.getElementById('fuel-kpi-waste-rp').textContent = 'Rp ' + Number(fvSummary.total_waste_cost || 0).toLocaleString('id-ID');
+      
+      const totL = (data.kpis.total_bbm_solar || 0) + (data.kpis.total_bbm_bensin || 0);
+      const solarPct = totL > 0 ? Math.round(((data.kpis.total_bbm_solar || 0) / totL) * 100) : 100;
+      document.getElementById('fuel-kpi-solar-pct').textContent = solarPct + '% Solar';
+
+      // 3. Render Maintenance Module KPIs
+      const maintSummary = (data.maintenance && data.maintenance.summary) || {};
+      document.getElementById('maint-kpi-total-cost').textContent = 'Rp ' + Number(maintSummary.total_cost || 0).toLocaleString('id-ID');
+      document.getElementById('maint-kpi-total-events').textContent = Number(maintSummary.total_events || 0).toLocaleString('id-ID') + ' Servis';
+      document.getElementById('maint-kpi-sparepart-cost').textContent = 'Rp ' + Number(maintSummary.sparepart_cost || 0).toLocaleString('id-ID');
+      document.getElementById('maint-kpi-sparepart-pct').textContent = (maintSummary.sparepart_pct || 0) + '% dari total biaya';
+      document.getElementById('maint-kpi-jasa-cost').textContent = 'Rp ' + Number(maintSummary.jasa_cost || 0).toLocaleString('id-ID');
+
+      // 4. Update Dropdown Slicer Units
+      const unitSelect = document.getElementById('slicer-unit');
+      const currentUnit = activeFilters.unit || 'ALL';
+      if (data.available_units && unitSelect.options.length <= 1) {
+        data.available_units.forEach(u => {
+          const opt = document.createElement('option');
+          opt.value = u;
+          opt.textContent = u;
+          if (u === currentUnit) opt.selected = true;
+          unitSelect.appendChild(opt);
+        });
+      }
+      if (unitSelect && currentUnit) unitSelect.value = currentUnit;
+
+      // 5. Render Tables
+      rawVraRecords = data.recent_activities || [];
+      rawFuelRecords = data.fuel_records || [];
+      rawMaintRecords = (data.maintenance && data.maintenance.records) || [];
+
+      renderVraTable(rawVraRecords);
+      renderFuelTable(rawFuelRecords);
+      renderMaintTable(rawMaintRecords);
+      renderOverviewTopUnits(data);
+      renderFuelQuadrantTable(data.fuel_vra);
+
+      // 6. Render Charts
+      renderCharts(data);
+    }
+
+    function renderCharts(data) {
+      const isDark = document.documentElement.classList.contains('dark');
+
+      // Chart 1: Categories Bar
+      const topCat = (data.categories || []).slice(0, 8);
+      const optCat = {
+        series: [{ name: 'Jam Kerja', data: topCat.map(c => c.hours) }],
+        chart: { type: 'bar', height: 260, toolbar: { show: false }, fontFamily: 'Inter, sans-serif' },
+        plotOptions: { bar: { horizontal: true, borderRadius: 6, distributed: true } },
+        colors: ['#0284c7', '#0369a1', '#0ea5e9', '#38bdf8', '#059669', '#10b981', '#d97706', '#9333ea'],
+        xaxis: { categories: topCat.map(c => c.name), labels: { style: { colors: isDark ? '#94a3b8' : '#64748b' } } },
+        yaxis: { labels: { show: false } },
+        grid: { borderColor: isDark ? '#1e293b' : '#f1f5f9' },
+        legend: { show: false }
+      };
+      if (chartOverviewCatInstance) chartOverviewCatInstance.destroy();
+      chartOverviewCatInstance = new ApexCharts(document.querySelector("#chart-overview-categories"), optCat);
+      chartOverviewCatInstance.render();
+
+      // Chart 2: Dual Axis Monthly Trend
+      const monthly = (data.fuel_vra && data.fuel_vra.monthly_comparison) || [];
+      const optDual = {
+        series: [
+          { name: 'Jam Kerja VRA (Jam)', type: 'column', data: monthly.map(m => m.vra_hours) },
+          { name: 'Konsumsi BBM (Liter)', type: 'area', data: monthly.map(m => m.fuel_liters) },
+          { name: 'Rasio Konsumsi (L/HM)', type: 'line', data: monthly.map(m => m.ratio_l_hm) }
+        ],
+        chart: { height: 260, type: 'line', stacked: false, toolbar: { show: false }, fontFamily: 'Inter, sans-serif' },
+        stroke: { width: [0, 2, 3], curve: 'smooth' },
+        colors: ['#0284c7', '#f59e0b', '#10b981'],
+        xaxis: { categories: monthly.map(m => m.month_name), labels: { style: { colors: isDark ? '#94a3b8' : '#64748b' } } },
+        yaxis: [
+          { title: { text: 'Jam / Liter' }, labels: { style: { colors: isDark ? '#94a3b8' : '#64748b' } } },
+          { opposite: true, title: { text: 'Rasio L/HM' }, labels: { style: { colors: '#10b981' } } }
+        ],
+        grid: { borderColor: isDark ? '#1e293b' : '#f1f5f9' },
+        legend: { position: 'top', labels: { colors: isDark ? '#94a3b8' : '#64748b' } }
+      };
+      if (chartOverviewDualAxisInstance) chartOverviewDualAxisInstance.destroy();
+      chartOverviewDualAxisInstance = new ApexCharts(document.querySelector("#chart-overview-dual-axis"), optDual);
+      chartOverviewDualAxisInstance.render();
+
+      // Chart 3: VRA Daily Activity Trend
+      const trend = data.trend || [];
+      const optTrend = {
+        series: [{ name: 'Jam Operasi', data: trend.map(t => t.hours) }],
+        chart: { type: 'area', height: 260, toolbar: { show: false }, fontFamily: 'Inter, sans-serif' },
+        stroke: { curve: 'smooth', width: 2.5 },
+        colors: ['#059669'],
+        xaxis: { categories: trend.map(t => t.date), labels: { style: { colors: isDark ? '#94a3b8' : '#64748b' } } },
+        yaxis: { labels: { style: { colors: isDark ? '#94a3b8' : '#64748b' } } },
+        grid: { borderColor: isDark ? '#1e293b' : '#f1f5f9' }
+      };
+      if (chartVraTrendInstance) chartVraTrendInstance.destroy();
+      chartVraTrendInstance = new ApexCharts(document.querySelector("#chart-vra-trend"), optTrend);
+      chartVraTrendInstance.render();
+
+      // Chart 4: Maintenance Material Breakdown (Donut)
+      const maintMat = ((data.maintenance && data.maintenance.by_material) || []).slice(0, 6);
+      const optMat = {
+        series: maintMat.map(m => m.cost),
+        labels: maintMat.map(m => m.name),
+        chart: { type: 'donut', height: 260, fontFamily: 'Inter, sans-serif' },
+        colors: ['#7c3aed', '#8b5cf6', '#a78bfa', '#0ea5e9', '#10b981', '#f59e0b'],
+        legend: { position: 'bottom', labels: { colors: isDark ? '#94a3b8' : '#64748b' } }
+      };
+      if (chartMaintMaterialInstance) chartMaintMaterialInstance.destroy();
+      chartMaintMaterialInstance = new ApexCharts(document.querySelector("#chart-maint-material"), optMat);
+      chartMaintMaterialInstance.render();
+
+      // Chart 5: Maintenance Top Units (Bar)
+      const maintUnits = ((data.maintenance && data.maintenance.top_units) || []).slice(0, 8);
+      const optUnits = {
+        series: [{ name: 'Biaya Servis (Rp)', data: maintUnits.map(u => u.cost) }],
+        chart: { type: 'bar', height: 260, toolbar: { show: false }, fontFamily: 'Inter, sans-serif' },
+        plotOptions: { bar: { borderRadius: 4, horizontal: true } },
+        colors: ['#dc2626'],
+        xaxis: { categories: maintUnits.map(u => u.unit), labels: { style: { colors: isDark ? '#94a3b8' : '#64748b' } } },
+        grid: { borderColor: isDark ? '#1e293b' : '#f1f5f9' }
+      };
+      if (chartMaintTopUnitsInstance) chartMaintTopUnitsInstance.destroy();
+      chartMaintTopUnitsInstance = new ApexCharts(document.querySelector("#chart-maint-top-units"), optUnits);
+      chartMaintTopUnitsInstance.render();
+    }
+
+    function renderOverviewTopUnits(data) {
+      const tbody = document.getElementById('table-overview-top-units');
+      tbody.innerHTML = '';
+      const list = (data.fuel_vra && data.fuel_vra.units ? data.fuel_vra.units.slice(0, 10) : []);
+      
+      const maintMap = {};
+      if (data.maintenance && data.maintenance.top_units) {
+        data.maintenance.top_units.forEach(u => { maintMap[u.unit] = u.cost; });
+      }
+
+      list.forEach(u => {
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-slate-50 dark:hover:bg-slate-800/40 border-b border-slate-100 dark:border-slate-800/60';
+        const maintCost = maintMap[u.unit] || 0;
+        tr.innerHTML = `
+          <td class="py-2 px-3 font-bold text-slate-800 dark:text-white">${u.unit}</td>
+          <td class="py-2 px-3 text-slate-500">${u.category}</td>
+          <td class="py-2 px-3 text-right font-bold text-sky-600">${Number(u.vra_hours).toFixed(1)} J</td>
+          <td class="py-2 px-3 text-right text-amber-600">${Number(u.fuel_liters).toFixed(1)} L</td>
+          <td class="py-2 px-3 text-right text-rose-600">Rp ${Number(u.fuel_liters * 6800).toLocaleString('id-ID')}</td>
+          <td class="py-2 px-3 text-right text-purple-600 font-semibold">${maintCost > 0 ? 'Rp ' + Number(maintCost).toLocaleString('id-ID') : '-'}</td>
+          <td class="py-2 px-3 text-center"><span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 dark:bg-slate-800">${u.status}</span></td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function renderVraTable(rows) {
+      const tbody = document.getElementById('table-vra-body');
+      tbody.innerHTML = '';
+      if (!rows || rows.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" class="text-center py-6 text-slate-400">Tidak ada rekaman aktivitas VRA.</td></tr>`;
+        return;
+      }
+      rows.forEach(r => {
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-slate-50 dark:hover:bg-slate-800/40 border-b border-slate-100 dark:border-slate-800/60';
+        tr.innerHTML = `
+          <td class="py-2 px-3 text-slate-500 whitespace-nowrap">${r.tanggal}</td>
+          <td class="py-2 px-3 font-bold text-slate-800 dark:text-white whitespace-nowrap">${r.kode_unit}</td>
+          <td class="py-2 px-3 text-slate-500 whitespace-nowrap"><span class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-[10px]">${r.kategori_fleet}</span></td>
+          <td class="py-2 px-3 text-slate-400 whitespace-nowrap">${r.jam_awal} - ${r.jam_selesai}</td>
+          <td class="py-2 px-3 text-right font-bold text-sky-600 whitespace-nowrap">${Number(r.jam_kerja).toFixed(1)} J</td>
+          <td class="py-2 px-3 text-slate-700 dark:text-slate-300 max-w-xs truncate" title="${r.aktivitas}">${r.aktivitas}</td>
+          <td class="py-2 px-3 text-right whitespace-nowrap ${r.bbm_liter > 0 ? 'text-amber-600 font-bold' : 'text-slate-400'}">${r.bbm_liter > 0 ? r.bbm_liter + ' L' : '-'}</td>
+          <td class="py-2 px-3 text-center whitespace-nowrap"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${r.status === 'Selesai' ? 'bg-emerald-50 text-emerald-600' : 'bg-sky-50 text-sky-600'}">${r.status}</span></td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function renderFuelTable(rows) {
+      const tbody = document.getElementById('table-fuel-log-body');
+      tbody.innerHTML = '';
+      if (!rows || rows.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" class="text-center py-6 text-slate-400">Tidak ada catatan transaksi BBM.</td></tr>`;
+        return;
+      }
+      rows.forEach(r => {
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-slate-50 dark:hover:bg-slate-800/40 border-b border-slate-100 dark:border-slate-800/60';
+        tr.innerHTML = `
+          <td class="py-2 px-3 text-slate-500 whitespace-nowrap">${r.tanggal}</td>
+          <td class="py-2 px-3 font-mono text-slate-600 dark:text-slate-300 whitespace-nowrap">${r.no_bkb}</td>
+          <td class="py-2 px-3 font-bold text-slate-800 dark:text-white whitespace-nowrap">${r.kode_unit}</td>
+          <td class="py-2 px-3 whitespace-nowrap"><span class="px-1.5 py-0.5 rounded text-[10px] font-bold ${r.jenis_bbm === 'BENSIN' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">${r.jenis_bbm}</span></td>
+          <td class="py-2 px-3 text-right font-bold text-amber-600 whitespace-nowrap">${Number(r.jumlah_liter).toLocaleString('id-ID')} L</td>
+          <td class="py-2 px-3 text-right font-bold text-rose-600 whitespace-nowrap">Rp ${Number(r.total_biaya).toLocaleString('id-ID')}</td>
+          <td class="py-2 px-3 text-slate-500 whitespace-nowrap">${r.section}</td>
+          <td class="py-2 px-3 text-slate-600 dark:text-slate-400 max-w-xs truncate">${r.aktivitas}</td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function renderMaintTable(rows) {
+      const tbody = document.getElementById('table-maint-log-body');
+      tbody.innerHTML = '';
+      if (!rows || rows.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" class="text-center py-6 text-slate-400">Tidak ada riwayat pemeliharaan yang sesuai filter.</td></tr>`;
+        return;
+      }
+      rows.forEach(r => {
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-slate-50 dark:hover:bg-slate-800/40 border-b border-slate-100 dark:border-slate-800/60';
+        tr.innerHTML = `
+          <td class="py-2 px-3 text-slate-500 whitespace-nowrap">${r.tanggal}</td>
+          <td class="py-2 px-3 font-bold text-slate-800 dark:text-white whitespace-nowrap">${r.kode_unit}</td>
+          <td class="py-2 px-3 whitespace-nowrap"><span class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-[10px] font-bold text-sky-600 dark:text-sky-400">${r.kategori_fleet || '-'}</span></td>
+          <td class="py-2 px-3 text-slate-600 dark:text-slate-300 whitespace-nowrap">${r.kategori_material}</td>
+          <td class="py-2 px-3 text-slate-400 whitespace-nowrap">${r.sub_kategori_material}</td>
+          <td class="py-2 px-3 font-medium text-slate-800 dark:text-slate-200 max-w-xs truncate" title="${r.nama_spare_part_jasa}">${r.nama_spare_part_jasa}</td>
+          <td class="py-2 px-3 text-right font-bold text-purple-600 dark:text-purple-400 whitespace-nowrap">Rp ${Number(r.nominal).toLocaleString('id-ID')}</td>
+          <td class="py-2 px-3 text-center whitespace-nowrap"><span class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-[10px]">${r.kode_section}</span></td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function renderFuelQuadrantTable(fuelVraData) {
+      if (!fuelVraData) return;
+      const qCounts = (fuelVraData.summary && fuelVraData.summary.quadrant_counts) || {};
+      const totalUnits = (fuelVraData.units || []).length;
+
+      document.getElementById('gas-quad-count-ALL').textContent = totalUnits;
+      document.getElementById('gas-quad-count-PRIMA_EFISIEN').textContent = qCounts.PRIMA_EFISIEN || 0;
+      document.getElementById('gas-quad-count-KRITIS_BOROS').textContent = qCounts.KRITIS_BOROS || 0;
+      document.getElementById('gas-quad-count-HEAVY_WORKLOAD').textContent = qCounts.HEAVY_WORKLOAD || 0;
+      document.getElementById('gas-quad-count-STANDBY_IDLE').textContent = qCounts.STANDBY_IDLE || 0;
+
+      filterFuelQuadrantTableInternal();
+    }
+
+    function setGasQuadrantFilter(quad) {
+      currentGasQuadrantFilter = quad;
+      document.querySelectorAll('.gas-quad-chip').forEach(btn => {
+        btn.className = 'gas-quad-chip px-2.5 py-1 rounded-full text-xs font-bold transition bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 shrink-0';
+      });
+      const activeBtn = document.getElementById('gas-quad-chip-' + quad);
+      if (activeBtn) activeBtn.className = 'gas-quad-chip px-2.5 py-1 rounded-full text-xs font-bold transition bg-sky-600 text-white shadow-xs shrink-0';
+      filterFuelQuadrantTableInternal();
+    }
+
+    function filterFuelQuadrantTableInternal() {
+      if (!currentPayload || !currentPayload.fuel_vra || !currentPayload.fuel_vra.units) return;
+      const tbody = document.getElementById('table-gas-fuel-vra-body');
+      tbody.innerHTML = '';
+
+      let list = currentPayload.fuel_vra.units;
+      if (currentGasQuadrantFilter !== 'ALL') {
+        list = list.filter(u => u.quadrant === currentGasQuadrantFilter);
+      }
+
+      list.forEach(u => {
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-slate-50 dark:hover:bg-slate-800/40 border-b border-slate-100 dark:border-slate-800/60';
+        let badgeColor = 'bg-slate-100 text-slate-700';
+        if (u.quadrant === 'PRIMA_EFISIEN') badgeColor = 'bg-emerald-50 text-emerald-700 border border-emerald-200';
+        else if (u.quadrant === 'KRITIS_BOROS') badgeColor = 'bg-rose-50 text-rose-700 border border-rose-200';
+        else if (u.quadrant === 'HEAVY_WORKLOAD') badgeColor = 'bg-amber-50 text-amber-700 border border-amber-200';
+
+        tr.innerHTML = `
+          <td class="py-2.5 px-3 font-bold text-slate-800 dark:text-white whitespace-nowrap">${u.unit}</td>
+          <td class="py-2.5 px-3 text-slate-500 whitespace-nowrap">${u.category}</td>
+          <td class="py-2.5 px-3 text-right font-bold text-sky-600 whitespace-nowrap">${Number(u.vra_hours).toFixed(1)} J</td>
+          <td class="py-2.5 px-3 text-right text-amber-600 whitespace-nowrap">${Number(u.fuel_liters).toFixed(1)} L</td>
+          <td class="py-2.5 px-3 text-right font-bold text-slate-800 dark:text-white whitespace-nowrap">${u.actual_ratio.toFixed(2)}</td>
+          <td class="py-2.5 px-3 text-right text-slate-400 whitespace-nowrap">${u.target_ratio.toFixed(1)}</td>
+          <td class="py-2.5 px-3 text-right font-bold whitespace-nowrap ${u.deviation_pct > 0 ? 'text-rose-600' : 'text-emerald-600'}">${u.deviation_pct > 0 ? '+' : ''}${u.deviation_pct.toFixed(1)}%</td>
+          <td class="py-2.5 px-3 text-right text-slate-600 dark:text-slate-300 whitespace-nowrap">Rp ${Number(u.cost_per_hm).toLocaleString('id-ID')}</td>
+          <td class="py-2.5 px-3 text-center whitespace-nowrap"><span class="px-2 py-0.5 rounded-full text-[10px] font-semibold ${badgeColor}">${u.status}</span></td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function filterVraTable() {
+      const q = (document.getElementById('search-input-vra').value || '').toLowerCase().trim();
+      const filtered = rawVraRecords.filter(r => (r.kode_unit && r.kode_unit.toLowerCase().includes(q)) || (r.aktivitas && r.aktivitas.toLowerCase().includes(q)));
+      renderVraTable(filtered);
+    }
+
+    function filterMaintTable() {
+      const q = (document.getElementById('search-input-maint').value || '').toLowerCase().trim();
+      const filtered = rawMaintRecords.filter(r => (r.kode_unit && r.kode_unit.toLowerCase().includes(q)) || (r.nama_spare_part_jasa && r.nama_spare_part_jasa.toLowerCase().includes(q)));
+      renderMaintTable(filtered);
+    }
+
+    function exportFuelCsv() {
+      if (!rawFuelRecords || rawFuelRecords.length === 0) return;
+      const headers = ['Tanggal', 'No_BKB', 'Kode_Unit', 'Jenis_BBM', 'Volume_Liter', 'Total_Biaya_Rp', 'Section', 'Aktivitas'];
+      const rows = rawFuelRecords.map(r => [`"${r.tanggal}"`, `"${r.no_bkb}"`, `"${r.kode_unit}"`, `"${r.jenis_bbm}"`, r.jumlah_liter, r.total_biaya, `"${r.section}"`, `"${r.aktivitas}"`]);
+      downloadCsv('PNS_BBM_Fuel_Log.csv', headers, rows);
+    }
+
+    function exportMaintCsv() {
+      if (!rawMaintRecords || rawMaintRecords.length === 0) return;
+      const headers = ['Tanggal', 'Kode Unit', 'Kategori Fleet', 'Kategori Barang/Jasa', 'Kategori Material', 'Sub Kategori Material', 'Nama Spare Part / Jasa', 'Nominal Biaya (Rp)', 'Kode Section'];
+      const rows = rawMaintRecords.map(r => [
+        `"${r.tanggal}"`,
+        `"${r.kode_unit}"`,
+        `"${r.kategori_fleet || ''}"`,
+        `"${r.kategori_barang_jasa || 'MAINTENANT ASSET - KENDARAAN'}"`,
+        `"${r.kategori_material || ''}"`,
+        `"${r.sub_kategori_material || ''}"`,
+        `"${(r.nama_spare_part_jasa || '').replace(/"/g, '""')}"`,
+        r.nominal || 0,
+        `"${r.kode_section || ''}"`
+      ]);
+      downloadCsv('Data_Maintenance_PNS_Asli.csv', headers, rows);
+    }
+
+    function copyMaintToClipboard() {
+      if (!rawMaintRecords || rawMaintRecords.length === 0) {
+        alert('Tidak ada data maintenance untuk disalin.');
+        return;
+      }
+      const headers = ['Tanggal', 'Kode Unit', 'Kategori Fleet', 'Kategori Barang/Jasa', 'Kategori Material', 'Sub Kategori Material', 'Nama Spare Part / Jasa', 'Nominal Biaya (Rp)', 'Kode Section'];
+      const lines = [headers.join('\t')];
+      rawMaintRecords.forEach(r => {
+        lines.push([
+          r.tanggal || '',
+          r.kode_unit || '',
+          r.kategori_fleet || '',
+          r.kategori_barang_jasa || 'MAINTENANT ASSET - KENDARAAN',
+          r.kategori_material || '',
+          r.sub_kategori_material || '',
+          (r.nama_spare_part_jasa || '').replace(/[\t\r\n]/g, ' '),
+          r.nominal || 0,
+          r.kode_section || ''
+        ].join('\t'));
+      });
+      const tsvContent = lines.join('\n');
+
+      const btn = document.getElementById('btn-copy-gas-maint');
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(tsvContent).then(() => {
+          if (btn) {
+            const oldHtml = btn.innerHTML;
+            btn.innerHTML = '<i class="ph-bold ph-check text-emerald-300"></i><span>Tersalin! Paste ke Sheet (A1)</span>';
+            btn.classList.remove('bg-sky-600', 'hover:bg-sky-700');
+            btn.classList.add('bg-emerald-600', 'hover:bg-emerald-700');
+            setTimeout(() => {
+              btn.innerHTML = oldHtml;
+              btn.classList.remove('bg-emerald-600', 'hover:bg-emerald-700');
+              btn.classList.add('bg-sky-600', 'hover:bg-sky-700');
+            }, 4000);
+          }
+        });
+      } else {
+        downloadCsv('Data_Maintenance_PNS_GoogleSheet.tsv', headers, lines.slice(1).map(l => l.split('\t')));
+      }
+    }
+
+    function downloadCsv(filename, headers, rows) {
+      const content = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+      const encodedUri = encodeURI(content);
+      const link = document.createElement('a');
+      link.setAttribute('href', encodedUri);
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    function showError(msg) {
+      document.getElementById('error-banner').classList.remove('hidden');
+      document.getElementById('error-message').textContent = msg;
+    }
+
+    function openGasConfigModal() {
+      const modal = document.getElementById('modal-gas-config');
+      const input = document.getElementById('input-gas-url');
+      if (input) input.value = localStorage.getItem('pns_gas_endpoint_url') || DEFAULT_GAS_URL;
+      if (modal) modal.classList.remove('hidden');
+    }
+
+    function closeGasConfigModal() {
+      const modal = document.getElementById('modal-gas-config');
+      if (modal) modal.classList.add('hidden');
+    }
+
+    function saveGasConfigUrl() {
+      const input = document.getElementById('input-gas-url');
+      let val = input ? input.value.trim() : '';
+      if (val) localStorage.setItem('pns_gas_endpoint_url', val);
+      else localStorage.removeItem('pns_gas_endpoint_url');
+      closeGasConfigModal();
+      applySlicers(true);
+    }
+
+    function initGasTableSorter() {
+      document.addEventListener('click', function(e) {
+        const th = e.target.closest('th');
+        if (!th) return;
+        const table = th.closest('table');
+        if (!table) return;
+        const thead = table.querySelector('thead');
+        const tbody = table.querySelector('tbody');
+        if (!thead || !tbody || !thead.contains(th)) return;
+
+        const trHeader = th.parentElement;
+        const colIndex = Array.from(trHeader.children).indexOf(th);
+        if (colIndex < 0) return;
+
+        const currentDir = th.getAttribute('data-sort-dir') === 'asc' ? 'desc' : 'asc';
+        th.setAttribute('data-sort-dir', currentDir);
+
+        const rows = Array.from(tbody.querySelectorAll('tr'));
+        if (rows.length <= 1) return;
+
+        rows.sort((rowA, rowB) => {
+          const valA = rowA.children[colIndex] ? rowA.children[colIndex].innerText.trim() : '';
+          const valB = rowB.children[colIndex] ? rowB.children[colIndex].innerText.trim() : '';
+          const numA = parseFloat(valA.replace(/[^0-9.-]/g, ''));
+          const numB = parseFloat(valB.replace(/[^0-9.-]/g, ''));
+
+          let res = 0;
+          if (!isNaN(numA) && !isNaN(numB)) res = numA - numB;
+          else res = valA.localeCompare(valB, 'id', { numeric: true });
+          return currentDir === 'asc' ? res : -res;
+        });
+
+        rows.forEach(r => tbody.appendChild(r));
+      });
+    }
+  </script>
+</body>
+</html>
