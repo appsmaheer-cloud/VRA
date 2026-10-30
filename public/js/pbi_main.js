@@ -294,10 +294,10 @@ async function loadApiData(type, endpoint, forceGas = false) {
     };
 
     const cdnFallbackMap = {
-        'vra': 'https://raw.githubusercontent.com/miftahulkhoiry/pns_vra/main/cache/vra_live_cache.json',
-        'fuel': 'https://raw.githubusercontent.com/miftahulkhoiry/pns_vra/main/cache/fuel_cache.json',
-        'assets': 'https://raw.githubusercontent.com/miftahulkhoiry/pns_vra/main/cache/fleet_asset_cache.json',
-        'maintenance': 'https://raw.githubusercontent.com/miftahulkhoiry/pns_vra/main/cache/maint_vra_cache.json'
+        'vra': 'https://raw.githubusercontent.com/appsmaheer-cloud/VRA/main/cache/vra_live_cache.json',
+        'fuel': 'https://raw.githubusercontent.com/appsmaheer-cloud/VRA/main/cache/fuel_cache.json',
+        'assets': 'https://raw.githubusercontent.com/appsmaheer-cloud/VRA/main/cache/fleet_asset_cache.json',
+        'maintenance': 'https://raw.githubusercontent.com/appsmaheer-cloud/VRA/main/cache/maint_vra_cache.json'
     };
 
     const extractData = (json) => {
