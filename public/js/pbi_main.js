@@ -334,7 +334,8 @@ async function loadApiData(type, endpoint, forceGas = false) {
     const tryFetchFromGas = async (gasUrl) => {
         if (!gasUrl || type === 'assets') return null;
         try {
-            const gasTarget = `${gasUrl}${gasUrl.includes('?') ? '&' : '?'}format=json&type=${encodeURIComponent(type)}&tahun=ALL`;
+            const refreshParam = forceGas ? '&refresh=1' : '';
+            const gasTarget = `${gasUrl}${gasUrl.includes('?') ? '&' : '?'}format=json&type=${encodeURIComponent(type)}&tahun=ALL${refreshParam}`;
             console.log(`[PNS DATA LOADER] Mencoba Google Apps Script API Gateway (${type}): ${gasTarget}`);
             const controller = new AbortController();
             const timer = setTimeout(() => controller.abort(), 45000);
@@ -634,12 +635,13 @@ export async function initializePbiApp() {
         reloadBuildingRoomsData();
         syncFromGasGatewayInBackground();
 
-        // Setup background periodic auto-sync (every 15 minutes) & tab visibility listener
+        // Setup background periodic auto-sync live (setiap 5 menit) & tab visibility listener
+        const AUTO_REFRESH_MINUTES = 5;
         if (!window._vraAutoRefreshInterval) {
             window._vraAutoRefreshInterval = setInterval(() => {
-                console.log("[PNS ENTERPRISE] Auto-sync VRA data berkala (15 menit)...");
+                console.log(`[PNS ENTERPRISE] Auto-sync VRA data live berkala (${AUTO_REFRESH_MINUTES} menit)...`);
                 syncLiveData(null, true);
-            }, 15 * 60 * 1000);
+            }, AUTO_REFRESH_MINUTES * 60 * 1000);
         }
 
         if (!window._vraVisibilityListenerAttached) {
@@ -647,8 +649,8 @@ export async function initializePbiApp() {
             document.addEventListener('visibilitychange', () => {
                 if (document.visibilityState === 'visible') {
                     const elapsed = Date.now() - (window._lastVraSyncTime || 0);
-                    if (elapsed > 15 * 60 * 1000) {
-                        console.log("[PNS ENTERPRISE] Tab aktif kembali setelah >15m, sinkronisasi VRA berkala...");
+                    if (elapsed > AUTO_REFRESH_MINUTES * 60 * 1000) {
+                        console.log(`[PNS ENTERPRISE] Tab aktif kembali setelah >${AUTO_REFRESH_MINUTES}m, auto-tarik data VRA live...`);
                         syncLiveData(null, true);
                     }
                 }
@@ -11735,6 +11737,14 @@ async function syncLiveData(btn, isSilent = false) {
             setupSlicers();
             applyPbiFilters();
             refreshAllCharts();
+
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+            const syncDot = document.getElementById('sync-dot');
+            const syncText = document.getElementById('sync-text');
+            if (syncDot) syncDot.className = 'w-2 h-2 rounded-full bg-emerald-500 animate-pulse';
+            if (syncText) syncText.textContent = `Tersinkron (${timeStr}) • Auto-5m`;
+
             if (!isSilent) {
                 alert(syncMsg + ' (' + pbiData.vra.length.toLocaleString('id-ID') + ' baris data, ' + pbiData.vraUnitSet.size + ' unit aktif)');
             }
@@ -12386,7 +12396,7 @@ export async function autoSyncLiveApiOnOpen() {
         syncDot.className = 'w-2 h-2 rounded-full bg-amber-400 animate-ping';
     }
     if (syncText) {
-        syncText.textContent = 'Memeriksa API...';
+        syncText.textContent = 'Menarik Data Live...';
     }
 
     try {
@@ -12397,7 +12407,7 @@ export async function autoSyncLiveApiOnOpen() {
             syncDot.className = 'w-2 h-2 rounded-full bg-emerald-500 animate-pulse';
         }
         if (syncText) {
-            syncText.textContent = `Tersinkron (${timeStr})`;
+            syncText.textContent = `Tersinkron (${timeStr}) • Auto-5m`;
         }
     } catch (err) {
         console.warn('[PNS AUTO-SYNC] Gagal auto-sync live API, menggunakan cache lokal:', err);
