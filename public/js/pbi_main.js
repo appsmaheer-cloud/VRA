@@ -509,6 +509,23 @@ async function syncFromGasGatewayInBackground() {
             refreshAllCharts();
             console.log(`[PNS MEDALLION GOLD] Data Google Sheets dimuat di latar belakang (${pbiData.vra.length.toLocaleString('id-ID')} baris VRA).`);
         }
+
+        // Auto-Revalidate Live di latar belakang (tanpa perlu trigger manual):
+        // Jika Google Sheet sudah > 10 menit, otomatis tarik API Pusat ke Sheet lalu refresh dashboard
+        if (!window._gasRevalidateInFlight) {
+            window._gasRevalidateInFlight = true;
+            fetch(`${customGasUrl}${customGasUrl.includes('?') ? '&' : '?'}action=auto_sync_if_stale&format=json`)
+                .then(r => r.ok ? r.json() : null)
+                .then(res => {
+                    window._gasRevalidateInFlight = false;
+                    if (res && res.updated) {
+                        console.log('[PNS MEDALLION GOLD] Google Sheet baru diperbarui di latar belakang, memuat ulang tampilan...');
+                        window._isSyncingBg = false;
+                        syncFromGasGatewayInBackground();
+                    }
+                })
+                .catch(() => { window._gasRevalidateInFlight = false; });
+        }
     } catch (e) {
         console.warn('[PNS MEDALLION GOLD] Background GAS sync gagal:', e);
     } finally {
