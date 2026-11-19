@@ -330,22 +330,21 @@ async function loadApiData(type, endpoint, forceGas = false) {
         return null;
     };
 
-    // Helper to fetch from Google Apps Script API Gateway with timeout protection
+    // Helper to fetch from Google Apps Script API Gateway (Medallion Gold/Silver Sheets) with timeout protection
     const tryFetchFromGas = async (gasUrl) => {
         if (!gasUrl || type === 'assets') return null;
         try {
-            const refreshParam = forceGas ? '&refresh=1' : '';
-            const gasTarget = `${gasUrl}${gasUrl.includes('?') ? '&' : '?'}format=json&type=${encodeURIComponent(type)}&tahun=ALL${refreshParam}`;
-            console.log(`[PNS DATA LOADER] Mencoba Google Apps Script API Gateway (${type}): ${gasTarget}`);
+            const gasTarget = `${gasUrl}${gasUrl.includes('?') ? '&' : '?'}format=json&type=${encodeURIComponent(type)}&tahun=ALL`;
+            console.log(`[PNS DATA LOADER] Mengambil data Google Sheets (${type}): ${gasTarget}`);
             const controller = new AbortController();
-            const timer = setTimeout(() => controller.abort(), 45000);
+            const timer = setTimeout(() => controller.abort(), 30000);
             const gasRes = await fetch(gasTarget, { signal: controller.signal });
             clearTimeout(timer);
             if (gasRes.ok) {
                 const gasJson = await gasRes.json();
                 const list = extractData(gasJson);
                 if (list && validateApiDataSchema(type, list)) {
-                    console.log(`[PNS DATA LOADER] Berhasil memuat ${type} dari Google Apps Script (${list.length.toLocaleString('id-ID')} baris).`);
+                    console.log(`[PNS DATA LOADER] Berhasil memuat ${type} dari Google Sheets (${list.length.toLocaleString('id-ID')} baris).`);
                     if (type === 'vra') {
                         pbiData.vraMeta = {
                             last_sync: gasJson.timestamp || new Date().toISOString(),
@@ -353,9 +352,6 @@ async function loadApiData(type, endpoint, forceGas = false) {
                             is_stale: false,
                             distinct_units: new Set(list.map(r => r.kode_unit)).size
                         };
-                        const statusEl = document.getElementById('top-bar-api-status');
-                        const todayStr = new Intl.DateTimeFormat('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date());
-                        if (statusEl) statusEl.innerHTML = `<span class="text-sky-600 dark:text-sky-400 font-medium">Google Sheets (${list.length.toLocaleString('id-ID')} baris) • ${todayStr}</span>`;
                     }
                     return list;
                 }
@@ -366,10 +362,9 @@ async function loadApiData(type, endpoint, forceGas = false) {
         return null;
     };
 
-    // 0. If forceGas is explicitly requested (e.g. background live sync or manual Sync button):
+    // 0. If forceGas is explicitly requested (background sync from Google Sheets Gold/Silver):
     if (forceGas && customGasUrl && type !== 'assets') {
-        const liveGasList = await tryFetchFromGas(customGasUrl);
-        if (liveGasList) return liveGasList;
+        return await tryFetchFromGas(customGasUrl);
     }
 
     // 1. In Localhost / PHP environment: try local PHP endpoint FIRST (instant <100ms)
@@ -470,22 +465,31 @@ async function loadApiData(type, endpoint, forceGas = false) {
 
 // Non-blocking background sync from Google Apps Script Live Gateway
 async function syncFromGasGatewayInBackground() {
+    if (window._isSyncingBg) return;
+    window._isSyncingBg = true;
+    window._lastVraSyncTime = Date.now();
     const DEFAULT_GAS_URL = "https://script.google.com/macros/s/AKfycby1NCzSID7xuPB9AwIdFfPJ5pXPtlbW0SJIA5r29wmYkRMDv-8C5gdDyA5UBwuvsezWtA/exec";
     const userConfiguredGasUrl = (localStorage.getItem('pns_gas_endpoint_url') || '').trim();
     const customGasUrl = userConfiguredGasUrl || DEFAULT_GAS_URL;
-    if (!customGasUrl) return;
+    if (!customGasUrl) {
+        window._isSyncingBg = false;
+        return;
+    }
     try {
         const [liveVra, liveFuel, liveMaint] = await Promise.all([
             loadApiData('vra', null, true),
             loadApiData('fuel', null, true),
             loadApiData('maintenance', null, true)
         ]);
+        let hasUpdated = false;
         if (liveVra && liveVra.length > 0) {
             pbiData.vra = enrichVraRows(liveVra, pbiData.assetMap || new Map());
             updateVraUnitSets();
+            hasUpdated = true;
         }
         if (liveFuel && liveFuel.length > 0) {
             pbiData.fuel = liveFuel;
+            hasUpdated = true;
         }
         if (liveMaint && liveMaint.length > 0) {
             let cleanMaint = liveMaint.filter(m => {
@@ -494,16 +498,21 @@ async function syncFromGasGatewayInBackground() {
             });
             if (cleanMaint.length === 0) cleanMaint = liveMaint;
             pbiData.maintenance = enrichMaintenance(cleanMaint);
+            hasUpdated = true;
         }
-        pbiData.vra4SummaryCache = null;
-        pbiData.unitIndexMaps = null;
-        setupSlicers();
-        setupMaintenanceSlicers();
-        applyPbiFilters();
-        refreshAllCharts();
-        console.log(`[PNS ENTERPRISE] Sinkronisasi Live Google Sheets selesai (${pbiData.vra.length.toLocaleString('id-ID')} baris VRA, ${pbiData.maintenance.length.toLocaleString('id-ID')} maintenance).`);
+        if (hasUpdated) {
+            pbiData.vra4SummaryCache = null;
+            pbiData.unitIndexMaps = null;
+            setupSlicers();
+            setupMaintenanceSlicers();
+            applyPbiFilters();
+            refreshAllCharts();
+            console.log(`[PNS MEDALLION GOLD] Data Google Sheets dimuat di latar belakang (${pbiData.vra.length.toLocaleString('id-ID')} baris VRA).`);
+        }
     } catch (e) {
-        console.warn('[PNS ENTERPRISE] Background GAS sync gagal:', e);
+        console.warn('[PNS MEDALLION GOLD] Background GAS sync gagal:', e);
+    } finally {
+        window._isSyncingBg = false;
     }
 }
 
@@ -633,14 +642,14 @@ export async function initializePbiApp() {
         applyPbiFilters();
         switchView(activeViewId);
         reloadBuildingRoomsData();
+        // Otomatis tarik data Medallion Gold/Silver dari Google Sheets di latar belakang saat buka
         syncFromGasGatewayInBackground();
 
-        // Setup background periodic auto-sync live (setiap 5 menit) & tab visibility listener
+        // Setup background periodic auto-sync dari Google Sheets (setiap 5 menit)
         const AUTO_REFRESH_MINUTES = 5;
         if (!window._vraAutoRefreshInterval) {
             window._vraAutoRefreshInterval = setInterval(() => {
-                console.log(`[PNS ENTERPRISE] Auto-sync VRA data live berkala (${AUTO_REFRESH_MINUTES} menit)...`);
-                syncLiveData(null, true);
+                syncFromGasGatewayInBackground();
             }, AUTO_REFRESH_MINUTES * 60 * 1000);
         }
 
@@ -650,8 +659,7 @@ export async function initializePbiApp() {
                 if (document.visibilityState === 'visible') {
                     const elapsed = Date.now() - (window._lastVraSyncTime || 0);
                     if (elapsed > AUTO_REFRESH_MINUTES * 60 * 1000) {
-                        console.log(`[PNS ENTERPRISE] Tab aktif kembali setelah >${AUTO_REFRESH_MINUTES}m, auto-tarik data VRA live...`);
-                        syncLiveData(null, true);
+                        syncFromGasGatewayInBackground();
                     }
                 }
             });
@@ -659,11 +667,6 @@ export async function initializePbiApp() {
 
         // Apply Public vs Admin Role UI state
         applyUserRoleToUi(getUserRole());
-
-        // Instant silent background sync on open so data is always 100% up-to-date
-        setTimeout(() => {
-            autoSyncLiveApiOnOpen();
-        }, 500);
 
 
     } catch (err) {
@@ -1447,14 +1450,14 @@ export function switchView(targetViewId, subId = null) {
 
     // 2. Update Sidebar Active Button
     document.querySelectorAll('.sidebar-nav-item').forEach(btn => {
-        btn.classList.remove('active', 'bg-blue-600', 'text-white', 'shadow-md', 'shadow-blue-500/20');
+        btn.classList.remove('active', 'bg-blue-600', 'bg-cyan-600', 'text-white', 'shadow-md', 'shadow-sm', 'shadow-blue-500/20', 'shadow-cyan-500/20');
         btn.classList.add('text-slate-600', 'dark:text-slate-400', 'hover:bg-slate-100', 'dark:hover:bg-slate-800');
     });
 
     const activeSidebarBtn = document.querySelector(`.sidebar-nav-item[data-target="${activeViewId}"]`);
     if (activeSidebarBtn) {
-        activeSidebarBtn.classList.add('active', 'bg-blue-600', 'text-white', 'shadow-md', 'shadow-blue-500/20');
-        activeSidebarBtn.classList.remove('text-slate-600', 'dark:text-slate-400', 'hover:bg-slate-100', 'dark:hover:bg-slate-800');
+        activeSidebarBtn.classList.add('active');
+        activeSidebarBtn.classList.remove('text-slate-600', 'dark:text-slate-400');
     }
 
     // 3. Update VRA & Asset Top Subnavs
@@ -12342,12 +12345,43 @@ window.pns.initUniversalTableSorter = initUniversalTableSorter;
 // -------------------------------------------------------------
 export function getUserRole() {
     const urlParams = new URLSearchParams(window.location.search);
-    const urlRole = urlParams.get('role');
-    if (urlRole && (urlRole === 'public' || urlRole === 'admin')) {
-        return urlRole;
+    if (urlParams.get('admin') === '1' || urlParams.get('role') === 'admin') {
+        return 'admin';
     }
-    return localStorage.getItem('pns_user_role') || 'admin';
+    return 'public';
 }
+
+export function switchSidebarModule(modKey) {
+    const mapView = {
+        'ALL': 'view-dashboard',
+        'VRA': 'view-vra-2',
+        'FUEL': 'view-fuel',
+        'MAINT': 'view-maintenance',
+        'REPORT': 'view-report-depreciation'
+    };
+    const groups = {
+        'VRA': 'nav-group-vra',
+        'FUEL': 'nav-group-fuel',
+        'MAINT': 'nav-group-maint',
+        'REPORT': 'nav-group-reports'
+    };
+    Object.keys(groups).forEach(k => {
+        const el = document.getElementById(groups[k]);
+        if (!el) return;
+        const wrapper = el.closest('.nav-module-group');
+        if (modKey === 'ALL' || modKey === k) {
+            if (wrapper) wrapper.classList.remove('hidden');
+            el.classList.remove('hidden');
+        } else {
+            if (wrapper) wrapper.classList.add('hidden');
+        }
+    });
+    if (mapView[modKey]) {
+        switchView(mapView[modKey]);
+    }
+}
+window.switchSidebarModule = switchSidebarModule;
+window.pns.switchSidebarModule = switchSidebarModule;
 
 export function setUserRole(role) {
     const validRole = (role === 'public') ? 'public' : 'admin';

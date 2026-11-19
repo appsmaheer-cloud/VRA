@@ -917,10 +917,98 @@
             font-size: 0.75rem !important;
         }
 
-        /* 6. Formatting Tombol Radius */
+        /* 6. Enterprise Prototype UI - Anti-AI-Slop Flat System (enterprise-prototype-ui-id) */
+        :root {
+            --ep-bg-canvas: #F3F4F6;
+            --ep-bg-surface: #FFFFFF;
+            --ep-bg-subtle: #F8FAFC;
+            --ep-border: #D8DCE3;
+            --ep-text-main: #111827;
+            --ep-text-muted: #4B5563;
+            --ep-accent: #0E5E63;
+            --ep-accent-blue: #2D4A94;
+        }
+        html.dark {
+            --ep-bg-canvas: #262626;
+            --ep-bg-surface: #303030;
+            --ep-bg-subtle: #2A2A2A;
+            --ep-border: #444444;
+            --ep-text-main: #E5E7EB;
+            --ep-text-muted: #9CA3AF;
+            --ep-accent: #2DD4BF;
+            --ep-accent-blue: #60A5FA;
+        }
+
+        body,
+        .pns-bg-wallpaper,
+        html.dark body,
+        html.dark .pns-bg-wallpaper {
+            background-color: var(--ep-bg-canvas) !important;
+            background-image: none !important;
+            color: var(--ep-text-main) !important;
+        }
+
+        .pns-card,
+        .clean-card,
+        .pns-kpi-card,
+        .vra4-glass,
+        header,
+        aside#pbi-sidebar {
+            background-color: var(--ep-bg-surface) !important;
+            border-color: var(--ep-border) !important;
+            box-shadow: none !important;
+        }
+
+        .pns-card,
+        .clean-card,
+        .pns-kpi-card,
+        .vra4-glass,
         button,
-        .btn {
-            border-radius: 8px !important;
+        .btn,
+        input,
+        select,
+        [class*="rounded-xl"],
+        [class*="rounded-2xl"],
+        [class*="rounded-3xl"],
+        [class*="rounded-lg"] {
+            border-radius: 4px !important;
+            box-shadow: none !important;
+        }
+
+        .pns-kpi-card {
+            border: 1px solid var(--ep-border) !important;
+            border-top: 1px solid var(--ep-border) !important;
+        }
+
+        /* Sidebar Navigation Active State: Left Line Indicator (No Glowing Blue Pill) */
+        .sidebar-nav-item {
+            border-radius: 3px !important;
+            border-left: 3px solid transparent !important;
+            box-shadow: none !important;
+            font-size: 12.5px !important;
+            font-weight: 500 !important;
+            padding: 7px 10px !important;
+        }
+        .sidebar-nav-item.active {
+            background-color: #E8ECEF !important;
+            color: #0E5E63 !important;
+            border-left-color: #0E5E63 !important;
+            font-weight: 600 !important;
+        }
+        html.dark .sidebar-nav-item.active {
+            background-color: #3A3A3A !important;
+            color: #5EEAD4 !important;
+            border-left-color: #2DD4BF !important;
+        }
+        html.dark .bg-white,
+        html.dark .dark\:bg-slate-900,
+        html.dark .dark\:bg-slate-900\/90 {
+            background-color: #303030 !important;
+        }
+        html.dark .dark\:bg-slate-950,
+        html.dark .dark\:bg-slate-800\/40,
+        html.dark .dark\:bg-slate-800\/50 {
+            background-color: #2A2A2A !important;
         }
     </style>
 
@@ -930,89 +1018,71 @@
     <!-- Auto-Scale Dashboard Script to Fit Any Screen -->
     <script>
         function autoScaleDashboard() {
-            // Jaga zoom pada 1:1 agar koordinat ApexCharts, tooltips, dan SVG sparkline tidak terdistorsi
             if (document.body) {
                 document.body.style.zoom = 1;
             }
         }
         window.addEventListener('resize', autoScaleDashboard);
         window.addEventListener('DOMContentLoaded', autoScaleDashboard);
-        autoScaleDashboard(); // Panggil langsung saat load
+        autoScaleDashboard();
     </script>
 
 </head>
 
-<body class="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 h-screen overflow-hidden flex flex-col font-sans antialiased select-none">
+<body class="bg-[#F3F4F6] dark:bg-[#262626] text-slate-800 dark:text-slate-100 h-screen overflow-hidden flex flex-col font-sans antialiased select-none">
 
-    <!-- Global App Layout with Left Sidebar -->
-    
   <!-- ==================================================== -->
-  <!-- TOP EXECUTIVE HEADER BAR (Full Width Spanning Entire App like pns_asset) -->
+  <!-- TOP HEADER BAR (Clean Enterprise Layout - Zero Admin Clutter) -->
   <!-- ==================================================== -->
-  <header class="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-3 sm:px-5 py-1.5 sm:py-2 flex items-center justify-between shrink-0 shadow-2xs z-40 gap-2 sm:gap-3">
+  <header class="bg-white dark:bg-[#303030] border-b border-[#D8DCE3] dark:border-[#444444] px-3 sm:px-4 py-1.5 flex items-center justify-between shrink-0 z-40 gap-2 sm:gap-3">
     <!-- Left: Brand & Sidebar Toggle -->
-    <div class="flex items-center gap-2 sm:gap-2.5 shrink-0 min-w-0">
-      <button id="btn-toggle-sidebar" onclick="window.toggleSidebar()" aria-label="Buka atau tutup navigasi samping" class="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer shrink-0">
-        <i class="ph-bold ph-list text-lg" aria-hidden="true"></i>
+    <div class="flex items-center gap-2.5 shrink-0 min-w-0">
+      <button id="btn-toggle-sidebar" onclick="window.toggleSidebar()" aria-label="Buka atau tutup navigasi samping" class="p-1.5 rounded border border-[#D8DCE3] dark:border-[#444444] text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer shrink-0">
+        <i class="ph-bold ph-list text-base" aria-hidden="true"></i>
       </button>
-      <div class="flex items-center gap-2 sm:gap-2.5 min-w-0">
-        <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-white border border-slate-200 p-1 flex items-center justify-center shadow-xs shrink-0">
-          <img data-pns-logo src="./img/logo-mark.png" onerror="this.onerror=null; this.src='https://raw.githubusercontent.com/appsmaheer-cloud/VRA/main/img/logo-mark.png';" alt="Logo PT Pratama Nusantara Sakti" width="28" height="28" class="w-full h-full object-contain">
+      <div class="flex items-center gap-2 min-w-0">
+        <div class="w-7 h-7 rounded bg-white border border-[#D8DCE3] p-0.5 flex items-center justify-center shrink-0">
+          <img data-pns-logo src="./img/logo-mark.png" onerror="this.onerror=null; this.src='https://raw.githubusercontent.com/appsmaheer-cloud/VRA/main/img/logo-mark.png';" alt="Logo PT Pratama Nusantara Sakti" width="24" height="24" class="w-full h-full object-contain">
         </div>
         <div class="min-w-0">
-          <div class="flex items-center gap-1.5 sm:gap-2">
-            <span class="font-bold text-xs sm:text-sm tracking-tight text-slate-900 dark:text-white truncate max-w-[130px] sm:max-w-none">PNS VRA &amp; FLEET</span>
-            <span class="text-[9.5px] font-semibold uppercase px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 hidden xl:inline-flex items-center gap-1 shrink-0">
-              <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Enterprise v2.5
-            </span>
-          </div>
-          <p class="text-[10px] text-slate-500 dark:text-slate-400 hidden 2xl:block whitespace-nowrap">PT Pratama Nusantara Sakti &bull; Vehicle Request &amp; Fleet Analytics Platform</p>
+          <span class="font-semibold text-[13px] tracking-tight text-slate-900 dark:text-slate-100 truncate block">PNS Operasional Armada</span>
         </div>
       </div>
     </div>
 
-    <!-- Center-Left: Quick Unit Code Search (Fast Jump to Profil Unit) -->
+    <!-- Center: Global Unit Search -->
     <div class="relative flex-1 max-w-xs sm:max-w-sm hidden sm:block">
-      <div class="flex items-center w-full bg-slate-100/90 dark:bg-slate-800/90 rounded-xl px-2.5 py-1 sm:py-1.5 border border-slate-200/80 dark:border-slate-700/80 hover:border-cyan-500/60 dark:hover:border-cyan-500/60 focus-within:ring-2 focus-within:ring-cyan-500/40 focus-within:border-cyan-500 transition shadow-2xs">
-        <i class="ph-bold ph-magnifying-glass text-slate-400 dark:text-slate-500 text-xs sm:text-sm mr-1.5 shrink-0"></i>
+      <div class="flex items-center w-full bg-[#F8FAFC] dark:bg-[#262626] rounded px-2.5 py-1 border border-[#D8DCE3] dark:border-[#444444] focus-within:border-[#0E5E63] dark:focus-within:border-teal-400 transition">
+        <i class="ph ph-magnifying-glass text-slate-400 dark:text-slate-500 text-xs mr-1.5 shrink-0"></i>
         <input type="text" id="global-unit-search-input"
-          placeholder="Cari Kode Unit... (MBL, TRK)"
+          placeholder="Cari kode unit... (MBL, TRK)"
           autocomplete="off"
-          class="bg-transparent text-xs font-semibold text-slate-800 dark:text-slate-100 placeholder:text-slate-400 placeholder:font-normal focus:outline-none w-full"
+          class="bg-transparent text-xs font-medium text-slate-800 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none w-full"
           oninput="window.pns.onGlobalUnitSearch(this.value)"
           onfocus="window.pns.onGlobalUnitSearch(this.value)"
           onkeydown="window.pns.onGlobalUnitSearchKeydown(event)">
-        <span class="hidden md:inline-flex text-[9px] font-mono px-1.5 py-0.5 rounded-md bg-slate-200/80 dark:bg-slate-700 text-slate-500 dark:text-slate-400 shrink-0 select-none" title="Tekan '/' untuk mencari cepat">/</span>
+        <span class="hidden md:inline-flex text-[9px] font-mono px-1 py-0.2 rounded bg-slate-200/70 dark:bg-slate-700 text-slate-500 dark:text-slate-400 shrink-0 select-none">/</span>
         <button type="button" id="global-unit-search-clear" onclick="window.pns.clearGlobalUnitSearch()" class="hidden text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 ml-1 cursor-pointer">
-          <i class="ph-bold ph-x text-xs"></i>
+          <i class="ph ph-x text-xs"></i>
         </button>
       </div>
-      <!-- Autocomplete Dropdown List -->
-      <div id="global-unit-search-dropdown" class="hidden absolute top-full left-0 right-0 mt-1 max-h-80 overflow-y-auto bg-white dark:bg-slate-800 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700 z-50 p-1.5 space-y-1 scrollbar-thin"></div>
+      <div id="global-unit-search-dropdown" class="hidden absolute top-full left-0 right-0 mt-1 max-h-80 overflow-y-auto bg-white dark:bg-[#303030] rounded border border-[#D8DCE3] dark:border-[#444444] z-50 p-1 space-y-0.5 scrollbar-thin"></div>
     </div>
 
-    <!-- Quick Navigation Switcher Pills (Matching pns_asset, Visible on 2xl) -->
-    <div class="hidden 2xl:flex items-center gap-1.5 bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl border border-slate-200 dark:border-slate-700 shadow-2xs shrink-0">
-      <button onclick="window.pns.switchView('view-vra-2', this)" id="top-pill-vra" class="top-nav-pill px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 text-cyan-700 bg-white dark:bg-slate-700 shadow-2xs cursor-pointer">
-        <i class="ph-bold ph-steering-wheel text-cyan-500"></i> Fleet &amp; VRA
-      </button>
-      <button onclick="window.pns.switchView('view-fuel', this)" id="top-pill-fuel" class="top-nav-pill px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 text-slate-700 dark:text-slate-200 hover:bg-white dark:hover:bg-slate-700 shadow-2xs cursor-pointer">
-        <i class="ph-bold ph-gas-pump text-purple-500"></i> BBM (Fuel)
-      </button>
-      <button onclick="window.pns.switchView('view-maintenance', this)" id="top-pill-maint" class="top-nav-pill px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 text-slate-700 dark:text-slate-200 hover:bg-white dark:hover:bg-slate-700 shadow-2xs cursor-pointer">
-        <i class="ph-bold ph-wrench text-amber-500"></i> Maintenance
-      </button>
-      <button onclick="window.pns.switchView('view-dashboard', this)" id="top-pill-dash" class="top-nav-pill active px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-2xs cursor-pointer">
-        <i class="ph-bold ph-squares-four text-sky-500"></i> Overview
-      </button>
+    <!-- Hidden Compatibility Nav Pills -->
+    <div class="hidden">
+      <button onclick="window.pns.switchView('view-vra-2', this)" id="top-pill-vra" class="top-nav-pill">Fleet &amp; VRA</button>
+      <button onclick="window.pns.switchView('view-fuel', this)" id="top-pill-fuel" class="top-nav-pill">BBM</button>
+      <button onclick="window.pns.switchView('view-maintenance', this)" id="top-pill-maint" class="top-nav-pill">Maintenance</button>
+      <button onclick="window.pns.switchView('view-dashboard', this)" id="top-pill-dash" class="top-nav-pill active">Overview</button>
     </div>
 
-    <!-- Right Controls: Global Filter Slicers + Live Sync Badge + User Badge -->
+    <!-- Right Controls: Period Slicers, Export CSV, Theme Toggle -->
     <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
       <!-- Slicer: Tahun -->
-      <div id="top-slicer-year-box" class="flex items-center bg-slate-50 dark:bg-slate-800 rounded-lg px-2 py-1 border border-slate-200 dark:border-slate-700 shadow-2xs shrink-0">
-        <span class="text-[10px] font-medium text-slate-400 dark:text-slate-500 uppercase mr-1">Tahun:</span>
-        <select id="slicer-year" onchange="window.applyFilters()" class="bg-transparent text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none cursor-pointer">
+      <div id="top-slicer-year-box" class="flex items-center bg-[#F8FAFC] dark:bg-[#262626] rounded px-2 py-1 border border-[#D8DCE3] dark:border-[#444444] shrink-0">
+        <span class="text-[11px] text-slate-500 dark:text-slate-400 mr-1">Tahun:</span>
+        <select id="slicer-year" onchange="window.applyFilters()" class="bg-transparent text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none cursor-pointer">
           <option value="2026">2026</option>
           <option value="2025">2025</option>
           <option value="ALL">Semua</option>
@@ -1020,9 +1090,9 @@
       </div>
 
       <!-- Slicer: Bulan -->
-      <div id="top-slicer-month-box" class="hidden sm:flex items-center bg-slate-50 dark:bg-slate-800 rounded-lg px-2 py-1 border border-slate-200 dark:border-slate-700 shadow-2xs shrink-0">
-        <span class="text-[10px] font-medium text-slate-400 dark:text-slate-500 uppercase mr-1">Bulan:</span>
-        <select id="slicer-month" onchange="window.applyFilters()" class="bg-transparent text-xs font-bold text-slate-800 dark:text-slate-200 focus:outline-none cursor-pointer">
+      <div id="top-slicer-month-box" class="hidden sm:flex items-center bg-[#F8FAFC] dark:bg-[#262626] rounded px-2 py-1 border border-[#D8DCE3] dark:border-[#444444] shrink-0">
+        <span class="text-[11px] text-slate-500 dark:text-slate-400 mr-1">Bulan:</span>
+        <select id="slicer-month" onchange="window.applyFilters()" class="bg-transparent text-xs font-semibold text-slate-800 dark:text-slate-200 focus:outline-none cursor-pointer">
           <option value="ALL">Semua</option>
           <option value="1">Jan</option>
           <option value="2">Feb</option>
@@ -1039,42 +1109,27 @@
         </select>
       </div>
 
-      <!-- Live Sync Badge -->
-      <button type="button" onclick="window.syncLiveData()" id="sync-badge" title="Klik untuk sinkronisasi live" class="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-200 transition cursor-pointer shrink-0">
-        <span id="sync-dot" class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-        <span id="sync-text" class="hidden xl:inline">Sheets Synced</span>
+      <!-- Unduh CSV -->
+      <button type="button" onclick="window.pns.exportVra2Csv()"
+        class="px-2.5 py-1 rounded bg-[#F8FAFC] hover:bg-slate-200/70 dark:bg-[#262626] dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-[#D8DCE3] dark:border-[#444444] font-medium text-xs transition flex items-center gap-1.5 cursor-pointer shrink-0"
+        title="Unduh Data CSV">
+        <i class="ph ph-download-simple text-xs"></i>
+        <span class="hidden md:inline">Unduh CSV</span>
       </button>
 
       <!-- Theme Toggle -->
-      <button type="button" onclick="window.toggleTheme()" class="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition shrink-0 cursor-pointer" title="Ganti Tema">
-        <i id="theme-icon" class="ph-bold ph-sun text-base text-amber-500"></i>
+      <button type="button" onclick="window.toggleTheme()" class="p-1.5 rounded border border-[#D8DCE3] dark:border-[#444444] text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition shrink-0 cursor-pointer" title="Ganti Tema Terang / Gelap">
+        <i id="theme-icon" class="ph ph-sun text-sm text-slate-700 dark:text-amber-400"></i>
       </button>
 
-      <!-- Role Switcher Pill (Public vs Admin View) -->
-      <div id="pns-role-switcher" class="flex items-center bg-slate-100 dark:bg-slate-800 p-0.5 rounded-lg border border-slate-200 dark:border-slate-700 shadow-2xs shrink-0">
-        <button type="button" id="pns-btn-role-admin" onclick="window.pns.setUserRole('admin')"
-          class="px-2 py-1 rounded-md text-[11px] font-bold transition flex items-center gap-1 cursor-pointer bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-2xs"
-          title="Mode Administrator (Akses penuh kelola foto & impor data)">
-          <i class="ph-bold ph-shield-check text-xs"></i>
-          <span class="hidden xl:inline">Admin</span>
-        </button>
-        <button type="button" id="pns-btn-role-public" onclick="window.pns.setUserRole('public')"
-          class="px-2 py-1 rounded-md text-[11px] font-bold transition flex items-center gap-1 cursor-pointer text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white"
-          title="Mode Publik / Executive Viewer (Pratinjau visual & baca-saja)">
-          <i class="ph-bold ph-globe text-xs"></i>
-          <span class="hidden xl:inline">Publik</span>
-        </button>
-      </div>
-
-      <!-- User Profile Badge (Never Truncated, Guaranteed Spacing) -->
-      <div class="flex items-center gap-2 pl-2 sm:pl-2.5 pr-0.5 border-l border-slate-200 dark:border-slate-700 shrink-0 select-none">
-        <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 flex items-center justify-center text-xs font-medium shrink-0 border border-emerald-300/60 dark:border-emerald-700/60 shadow-2xs">
-          MK
-        </div>
-        <div class="hidden sm:block text-left shrink-0 whitespace-nowrap">
-          <div class="text-xs font-bold text-slate-900 dark:text-white leading-tight whitespace-nowrap">Miftahul Khoiry</div>
-          <div id="pns-user-role-label" class="text-[10px] text-slate-500 dark:text-slate-400 whitespace-nowrap">Fleet Operations</div>
-        </div>
+      <!-- Hidden System Elements (Not for Public Consumption) -->
+      <button type="button" onclick="window.syncLiveData()" id="sync-badge" class="hidden">
+        <span id="sync-dot"></span>
+        <span id="sync-text">Sheets Synced</span>
+      </button>
+      <div id="pns-role-switcher" class="hidden">
+        <button type="button" id="pns-btn-role-admin" onclick="window.pns.setUserRole('admin')">Admin</button>
+        <button type="button" id="pns-btn-role-public" onclick="window.pns.setUserRole('public')">Publik</button>
       </div>
     </div>
   </header>
@@ -1083,208 +1138,149 @@
   <div class="flex-1 flex overflow-hidden min-h-0 w-full">
 
         <!-- ==================================================== -->
-        <!-- LEFT SIDEBAR NAVIGATION & MOBILE BACKDROP -->
+        <!-- LEFT SIDEBAR NAVIGATION (Pemilih Modul + Menu Bertingkat) -->
         <!-- ==================================================== -->
         <div id="pbi-sidebar-backdrop" onclick="window.closeMobileSidebar()"
-            class="fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-40 hidden transition-opacity"></div>
+            class="fixed inset-0 bg-slate-900/60 z-40 hidden transition-opacity"></div>
         <aside id="pbi-sidebar"
-            class="w-60 bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex flex-col shrink-0 z-20 transition-colors">
+            class="w-56 bg-white dark:bg-[#303030] border-r border-[#D8DCE3] dark:border-[#444444] flex flex-col shrink-0 z-20 transition-colors">
 
-            <!-- Brand Logo Header -->
-            <div class="sidebar-header p-3 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/70 dark:bg-slate-800/40 shrink-0">
-                <div class="font-bold text-xs text-slate-800 dark:text-slate-200 flex items-center gap-2">
-                    <i class="ph-bold ph-list text-cyan-500"></i>
-                    <span>Menu Navigasi</span>
-                </div>
-                <div class="flex items-center gap-1.5">
-                    <span class="text-[9.5px] font-bold text-slate-400 dark:text-slate-500 uppercase px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800">VRA v2.5</span>
+            <!-- Pemilih Modul di Kiri Atas Sidebar (enterprise-prototype-ui-id) -->
+            <div class="sidebar-header p-2.5 border-b border-[#D8DCE3] dark:border-[#444444] bg-[#F8FAFC] dark:bg-[#2A2A2A] shrink-0">
+                <div class="flex items-center justify-between mb-1.5">
+                    <label for="sidebar-module-select" class="text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Modul</label>
                     <button type="button" onclick="window.closeMobileSidebar()"
-                        class="md:hidden p-1 text-slate-400 hover:text-slate-600 dark:hover:text-white rounded hover:bg-slate-200 transition cursor-pointer"
+                        class="md:hidden p-1 text-slate-400 hover:text-slate-600 dark:hover:text-white rounded cursor-pointer"
                         title="Tutup Menu">
-                        <i class="ph-bold ph-x text-sm"></i>
+                        <i class="ph ph-x text-xs"></i>
                     </button>
                 </div>
+                <select id="sidebar-module-select" onchange="window.switchSidebarModule(this.value)"
+                    class="w-full bg-white dark:bg-[#303030] border border-[#D8DCE3] dark:border-[#444444] rounded px-2 py-1.5 text-xs font-semibold text-slate-800 dark:text-slate-100 focus:outline-none cursor-pointer">
+                    <option value="ALL">Semua Modul</option>
+                    <option value="VRA">Operasional &amp; VRA</option>
+                    <option value="FUEL">Konsumsi BBM</option>
+                    <option value="MAINT">Pemeliharaan</option>
+                    <option value="REPORT">Laporan Aset</option>
+                </select>
             </div>
 
-            <!-- Navigation Modules & Submodules with Accordion Toggle -->
-            <div class="flex-1 overflow-y-auto px-2.5 py-3 space-y-3.5 text-xs scrollbar-thin">
+            <!-- Navigation Modules & Submodules -->
+            <div class="flex-1 overflow-y-auto px-2 py-2.5 space-y-3 text-xs scrollbar-thin">
 
-                <!-- Primary Executive Dashboard Item -->
+                <!-- Primary Overview Item -->
                 <div>
                     <button type="button" data-target="view-dashboard"
-                        class="sidebar-nav-item active w-full flex items-center gap-2.5 px-3 py-2.5 rounded-[12px] text-left font-bold transition text-xs bg-blue-600 text-white shadow-md shadow-blue-500/20 cursor-pointer"
-                        title="Dashboard Overview">
-                        <i class="ph-bold ph-squares-four text-base shrink-0"></i>
-                        <span class="sidebar-text font-semibold truncate">Dashboard Overview</span>
+                        class="sidebar-nav-item active w-full flex items-center gap-2 px-2.5 py-2 text-left transition cursor-pointer"
+                        title="Ringkasan Utama">
+                        <i class="ph ph-squares-four text-sm shrink-0"></i>
+                        <span class="sidebar-text truncate">Ringkasan Utama</span>
                     </button>
                 </div>
 
-                <!-- Module 1: Fleet & VRA -->
+                <!-- Module 1: Operasional & VRA -->
                 <div class="nav-module-group">
                     <button type="button" onclick="window.toggleNavModule('nav-group-vra')"
-                        class="nav-module-btn w-full px-2 py-1.5 flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition cursor-pointer rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800/60"
-                        title="Fleet & VRA">
-                        <span class="flex items-center gap-1.5"><i
-                                class="ph-bold ph-steering-wheel text-cyan-500 text-sm"></i> <span
-                                class="sidebar-text">Fleet & VRA</span></span>
-                        <div class="flex items-center gap-1.5">
-                            <span
-                                class="sidebar-badge px-1.5 py-0.2 bg-cyan-50 dark:bg-cyan-950/60 text-cyan-600 dark:text-blue-400 rounded text-[8.5px] font-bold">VRA</span>
-                            <i id="caret-nav-group-vra"
-                                class="ph-bold ph-caret-down text-xs module-caret text-slate-400"></i>
-                        </div>
+                        class="nav-module-btn w-full px-2 py-1 flex items-center justify-between text-[11px] font-semibold text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition cursor-pointer"
+                        title="Operasional & VRA">
+                        <span class="sidebar-text">Operasional &amp; VRA</span>
+                        <i id="caret-nav-group-vra" class="ph ph-caret-down text-xs module-caret text-slate-400"></i>
                     </button>
-                    <div id="nav-group-vra" class="nav-submodule-list space-y-1 mt-1 pl-1">
+                    <div id="nav-group-vra" class="nav-submodule-list space-y-0.5 mt-1 pl-1">
                         <button type="button" data-target="view-vra-1"
-                            class="sidebar-nav-item w-full flex items-center gap-2.5 px-3 py-2 rounded-[12px] text-left font-bold transition text-xs text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
-                            title="1. Overview">
-                            <i class="ph-bold ph-chart-donut text-sm shrink-0"></i>
-                            <span class="sidebar-text truncate">1. Overview</span>
+                            class="sidebar-nav-item w-full flex items-center gap-2 px-2.5 py-1.5 text-left transition text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">
+                            <span class="sidebar-text truncate">Ringkasan VRA</span>
                         </button>
                         <button type="button" data-target="view-vra-2"
-                            class="sidebar-nav-item text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 w-full flex items-center gap-2.5 px-3 py-2 rounded-[12px] text-left font-bold transition text-xs bg-cyan-600 text-white shadow-sm shadow-cyan-500/20 cursor-pointer"
-                            title="2. Performa Unit">
-                            <i class="ph-bold ph-table text-sm shrink-0"></i>
-                            <span class="sidebar-text truncate">2. Performa Unit</span>
+                            class="sidebar-nav-item w-full flex items-center gap-2 px-2.5 py-1.5 text-left transition text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">
+                            <span class="sidebar-text truncate">Performa Unit</span>
                         </button>
                         <button type="button" data-target="view-vra-3"
-                            class="sidebar-nav-item w-full flex items-center gap-2.5 px-3 py-2 rounded-[12px] text-left font-bold transition text-xs text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
-                            title="3. Aktivitas">
-                            <i class="ph-bold ph-tree-structure text-sm shrink-0"></i>
-                            <span class="sidebar-text truncate">3. Aktivitas</span>
+                            class="sidebar-nav-item w-full flex items-center gap-2 px-2.5 py-1.5 text-left transition text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">
+                            <span class="sidebar-text truncate">Log Aktivitas</span>
                         </button>
                         <button type="button" data-target="view-vra-category-detail"
-                            class="sidebar-nav-item w-full flex items-center gap-2.5 px-3 py-2 rounded-[12px] text-left font-bold transition text-xs text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
-                            title="3.1. Detail Kategori">
-                            <i class="ph-bold ph-steering-wheel text-sm shrink-0"></i>
-                            <span class="sidebar-text truncate">3.1. Detail Kategori</span>
+                            class="sidebar-nav-item w-full flex items-center gap-2 px-2.5 py-1.5 text-left transition text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">
+                            <span class="sidebar-text truncate">Rincian Kategori</span>
                         </button>
                         <button type="button" data-target="view-vra-4"
-                            class="sidebar-nav-item w-full flex items-center gap-2.5 px-3 py-2 rounded-[12px] text-left font-bold transition text-xs text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
-                            title="4. Profil Unit">
-                            <i class="ph-bold ph-identification-card text-sm shrink-0"></i>
-                            <span class="sidebar-text truncate">4. Profil Unit</span>
+                            class="sidebar-nav-item w-full flex items-center gap-2 px-2.5 py-1.5 text-left transition text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">
+                            <span class="sidebar-text truncate">Profil Unit</span>
                         </button>
                     </div>
                 </div>
 
-                <!-- Module 2: BBM (Fuel) -->
+                <!-- Module 2: Konsumsi BBM -->
                 <div class="nav-module-group">
                     <button type="button" onclick="window.toggleNavModule('nav-group-fuel')"
-                        class="nav-module-btn w-full px-2 py-1.5 flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition cursor-pointer rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800/60"
-                        title="BBM (Fuel)">
-                        <span class="flex items-center gap-1.5"><i
-                                class="ph-bold ph-gas-pump text-purple-500 text-sm"></i> <span class="sidebar-text">BBM
-                                (Fuel)</span></span>
-                        <div class="flex items-center gap-1.5">
-                            <span
-                                class="sidebar-badge px-1.5 py-0.2 bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 rounded text-[8.5px] font-bold">BBM</span>
-                            <i id="caret-nav-group-fuel"
-                                class="ph-bold ph-caret-down text-xs module-caret text-slate-400"></i>
-                        </div>
+                        class="nav-module-btn w-full px-2 py-1 flex items-center justify-between text-[11px] font-semibold text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition cursor-pointer"
+                        title="Konsumsi BBM">
+                        <span class="sidebar-text">Konsumsi BBM</span>
+                        <i id="caret-nav-group-fuel" class="ph ph-caret-down text-xs module-caret text-slate-400"></i>
                     </button>
-                    <div id="nav-group-fuel" class="nav-submodule-list space-y-1 mt-1 pl-1">
+                    <div id="nav-group-fuel" class="nav-submodule-list space-y-0.5 mt-1 pl-1">
                         <button type="button" data-target="view-fuel"
-                            class="sidebar-nav-item w-full flex items-center gap-2.5 px-3 py-2 rounded-[12px] text-left font-bold transition text-xs text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
-                            title="1. Analisis & Tren BBM">
-                            <i class="ph-bold ph-gauge text-sm shrink-0"></i>
-                            <span class="sidebar-text truncate">1. Analisis & Tren BBM</span>
+                            class="sidebar-nav-item w-full flex items-center gap-2 px-2.5 py-1.5 text-left transition text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">
+                            <span class="sidebar-text truncate">Analisis &amp; Tren BBM</span>
                         </button>
                         <button type="button" data-target="view-fuel-vra"
-                            class="sidebar-nav-item w-full flex items-center gap-2.5 px-3 py-2 rounded-[12px] text-left font-bold transition text-xs text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
-                            title="2. Komparasi BBM vs VRA">
-                            <i class="ph-bold ph-git-diff text-sm shrink-0 text-cyan-500"></i>
-                            <span class="sidebar-text truncate">2. Komparasi BBM vs VRA</span>
+                            class="sidebar-nav-item w-full flex items-center gap-2 px-2.5 py-1.5 text-left transition text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">
+                            <span class="sidebar-text truncate">Komparasi BBM vs VRA</span>
                         </button>
                         <button type="button" data-target="view-fuel-detail"
-                            class="sidebar-nav-item w-full flex items-center gap-2.5 px-3 py-2 rounded-[12px] text-left font-bold transition text-xs text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
-                            title="3. Detail Log BBM">
-                            <i class="ph-bold ph-receipt text-sm shrink-0"></i>
-                            <span class="sidebar-text truncate">3. Detail Log BBM</span>
+                            class="sidebar-nav-item w-full flex items-center gap-2 px-2.5 py-1.5 text-left transition text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">
+                            <span class="sidebar-text truncate">Log Transaksi BBM</span>
                         </button>
                         <button type="button" data-target="view-fuel-anomaly"
-                            class="sidebar-nav-item w-full flex items-center gap-2.5 px-3 py-2 rounded-[12px] text-left font-bold transition text-xs text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
-                            title="4. Cek Efisiensi & Rata-Rata">
-                            <i class="ph-bold ph-warning-circle text-sm shrink-0 text-rose-500"></i>
-                            <span class="sidebar-text truncate">4. Cek Efisiensi & Rata-Rata</span>
+                            class="sidebar-nav-item w-full flex items-center gap-2 px-2.5 py-1.5 text-left transition text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">
+                            <span class="sidebar-text truncate">Efisiensi &amp; Rata-Rata</span>
                         </button>
                     </div>
                 </div>
 
-
-                <!-- Module 4: Maintenance -->
+                <!-- Module 3: Pemeliharaan -->
                 <div class="nav-module-group">
                     <button type="button" onclick="window.toggleNavModule('nav-group-maint')"
-                        class="nav-module-btn w-full px-2 py-1.5 flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition cursor-pointer rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800/60"
-                        title="Maintenance">
-                        <span class="flex items-center gap-1.5"><i class="ph-bold ph-wrench text-amber-500 text-sm"></i>
-                            <span class="sidebar-text">Maintenance</span></span>
-                        <div class="flex items-center gap-1.5">
-                            <span
-                                class="sidebar-badge px-1.5 py-0.2 bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 rounded text-[8.5px] font-bold">MTC</span>
-                            <i id="caret-nav-group-maint"
-                                class="ph-bold ph-caret-down text-xs module-caret text-slate-400"></i>
-                        </div>
+                        class="nav-module-btn w-full px-2 py-1 flex items-center justify-between text-[11px] font-semibold text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition cursor-pointer"
+                        title="Pemeliharaan">
+                        <span class="sidebar-text">Pemeliharaan</span>
+                        <i id="caret-nav-group-maint" class="ph ph-caret-down text-xs module-caret text-slate-400"></i>
                     </button>
-                    <div id="nav-group-maint" class="nav-submodule-list space-y-1 mt-1 pl-1">
+                    <div id="nav-group-maint" class="nav-submodule-list space-y-0.5 mt-1 pl-1">
                         <button type="button" data-target="view-maintenance"
-                            class="sidebar-nav-item w-full flex items-center gap-2.5 px-3 py-2 rounded-[12px] text-left font-bold transition text-xs text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
-                            title="1. Biaya & Servis">
-                            <i class="ph-bold ph-currency-dollar text-sm shrink-0"></i>
-                            <span class="sidebar-text truncate">1. Biaya & Servis</span>
+                            class="sidebar-nav-item w-full flex items-center gap-2 px-2.5 py-1.5 text-left transition text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">
+                            <span class="sidebar-text truncate">Biaya &amp; Servis</span>
                         </button>
                         <button type="button" data-target="view-maint-detail"
-                            class="sidebar-nav-item w-full flex items-center gap-2.5 px-3 py-2 rounded-[12px] text-left font-bold transition text-xs text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
-                            title="2. Detail Material & Part">
-                            <i class="ph-bold ph-package text-sm shrink-0"></i>
-                            <span class="sidebar-text truncate">2. Detail Material & Part</span>
+                            class="sidebar-nav-item w-full flex items-center gap-2 px-2.5 py-1.5 text-left transition text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">
+                            <span class="sidebar-text truncate">Rincian Suku Cadang</span>
                         </button>
                         <button type="button" data-target="view-maint-services"
-                            class="sidebar-nav-item w-full flex items-center gap-2.5 px-3 py-2 rounded-[12px] text-left font-bold transition text-xs text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
-                            title="3. Kategori & Jasa Servis">
-                            <i class="ph-bold ph-faders text-sm shrink-0 text-emerald-500"></i>
-                            <span class="sidebar-text truncate">3. Kategori & Jasa Servis</span>
+                            class="sidebar-nav-item w-full flex items-center gap-2 px-2.5 py-1.5 text-left transition text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">
+                            <span class="sidebar-text truncate">Kategori &amp; Jasa</span>
                         </button>
                         <button type="button" data-target="view-maint-frequency"
-                            class="sidebar-nav-item w-full flex items-center gap-2.5 px-3 py-2 rounded-[12px] text-left font-bold transition text-xs text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
-                            title="4. Frekuensi Servis Unit">
-                            <i class="ph-bold ph-clock-counter-clockwise text-sm shrink-0 text-amber-500"></i>
-                            <span class="sidebar-text truncate">4. Frekuensi Servis Unit</span>
+                            class="sidebar-nav-item w-full flex items-center gap-2 px-2.5 py-1.5 text-left transition text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">
+                            <span class="sidebar-text truncate">Frekuensi Servis</span>
                         </button>
                         <button type="button" data-target="view-maint-simulation"
-                            class="sidebar-nav-item w-full flex items-center justify-between px-3 py-2 rounded-[12px] text-left font-bold transition text-xs text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
-                            title="5. Simulasi Servis & Ganti Unit">
-                            <span class="flex items-center gap-2.5 min-w-0">
-                                <i class="ph-bold ph-calculator text-sm shrink-0 text-amber-500"></i>
-                                <span class="sidebar-text truncate">5. Simulasi Servis & Ganti</span>
-                            </span>
-                            <span
-                                class="sidebar-badge px-1.5 py-0.2 bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 rounded text-[8.5px] font-semibold uppercase">SIM</span>
+                            class="sidebar-nav-item w-full flex items-center gap-2 px-2.5 py-1.5 text-left transition text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">
+                            <span class="sidebar-text truncate">Simulasi Peremajaan</span>
                         </button>
                     </div>
                 </div>
 
-
-                <!-- Module 5: Reports -->
+                <!-- Module 4: Laporan -->
                 <div class="nav-module-group">
                     <button type="button" onclick="window.toggleNavModule('nav-group-reports')"
-                        class="nav-module-btn w-full px-2 py-1.5 flex items-center justify-between text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition cursor-pointer rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800/60"
-                        title="Reports">
-                        <span class="flex items-center gap-1.5"><i
-                                class="ph-bold ph-file-text text-cyan-500 text-sm"></i> <span
-                                class="sidebar-text">Reports</span></span>
-                        <div class="flex items-center gap-1.5">
-                            <span
-                                class="sidebar-badge px-1.5 py-0.2 bg-cyan-50 dark:bg-cyan-950/60 text-cyan-600 dark:text-blue-400 rounded text-[8.5px] font-bold">RPT</span>
-                            <i id="caret-nav-group-reports"
-                                class="ph-bold ph-caret-down text-xs module-caret text-slate-400"></i>
-                        </div>
+                        class="nav-module-btn w-full px-2 py-1 flex items-center justify-between text-[11px] font-semibold text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition cursor-pointer"
+                        title="Laporan">
+                        <span class="sidebar-text">Laporan</span>
+                        <i id="caret-nav-group-reports" class="ph ph-caret-down text-xs module-caret text-slate-400"></i>
                     </button>
-                    <div id="nav-group-reports" class="nav-submodule-list space-y-1 mt-1 pl-1">
+                    <div id="nav-group-reports" class="nav-submodule-list space-y-0.5 mt-1 pl-1">
                         <button type="button" data-target="view-report-depreciation"
-                            class="sidebar-nav-item w-full flex items-center gap-2.5 px-3 py-2 rounded-[12px] text-left font-bold transition text-xs text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
-                            title="Laporan Penyusutan">
-                            <i class="ph-bold ph-trend-down text-sm shrink-0 text-cyan-500"></i>
+                            class="sidebar-nav-item w-full flex items-center gap-2 px-2.5 py-1.5 text-left transition text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">
                             <span class="sidebar-text truncate">Laporan Penyusutan</span>
                         </button>
                     </div>
@@ -1292,34 +1288,17 @@
 
             </div>
 
-            <!-- Sidebar Bottom Footer -->
-            <div class="p-2.5 border-t border-slate-100 dark:border-slate-800 space-y-2 shrink-0">
+            <!-- Sidebar Bottom Footer (Minimal) -->
+            <div class="p-2 border-t border-[#D8DCE3] dark:border-[#444444] shrink-0">
                 <button type="button" onclick="window.toggleTheme()"
-                    class="sidebar-footer-btn w-full flex items-center justify-between px-3 py-2 rounded-[12px] bg-slate-100 dark:bg-slate-800/80 hover:bg-slate-200 dark:hover:bg-slate-700/80 text-slate-700 dark:text-slate-200 text-xs font-bold transition"
+                    class="sidebar-footer-btn w-full flex items-center justify-between px-2.5 py-1.5 rounded bg-[#F8FAFC] dark:bg-[#262626] hover:bg-slate-200/70 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-medium border border-[#D8DCE3] dark:border-[#444444] transition cursor-pointer"
                     title="Ganti Tema">
                     <span class="flex items-center gap-2">
-                        <i id="theme-icon" class="ph-bold ph-sun text-sm text-amber-500 shrink-0"></i>
-                        <span class="sidebar-text">Tema Tampilan</span>
+                        <i class="ph ph-sun text-xs text-slate-600 dark:text-amber-400 shrink-0"></i>
+                        <span class="sidebar-text">Tema</span>
                     </span>
-                    <span id="theme-text"
-                        class="sidebar-text text-[10px] font-semibold text-slate-500 dark:text-slate-400">Light</span>
+                    <span id="theme-text" class="sidebar-text text-[11px] text-slate-500 dark:text-slate-400">Terang</span>
                 </button>
-                <button type="button" onclick="window.openImportModal()"
-                    class="sidebar-footer-btn role-admin-only w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-[12px] bg-cyan-50 dark:bg-cyan-950/50 hover:bg-cyan-100 dark:hover:bg-cyan-900/50 text-cyan-600 dark:text-cyan-400 text-xs font-bold border border-cyan-200 dark:border-cyan-800 transition"
-                    title="Impor Data CSV">
-                    <i class="ph-bold ph-upload-simple shrink-0"></i>
-                    <span class="sidebar-text">Impor CSV</span>
-                </button>
-                <div class="role-public-only w-full p-2 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/80 text-center">
-                    <span class="text-[10px] font-bold text-slate-500 dark:text-slate-400 block"><i class="ph-bold ph-globe text-cyan-500 mr-1"></i> Mode Publik</span>
-                    <span class="text-[9px] text-slate-400 block">Executive View Only</span>
-                </div>
-                <div class="sidebar-text pt-2 text-center">
-                    <p class="text-[9px] font-semibold text-slate-400 dark:text-slate-500">
-                        CREATED BY <span class="font-bold text-slate-600 dark:text-slate-300">LensaLaporan</span>
-                        [Mifta]
-                    </p>
-                </div>
             </div>
         </aside>
 
@@ -1328,29 +1307,12 @@
         <!-- ==================================================== -->
         <main class="flex-1 flex flex-col min-w-0 h-full overflow-hidden pns-bg-wallpaper">
 
-            <!-- TOP EXECUTIVE HEADER BAR & GLOBAL SLICERS -->
-            
-            <!-- Sub-Header Breadcrumb Bar (Matching pns_asset) -->
-            <div class="bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 px-4 py-1.5 flex items-center justify-between gap-3 shrink-0 z-10 shadow-2xs">
-                <div id="top-breadcrumb-title" class="text-xs tracking-wide flex items-center gap-1.5 font-bold truncate">
-                    <span class="text-slate-400 dark:text-slate-500 font-semibold">Dashboard</span>
-                    <span class="text-slate-300 dark:text-slate-700">/</span>
-                    <span class="text-cyan-600 dark:text-cyan-400">Ringkasan Operasional</span>
-                </div>
-                <div class="flex items-center gap-2">
-                    <button type="button" onclick="window.pns.syncLiveData(this)"
-                        class="px-2.5 py-1 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-[11px] transition flex items-center gap-1.5 shadow-2xs cursor-pointer"
-                        title="Tarik data live manual sewaktu-waktu (Trigger Backup)">
-                        <i class="ph-bold ph-arrows-clockwise text-xs"></i>
-                        <span>Sinkron Data Live</span>
-                    </button>
-                    <button type="button" onclick="window.pns.exportVra2Csv()"
-                        class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 font-bold text-[11px] transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
-                        title="Unduh Ringkasan Rekapitulasi Operasional (CSV)">
-                        <i class="ph-bold ph-download-simple text-xs"></i>
-                        <span>Export CSV</span>
-                    </button>
-                    <span class="text-[10.5px] text-slate-400 dark:text-slate-500 font-semibold hidden sm:inline ml-1 pl-2 border-l border-slate-200 dark:border-slate-700">PT Pratama Nusantara Sakti &bull; Enterprise VRA Engine</span>
+            <!-- Sub-Header Breadcrumb Bar (Clean - No Public Sync Button) -->
+            <div class="bg-white dark:bg-[#303030] border-b border-[#D8DCE3] dark:border-[#444444] px-4 py-1.5 flex items-center justify-between gap-3 shrink-0 z-10">
+                <div id="top-breadcrumb-title" class="text-xs flex items-center gap-1.5 font-medium truncate">
+                    <span class="text-slate-500 dark:text-slate-400">Operasional Armada</span>
+                    <span class="text-slate-300 dark:text-slate-600">/</span>
+                    <span class="text-slate-900 dark:text-slate-100 font-semibold">Ringkasan Utama</span>
                 </div>
             </div>
 
@@ -10036,7 +9998,7 @@
     </div>
 
     <!-- MVC Admin-Only Bug & Code Locator (Hidden in Public Mode) -->
-    <script>window.PNS_MVC_VARIANT = 'GAS_GIT';</script>
+    <script>window.PNS_MVC_VARIANT = 'PHP';</script>
     <script src="./public/js/bug_locator.js"></script>
 </body>
 

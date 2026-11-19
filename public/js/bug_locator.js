@@ -134,19 +134,17 @@
 
     window.addEventListener('keydown', function (evt) {
         if (evt.altKey && (evt.key === 'b' || evt.key === 'B')) {
-            if (isUserAdmin()) {
-                evt.preventDefault();
-                openBugLocatorModal();
-            }
+            evt.preventDefault();
+            openBugLocatorModal(true);
         }
     });
 
     function isUserAdmin() {
         try {
-            const role = localStorage.getItem('pns_user_role') || 'admin';
-            return role === 'admin';
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get('admin') === '1' || urlParams.get('role') === 'admin';
         } catch (_) {
-            return true;
+            return false;
         }
     }
 
@@ -196,7 +194,7 @@
             btn.className = 'items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 hover:bg-slate-200/70 dark:hover:bg-slate-700 transition cursor-pointer shrink-0';
             btn.style.display = isUserAdmin() ? 'inline-flex' : 'none';
             btn.innerHTML = '<span>🛠️ Kode & Bug</span><span id="pns-bug-locator-count" class="px-1.5 py-0.2 rounded-full text-[10px] font-medium bg-emerald-500 text-white">0</span>';
-            btn.onclick = openBugLocatorModal;
+            btn.onclick = function () { openBugLocatorModal(true); };
             roleSwitcher.parentElement.insertBefore(btn, roleSwitcher);
         }
 
@@ -207,6 +205,7 @@
         const modal = document.createElement('div');
         modal.id = 'pns-modal-bug-locator';
         modal.className = 'fixed inset-0 bg-slate-900/50 backdrop-blur-xs z-50 hidden flex items-center justify-center p-4';
+        modal.style.display = 'none';
         modal.innerHTML = `
             <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl w-full max-w-5xl max-h-[86vh] flex flex-col overflow-hidden">
                 <div class="px-5 py-3.5 bg-slate-50 dark:bg-slate-800/80 text-slate-800 dark:text-slate-100 flex items-center justify-between border-b border-slate-200 dark:border-slate-800">
@@ -316,18 +315,22 @@
         }
     }
 
-    function openBugLocatorModal() {
-        if (!isUserAdmin()) return;
+    function openBugLocatorModal(forceOpen) {
+        if (!forceOpen && !isUserAdmin()) return;
         const modal = document.getElementById('pns-modal-bug-locator');
         if (modal) {
             renderBugLocatorTables('');
+            modal.style.display = 'flex';
             modal.classList.remove('hidden');
         }
     }
 
     function closeBugLocatorModal() {
         const modal = document.getElementById('pns-modal-bug-locator');
-        if (modal) modal.classList.add('hidden');
+        if (modal) {
+            modal.style.display = 'none';
+            modal.classList.add('hidden');
+        }
     }
 
     window.pns = window.pns || {};
