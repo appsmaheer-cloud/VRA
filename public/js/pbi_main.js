@@ -297,8 +297,69 @@ function validateApiDataSchema(type, list) {
     return true;
 }
 
+// Helper: Expand compact GAS columnar payload ({ format: 'compact', fields, rows }) into standard objects
+function expandCompactGasPayload(type, gasJson) {
+    if (!gasJson) return null;
+    if (gasJson.format === 'compact' && Array.isArray(gasJson.fields) && Array.isArray(gasJson.rows)) {
+        const fields = gasJson.fields;
+        const fieldLen = fields.length;
+        return gasJson.rows.map((arr, idx) => {
+            const obj = { id: idx + 1 };
+            for (let i = 0; i < fieldLen; i++) {
+                obj[fields[i]] = arr[i];
+            }
+            if (type === 'vra') {
+                obj.nama_aktivitas = obj.aktivitas;
+                obj.nama_kegiatan = obj.kegiatan;
+                obj.keterangan_tambahan = obj.keterangan;
+                obj.cost_section = obj.section;
+                obj.quantity_bahan_bakar = obj.bbm_liter;
+                obj.jenis_bbm = obj.bbm_jenis;
+            } else if (type === 'fuel') {
+                obj.tanggal_bkb = obj.tanggal;
+                obj.nomor_bkb = obj.no_bkb;
+                obj.no_asset_manual = obj.kode_unit;
+                obj.jumlah_bkb_fix = obj.jumlah_liter;
+                obj.harga_bkb = obj.total_biaya;
+            }
+            return obj;
+        });
+    }
+    return null;
+}
+
+// Helper: Extract Fuel BKB rows directly from VRA activity records
+function extractFuelFromVraRows(vraList) {
+    return (vraList || [])
+        .filter(r => (Number(r.quantity_bahan_bakar) > 0 || Number(r.bbm_liter) > 0 || (r.no_bkb && r.no_bkb !== '-')))
+        .map((r, idx) => ({
+            id: 900000 + idx,
+            no_bkb: r.no_bkb || `BKB-VRA-${r.tanggal || ''}-${idx}`,
+            nomor_bkb: r.no_bkb || `BKB-VRA-${r.tanggal || ''}-${idx}`,
+            no_asset_manual: r.kode_unit || r.no_asset_manual,
+            kode_unit: r.kode_unit || r.no_asset_manual,
+            jenis_bbm: (r.jenis_bbm || r.bbm_jenis || 'SOLAR').toUpperCase(),
+            tanggal_bkb: r.tanggal,
+            tanggal: r.tanggal,
+            jumlah_bkb_fix: Number(r.quantity_bahan_bakar || r.bbm_liter || 0),
+            jumlah_liter: Number(r.quantity_bahan_bakar || r.bbm_liter || 0),
+            harga_bkb: Number(r.bbm_estimasi_rp || ((Number(r.quantity_bahan_bakar || r.bbm_liter || 0)) * ((r.jenis_bbm || '').toUpperCase().includes('BENSIN') ? 10000 : 6800))),
+            total_biaya: Number(r.bbm_estimasi_rp || ((Number(r.quantity_bahan_bakar || r.bbm_liter || 0)) * ((r.jenis_bbm || '').toUpperCase().includes('BENSIN') ? 10000 : 6800))),
+            section: r.section || 'OPERASIONAL',
+            keterangan: r.aktivitas || r.kegiatan || 'Konsumsi BBM VRA'
+        }));
+}
+
 // API Loader with Instant Local/Cache Priority, Strict Schema Validation & Non-Blocking Live GAS Sync
-async function loadApiData(type, endpoint, forceGas = false) {
+async function loadApiData(type, endpoint, forceGasOrOpts = false) {
+    const opts = (typeof forceGasOrOpts === 'object' && forceGasOrOpts !== null)
+        ? forceGasOrOpts
+        : { forceGas: Boolean(forceGasOrOpts) };
+    const forceGas = Boolean(opts.forceGas);
+    const reqYear = opts.year || 'ALL';
+    const useCompact = Boolean(opts.compact);
+    const timeoutMs = Number(opts.timeoutMs) || 25000;
+
     const isLocalhost = window.location.hostname.includes('localhost') || 
                         window.location.hostname.includes('127.0.0.1') || 
                         (window.location.protocol === 'http:' || window.location.protocol === 'https:') && !window.location.hostname.includes('github.io');
@@ -323,6 +384,8 @@ async function loadApiData(type, endpoint, forceGas = false) {
 
     const extractData = (json) => {
         if (!json) return null;
+        const expanded = expandCompactGasPayload(type, json);
+        if (expanded && expanded.length > 0) return expanded;
         if (json.data && Array.isArray(json.data) && json.data.length > 0) return json.data;
         if (json.success && json.data && Array.isArray(json.data)) return json.data;
         if (json.status === 'success' && json.data && Array.isArray(json.data)) return json.data;
@@ -334,20 +397,23 @@ async function loadApiData(type, endpoint, forceGas = false) {
     const tryFetchFromGas = async (gasUrl) => {
         if (!gasUrl || type === 'assets') return null;
         try {
-            const gasTarget = `${gasUrl}${gasUrl.includes('?') ? '&' : '?'}format=json&type=${encodeURIComponent(type)}&tahun=ALL`;
-            console.log(`[PNS DATA LOADER] Mengambil data Google Sheets (${type}): ${gasTarget}`);
+            const sep = gasUrl.includes('?') ? '&' : '?';
+            const compactParam = useCompact ? '&compact=1' : '';
+            const gasTarget = `${gasUrl}${sep}format=json&type=${encodeURIComponent(type)}${compactParam}&tahun=${encodeURIComponent(reqYear)}&_ts=${Date.now()}`;
+            console.log(`[PNS DATA LOADER] Mengambil data Google Sheets (${type}, tahun=${reqYear}${useCompact ? ', compact' : ''})`);
             const controller = new AbortController();
-            const timer = setTimeout(() => controller.abort(), 30000);
-            const gasRes = await fetch(gasTarget, { signal: controller.signal });
+            const timer = setTimeout(() => controller.abort(), timeoutMs);
+            const gasRes = await fetch(gasTarget, { signal: controller.signal, cache: 'no-store' });
             clearTimeout(timer);
             if (gasRes.ok) {
                 const gasJson = await gasRes.json();
                 const list = extractData(gasJson);
                 if (list && validateApiDataSchema(type, list)) {
-                    console.log(`[PNS DATA LOADER] Berhasil memuat ${type} dari Google Sheets (${list.length.toLocaleString('id-ID')} baris).`);
+                    console.log(`[PNS DATA LOADER] Berhasil memuat ${type} (${reqYear}) dari Google Sheets (${list.length.toLocaleString('id-ID')} baris).`);
                     if (type === 'vra') {
                         pbiData.vraMeta = {
                             last_sync: gasJson.timestamp || new Date().toISOString(),
+                            latest_date: gasJson.latest_date || '',
                             cache_age: 0,
                             is_stale: false,
                             distinct_units: new Set(list.map(r => r.kode_unit)).size
@@ -357,7 +423,7 @@ async function loadApiData(type, endpoint, forceGas = false) {
                 }
             }
         } catch (gasErr) {
-            console.warn(`[PNS DATA LOADER] Gagal menghubungi GAS untuk ${type} (${gasErr.message}).`);
+            console.warn(`[PNS DATA LOADER] Gagal menghubungi GAS untuk ${type} (${reqYear}): ${gasErr.message}`);
         }
         return null;
     };
@@ -463,8 +529,33 @@ async function loadApiData(type, endpoint, forceGas = false) {
     return [];
 }
 
-// Non-blocking background sync from Google Apps Script Live Gateway
-async function syncFromGasGatewayInBackground() {
+// Merge rows for a specific year without dropping other years already in store
+function mergeYearPartition(existingList, newYearRows, yearStr, dateField = 'tanggal') {
+    const yPrefix = String(yearStr || '').trim();
+    const preserved = (existingList || []).filter(r => {
+        const d = String(r[dateField] || r.tanggal || '').trim();
+        return !d.startsWith(yPrefix);
+    });
+    return [...(newYearRows || []), ...preserved];
+}
+
+// Re-render PBI UI cleanly after background live update
+function refreshUiAfterLiveUpdate() {
+    pbiData.vra4SummaryCache = null;
+    pbiData.unitIndexMaps = null;
+    setupSlicers();
+    setupMaintenanceSlicers();
+    applyPbiFilters();
+    refreshAllCharts();
+    const liveDateEl = document.getElementById('live-date-str');
+    if (liveDateEl) {
+        const todayStr = new Intl.DateTimeFormat('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }).format(new Date());
+        liveDateEl.textContent = todayStr;
+    }
+}
+
+// Non-blocking background sync from Google Apps Script Live Gateway (Compact Multi-Stage)
+async function syncFromGasGatewayInBackground(skipRevalidate = false) {
     if (window._isSyncingBg) return;
     window._isSyncingBg = true;
     window._lastVraSyncTime = Date.now();
@@ -475,22 +566,51 @@ async function syncFromGasGatewayInBackground() {
         window._isSyncingBg = false;
         return;
     }
+
     try {
-        const [liveVra, liveFuel, liveMaint] = await Promise.all([
-            loadApiData('vra', null, true),
-            loadApiData('fuel', null, true),
-            loadApiData('maintenance', null, true)
+        // Tahap 1: Tarik data tahun berjalan (2026) & Maintenance secara compact (< 5 detik, bebas timeout)
+        const [liveVra2026, liveMaint] = await Promise.all([
+            loadApiData('vra', null, { forceGas: true, year: '2026', compact: true, timeoutMs: 25000 }),
+            loadApiData('maintenance', null, { forceGas: true, year: 'ALL', compact: true, timeoutMs: 25000 })
         ]);
-        let hasUpdated = false;
-        if (liveVra && liveVra.length > 0) {
-            pbiData.vra = enrichVraRows(liveVra, pbiData.assetMap || new Map());
+
+        let stage1Updated = false;
+        if (liveVra2026 && liveVra2026.length > 0) {
+            const enriched2026 = enrichVraRows(liveVra2026, pbiData.assetMap || new Map());
+            pbiData.vra = mergeYearPartition(pbiData.vra, enriched2026, '2026', 'tanggal');
             updateVraUnitSets();
-            hasUpdated = true;
+
+            // Ekstrak juga data BBM 2026 langsung dari VRA terbaru agar sinkron instan
+            const extractedFuel2026 = extractFuelFromVraRows(liveVra2026);
+            if (extractedFuel2026.length > 0) {
+                pbiData.fuel = mergeYearPartition(pbiData.fuel, extractedFuel2026, '2026', 'tanggal_bkb');
+            }
+            stage1Updated = true;
+        } else {
+            // Fallback jika GAS Web App belum dideploy ulang dengan `compact=1`: ambil `action=gold` (< 5 detik)
+            try {
+                const goldUrl = `${customGasUrl}${customGasUrl.includes('?') ? '&' : '?'}action=gold&format=json&tahun=2026&_ts=${Date.now()}`;
+                const goldRes = await fetch(goldUrl, { cache: 'no-store' });
+                if (goldRes.ok) {
+                    const goldJson = await goldRes.json();
+                    const goldVra = goldJson && Array.isArray(goldJson.recent_activities) ? goldJson.recent_activities : [];
+                    if (goldVra.length > 0) {
+                        const existingKeys = new Set((pbiData.vra || []).map(r => `${r.kode_unit}|${r.tanggal}|${r.jam_awal || ''}`));
+                        const added = goldVra.filter(r => !existingKeys.has(`${r.kode_unit}|${r.tanggal}|${r.jam_awal || ''}`));
+                        if (added.length > 0) {
+                            pbiData.vra = [...enrichVraRows(added, pbiData.assetMap || new Map()), ...(pbiData.vra || [])];
+                            updateVraUnitSets();
+                            const addedFuel = extractFuelFromVraRows(added);
+                            if (addedFuel.length > 0) pbiData.fuel = [...addedFuel, ...(pbiData.fuel || [])];
+                            stage1Updated = true;
+                        }
+                    }
+                }
+            } catch (goldErr) {
+                console.warn('[PNS MEDALLION GOLD] Fallback gold gagal:', goldErr.message);
+            }
         }
-        if (liveFuel && liveFuel.length > 0) {
-            pbiData.fuel = liveFuel;
-            hasUpdated = true;
-        }
+
         if (liveMaint && liveMaint.length > 0) {
             let cleanMaint = liveMaint.filter(m => {
                 const u = String(m.kode_unit || m['KODE UNIT'] || m.no_asset_manual || m.kode_asset || '').trim();
@@ -498,33 +618,67 @@ async function syncFromGasGatewayInBackground() {
             });
             if (cleanMaint.length === 0) cleanMaint = liveMaint;
             pbiData.maintenance = enrichMaintenance(cleanMaint);
-            hasUpdated = true;
-        }
-        if (hasUpdated) {
-            pbiData.vra4SummaryCache = null;
-            pbiData.unitIndexMaps = null;
-            setupSlicers();
-            setupMaintenanceSlicers();
-            applyPbiFilters();
-            refreshAllCharts();
-            console.log(`[PNS MEDALLION GOLD] Data Google Sheets dimuat di latar belakang (${pbiData.vra.length.toLocaleString('id-ID')} baris VRA).`);
+            stage1Updated = true;
         }
 
-        // Auto-Revalidate Live di latar belakang (tanpa perlu trigger manual):
-        // Jika Google Sheet sudah > 10 menit, otomatis tarik API Pusat ke Sheet lalu refresh dashboard
-        if (!window._gasRevalidateInFlight) {
+        if (stage1Updated) {
+            refreshUiAfterLiveUpdate();
+            console.log(`[PNS MEDALLION GOLD] Data 2026 live dimuat (${pbiData.vra.length.toLocaleString('id-ID')} total baris VRA).`);
+        }
+
+        // Tahap 2: Muat data Fuel Log & arsip VRA 2025 di latar belakang jika diperlukan
+        if (liveVra2026 && liveVra2026.length > 0) {
+            Promise.all([
+                loadApiData('fuel', null, { forceGas: true, year: '2026', compact: true, timeoutMs: 25000 }),
+                loadApiData('vra', null, { forceGas: true, year: '2025', compact: true, timeoutMs: 25000 })
+            ]).then(([liveFuel2026, liveVra2025]) => {
+                let stage2Updated = false;
+                if (liveFuel2026 && liveFuel2026.length > 0) {
+                    pbiData.fuel = mergeYearPartition(pbiData.fuel, liveFuel2026, '2026', 'tanggal_bkb');
+                    stage2Updated = true;
+                }
+                if (liveVra2025 && liveVra2025.length > 0) {
+                    const enriched2025 = enrichVraRows(liveVra2025, pbiData.assetMap || new Map());
+                    pbiData.vra = mergeYearPartition(pbiData.vra, enriched2025, '2025', 'tanggal');
+                    updateVraUnitSets();
+                    stage2Updated = true;
+                }
+                if (stage2Updated) {
+                    refreshUiAfterLiveUpdate();
+                    console.log(`[PNS MEDALLION GOLD] Sinkronisasi penuh 2025+2026 & BBM selesai (${pbiData.vra.length.toLocaleString('id-ID')} baris).`);
+                }
+            }).catch(() => {});
+        }
+
+        // Tahap 3: Trigger Stale-While-Revalidate Non-Blocking di server GAS
+        if (!skipRevalidate && !window._gasRevalidateInFlight) {
             window._gasRevalidateInFlight = true;
-            fetch(`${customGasUrl}${customGasUrl.includes('?') ? '&' : '?'}action=auto_sync_if_stale&format=json`)
-                .then(r => r.ok ? r.json() : null)
+            const revCtrl = new AbortController();
+            const revTimer = setTimeout(() => revCtrl.abort(), 12000);
+            fetch(`${customGasUrl}${customGasUrl.includes('?') ? '&' : '?'}action=auto_sync_if_stale&format=json&_ts=${Date.now()}`, {
+                signal: revCtrl.signal,
+                cache: 'no-store'
+            })
+                .then(r => {
+                    clearTimeout(revTimer);
+                    return r.ok ? r.json() : null;
+                })
                 .then(res => {
                     window._gasRevalidateInFlight = false;
                     if (res && res.updated) {
-                        console.log('[PNS MEDALLION GOLD] Google Sheet baru diperbarui di latar belakang, memuat ulang tampilan...');
                         window._isSyncingBg = false;
-                        syncFromGasGatewayInBackground();
+                        syncFromGasGatewayInBackground(true);
+                    } else if (res && res.scheduled && !window._gasScheduledRetryTimer) {
+                        window._gasScheduledRetryTimer = setTimeout(() => {
+                            window._gasScheduledRetryTimer = null;
+                            syncFromGasGatewayInBackground(true);
+                        }, 18000);
                     }
                 })
-                .catch(() => { window._gasRevalidateInFlight = false; });
+                .catch(() => {
+                    clearTimeout(revTimer);
+                    window._gasRevalidateInFlight = false;
+                });
         }
     } catch (e) {
         console.warn('[PNS MEDALLION GOLD] Background GAS sync gagal:', e);
@@ -580,25 +734,8 @@ export async function initializePbiApp() {
 
         // Fallback: Jika fact_bkb_fuel belum termuat dari file cache, ekstrak dari rekaman transaksi VRA
         if (!pbiData.fuel || pbiData.fuel.length === 0) {
-            console.warn("[PNS DATA LOADER] Data fact_bkb_fuel belum tersedia. Mengekstrak 2.500+ transaksi BBM dari catatan VRA...");
-            pbiData.fuel = (pbiData.vra || [])
-                .filter(r => (Number(r.quantity_bahan_bakar) > 0 || Number(r.bbm_liter) > 0 || (r.no_bkb && r.no_bkb !== '-')))
-                .map((r, idx) => ({
-                    id: 900000 + idx,
-                    no_bkb: r.no_bkb || `BKB-VRA-${r.tanggal || ''}-${idx}`,
-                    nomor_bkb: r.no_bkb || `BKB-VRA-${r.tanggal || ''}-${idx}`,
-                    no_asset_manual: r.kode_unit || r.no_asset_manual,
-                    kode_unit: r.kode_unit || r.no_asset_manual,
-                    jenis_bbm: (r.jenis_bbm || r.bbm_jenis || 'SOLAR').toUpperCase(),
-                    tanggal_bkb: r.tanggal,
-                    tanggal: r.tanggal,
-                    jumlah_bkb_fix: Number(r.quantity_bahan_bakar || r.bbm_liter || 0),
-                    jumlah_liter: Number(r.quantity_bahan_bakar || r.bbm_liter || 0),
-                    harga_bkb: Number(r.bbm_estimasi_rp || ((Number(r.quantity_bahan_bakar || r.bbm_liter || 0)) * ((r.jenis_bbm || '').toUpperCase().includes('BENSIN') ? 10000 : 6800))),
-                    total_biaya: Number(r.bbm_estimasi_rp || ((Number(r.quantity_bahan_bakar || r.bbm_liter || 0)) * ((r.jenis_bbm || '').toUpperCase().includes('BENSIN') ? 10000 : 6800))),
-                    section: r.section || 'OPERASIONAL',
-                    keterangan: r.aktivitas || r.kegiatan || 'Konsumsi BBM VRA'
-                }));
+            console.warn("[PNS DATA LOADER] Data fact_bkb_fuel belum tersedia. Mengekstrak transaksi BBM dari catatan VRA...");
+            pbiData.fuel = extractFuelFromVraRows(pbiData.vra);
         }
 
         // Enforce strict VRA-only inline maintenance: strip out non-VRA assets (buildings, helipads, roofs, mess, infrastructure)
@@ -898,6 +1035,7 @@ function setupSlicers() {
 
     const yearSelect = document.getElementById('slicer-year');
     if (yearSelect && years.size > 0) {
+        const prevYearVal = yearSelect.value || 'ALL';
         const sorted = Array.from(years).sort().reverse();
         yearSelect.innerHTML = '<option value="ALL">Semua Tahun</option>';
         sorted.forEach(y => {
@@ -906,8 +1044,7 @@ function setupSlicers() {
             opt.textContent = y;
             yearSelect.appendChild(opt);
         });
-        // Default to ALL or first available year if specified
-        yearSelect.value = 'ALL';
+        yearSelect.value = (prevYearVal === 'ALL' || years.has(prevYearVal)) ? prevYearVal : 'ALL';
     }
 
     const locSelect = document.getElementById('slicer-location');
@@ -2659,7 +2796,7 @@ function renderVra1(vraPerf, monthlyData) {
         return;
     }
 
-    tbody.innerHTML = list.slice(0, 100).map(u => {
+    tbody.innerHTML = list.slice(0, 1000).map(u => {
         const effPct = Math.min(100, Math.max(0, u.effective_km_run || u.eff_km_run || 0));
         const aging = u.aging_days !== undefined ? u.aging_days : 0;
         let agingBadge = '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 whitespace-nowrap">Hari ini</span>';
@@ -3234,7 +3371,7 @@ function renderVra2(vraPerf, totalLiter) {
 
     const countLabel = document.getElementById('vra2-table-count-label');
     if (countLabel) {
-        countLabel.textContent = `Menampilkan ${Math.min(100, displayUnits.length)} dari ${displayUnits.length} unit`;
+        countLabel.textContent = `Total ${displayUnits.length} unit`;
     }
 
     if (displayUnits.length === 0) {
@@ -3242,7 +3379,7 @@ function renderVra2(vraPerf, totalLiter) {
         return;
     }
 
-    tbody.innerHTML = displayUnits.slice(0, 100).map(u => {
+    tbody.innerHTML = displayUnits.slice(0, 1000).map(u => {
         const effPct = Math.min(100, Math.max(0, u.effective_jam_kerja || 0));
         const aging = u.aging_days !== undefined ? u.aging_days : 0;
         let agingBadge = '<span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/80 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800 whitespace-nowrap">Hari ini</span>';
@@ -3449,7 +3586,7 @@ function renderVra3(vraPerf, hierData) {
 
         const maxDur = Math.max(...list.map(i => i.total_durasi || 0), 1);
 
-        tbody.innerHTML = list.slice(0, 100).map(item => {
+        tbody.innerHTML = list.slice(0, 1000).map(item => {
             const pct = Math.min(100, ((item.total_durasi || 0) / maxDur) * 100);
             return `
                 <tr class="hover:bg-blue-50/50 dark:hover:bg-blue-950/20 transition text-xs border-b border-slate-100 dark:border-slate-800 group">
@@ -3750,7 +3887,7 @@ function renderVraCategoryDetail(category, vra, fuel, assets) {
         if (logs.length === 0) {
             logsTbody.innerHTML = '<tr><td colspan="8" class="text-center py-6 text-slate-400 font-medium">Tidak ada log aktivitas yang cocok dengan pencarian.</td></tr>';
         } else {
-            logsTbody.innerHTML = logs.slice(0, 50).map(l => {
+            logsTbody.innerHTML = logs.slice(0, 1000).map(l => {
                 return `
                     <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition text-xs border-b border-slate-100 dark:border-slate-800">
                         <td class="px-3.5 py-2 text-slate-500 font-mono">${l.tanggal || '-'}</td>
@@ -4742,7 +4879,7 @@ function renderVra4(assets, vra, fuel, maint) {
             dailyTbody.innerHTML = `<tr><td colspan="14" class="p-8 text-center text-slate-400">Tidak ada catatan log aktivitas yang cocok dengan kriteria filter untuk unit ${selectedUnitCode}</td></tr>`;
         } else {
             const sortedLogs = [...filteredLogs].sort((a, b) => new Date(b.tanggal || 0) - new Date(a.tanggal || 0));
-            dailyTbody.innerHTML = sortedLogs.slice(0, 150).map((row, idx) => {
+            dailyTbody.innerHTML = sortedLogs.slice(0, 1000).map((row, idx) => {
                 const hmAwal = Number(row.hm_awal) || 0;
                 const hmAkhir = Number(row.hm_akhir) || 0;
                 const deltaMeter = Math.max(0, hmAkhir - hmAwal);
@@ -4824,7 +4961,7 @@ function renderVra4(assets, vra, fuel, maint) {
     const tbody = document.getElementById('table-pbi-vra4-summary-body');
     if (tbody) {
         if (tbody.dataset.populated !== 'true' || tbody.children.length === 0) {
-            tbody.innerHTML = summaryData.slice(0, 100).map(u => `
+            tbody.innerHTML = summaryData.slice(0, 1000).map(u => `
                 <tr data-unit="${u.kode_unit}" class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition cursor-pointer text-xs border-b border-slate-100 dark:border-slate-800 ${u.kode_unit === selectedUnitCode ? 'bg-blue-50/60 dark:bg-blue-900/20 font-bold active' : ''}" onclick="window.pns.onVra4UnitChanged('${u.kode_unit}')">
                     <td class="font-bold text-blue-600 dark:text-sky-400 p-2 whitespace-nowrap">${u.kode_unit}</td>
                     <td class="p-2 font-semibold truncate max-w-[150px]">${u.nama_asset}</td>
@@ -5558,9 +5695,9 @@ function renderFuel(fuel, vra) {
             return;
         }
 
-        const maxLtr = Math.max(...unitList.slice(0, 100).map(r => r.total_liter || 0), 1);
+        const maxLtr = Math.max(...unitList.slice(0, 1000).map(r => r.total_liter || 0), 1);
 
-        tbody.innerHTML = unitList.slice(0, 100).map(r => {
+        tbody.innerHTML = unitList.slice(0, 1000).map(r => {
             const pct = Math.min(100, ((r.total_liter || 0) / maxLtr) * 100);
             return `
                 <tr class="hover:bg-purple-50/70 dark:hover:bg-purple-950/40 transition text-xs border-b border-slate-100 dark:border-slate-800">
@@ -5842,7 +5979,7 @@ export function renderFuelVraComparison(fuel, vra, assets) {
             return;
         }
 
-        tbody.innerHTML = comparisonList.slice(0, 150).map(u => {
+        tbody.innerHTML = comparisonList.slice(0, 1000).map(u => {
             const devSign = u.deviation_pct > 0 ? `+${u.deviation_pct}%` : `${u.deviation_pct}%`;
             const devClass = u.deviation_pct > 15 ? 'text-rose-600 font-semibold' : (u.deviation_pct <= 0 ? 'text-emerald-600 font-bold' : 'text-slate-600');
             
@@ -6007,7 +6144,7 @@ function renderAsset1(assets, maint = []) {
     const tbodyLeft = document.getElementById('table-pbi-asset1-overview-matrix');
     if (tbodyLeft) {
         let totalAssetSum = 0, totalAcqSum = 0, totalMaintSum = 0, totalGoodSum = 0;
-        const rowHtml = overviewRows.slice(0, 100).map(r => {
+        const rowHtml = overviewRows.slice(0, 1000).map(r => {
             totalAssetSum += r.totalAsset;
             totalAcqSum += r.acquisition;
             totalMaintSum += r.maintenanceCost;
@@ -6116,7 +6253,7 @@ function renderAsset1(assets, maint = []) {
     const tbodyRight = document.getElementById('table-pbi-asset1-perf-matrix');
     if (tbodyRight) {
         let sumTotal = 0, sumGood = 0, sumRepair = 0, sumBroken = 0, sumLost = 0, sumDisposal = 0;
-        const rowHtml = perfRows.slice(0, 100).map(r => {
+        const rowHtml = perfRows.slice(0, 1000).map(r => {
             sumTotal += r.totalAsset;
             sumGood += r.good;
             sumRepair += r.repair;
@@ -6649,7 +6786,7 @@ function renderAssetDrillthrough(filters = {}, assets = [], maint = []) {
             return;
         }
 
-        tbody.innerHTML = res.assets.slice(0, 200).map(a => {
+        tbody.innerHTML = res.assets.slice(0, 1000).map(a => {
             const sec = a.penanggungjawab_section || a.kode_section || inferAssetSection(a) || '';
             const pic = a.pic_nama || a.user_pic || '';
             return `
@@ -6861,9 +6998,9 @@ function renderAsset3(assets) {
             return;
         }
 
-        const maxBuku = Math.max(...filteredAssets.slice(0, 100).map(a => Number(a.Nilai_buku ?? a.nilai_buku ?? 0)), 1);
+        const maxBuku = Math.max(...filteredAssets.slice(0, 1000).map(a => Number(a.Nilai_buku ?? a.nilai_buku ?? 0)), 1);
 
-        tbody.innerHTML = filteredAssets.slice(0, 100).map(a => {
+        tbody.innerHTML = filteredAssets.slice(0, 1000).map(a => {
             const bukuVal = Number(a.Nilai_buku ?? a.nilai_buku ?? 0);
             const acqVal = Number(a.total_harga_perolehan ?? a.nilai_perolehan ?? 0);
             const pct = Math.min(100, Math.max(0, (bukuVal / maxBuku) * 100));
@@ -7158,9 +7295,9 @@ function renderMaintenance(maint) {
             return;
         }
 
-        const maxNominal = Math.max(...filtered.slice(0, 100).map(m => Number(m.nominal) || 0), 1);
+        const maxNominal = Math.max(...filtered.slice(0, 1000).map(m => Number(m.nominal) || 0), 1);
 
-        tbody.innerHTML = filtered.slice(0, 100).map(m => {
+        tbody.innerHTML = filtered.slice(0, 1000).map(m => {
             const pct = Math.min(100, (Number(m.nominal || 0) / maxNominal) * 100);
             return `
                 <tr onclick="window.pns.drillToMaintDetail('${m.nama_spare_part_jasa || m.kode_unit}')" class="hover:bg-amber-50/70 dark:hover:bg-amber-950/40 transition text-xs border-b border-slate-100 dark:border-slate-800 cursor-pointer group" title="Klik untuk Drill-Through ke Material Ledger ${m.nama_spare_part_jasa || m.kode_unit}">
@@ -7475,8 +7612,8 @@ function renderFuelDetail(fuel, vra) {
         if (list.length === 0) {
             tbodyUnit.innerHTML = '<tr><td colspan="8" class="text-center py-8 text-slate-400 font-medium">Tidak ada data unit yang sesuai filter.</td></tr>';
         } else {
-            const maxLtr = Math.max(...list.slice(0, 100).map(u => u.total_liter), 1);
-            tbodyUnit.innerHTML = list.slice(0, 100).map(u => {
+            const maxLtr = Math.max(...list.slice(0, 1000).map(u => u.total_liter), 1);
+            tbodyUnit.innerHTML = list.slice(0, 1000).map(u => {
                 const pct = Math.min(100, Math.max(0, (u.total_liter / maxLtr) * 100));
                 return `
                     <tr class="hover:bg-purple-50/60 dark:hover:bg-purple-950/30 transition text-xs border-b border-slate-100 dark:border-slate-800">
@@ -7537,7 +7674,7 @@ function renderFuelDetail(fuel, vra) {
         if (bkbList.length === 0) {
             tbodyBkb.innerHTML = '<tr><td colspan="7" class="text-center py-8 text-slate-400 font-medium">Tidak ada transaksi BKB yang cocok.</td></tr>';
         } else {
-            tbodyBkb.innerHTML = bkbList.slice(0, 100).map(b => `
+            tbodyBkb.innerHTML = bkbList.slice(0, 1000).map(b => `
                 <tr class="hover:bg-purple-50/60 dark:hover:bg-purple-950/30 transition text-xs border-b border-slate-100 dark:border-slate-800">
                     <td class="px-3 py-2 text-slate-500 font-mono whitespace-nowrap min-w-[90px]">${b.tanggal || '-'}</td>
                     <td class="px-3 py-2 font-mono whitespace-nowrap min-w-[140px]">
@@ -8069,7 +8206,7 @@ function renderAssetDetail(assets, maint) {
             return;
         }
 
-        tbody.innerHTML = list.slice(0, 100).map(a => {
+        tbody.innerHTML = list.slice(0, 1000).map(a => {
             const isGood = (a.kondisi || '').toLowerCase().includes('good');
             const rec = a.lifecycle_recommendation || 'OPTIMAL';
             const sec = a.penanggungjawab_section || a.kode_section || '-';
@@ -8256,9 +8393,9 @@ function renderMaintDetail(maint) {
             return;
         }
 
-        const maxCost = Math.max(...list.slice(0, 100).map(p => p.total_cost), 1);
+        const maxCost = Math.max(...list.slice(0, 1000).map(p => p.total_cost), 1);
 
-        tbody.innerHTML = list.slice(0, 100).map(p => {
+        tbody.innerHTML = list.slice(0, 1000).map(p => {
             const pct = Math.min(100, (p.total_cost / maxCost) * 100);
             return `
                 <tr class="hover:bg-amber-50/60 dark:hover:bg-amber-950/30 transition text-xs border-b border-slate-100 dark:border-slate-800">
@@ -10692,7 +10829,7 @@ function renderMaintFrequency(maint, assets = []) {
 
     const tbody = document.getElementById('table-pbi-maint-freq-body');
     if (tbody) {
-        tbody.innerHTML = rep.unitList.slice(0, 50).map(u => `
+        tbody.innerHTML = rep.unitList.slice(0, 1000).map(u => `
             <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/50 border-b border-slate-100 dark:border-slate-800 text-xs">
                 <td class="px-3 py-2 font-mono font-bold text-blue-600">${u.kode_unit}</td>
                 <td class="px-3 py-2 font-semibold truncate max-w-[150px]">${u.nama_asset}</td>
