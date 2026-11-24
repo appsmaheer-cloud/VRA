@@ -3,17 +3,22 @@
  * Clean Rebuild with Robust Event Routing & DAX Analytics
  */
 
-import { 
-    getUnitPhotos, 
-    saveUnitPhotos, 
-    openUnitPhotoModal, 
-    closeUnitPhotoModal, 
-    onSlotFileInputChange, 
-    removeSlotPhoto, 
-    saveAllModalPhotos, 
-    renderUnitPhotoShowcase, 
-    previewFullPhoto 
-} from './pbi_unit_photos.js';
+import {
+    getUnitPhotos,
+    saveUnitPhotos,
+    openUnitPhotoModal,
+    closeUnitPhotoModal,
+    onSlotFileInputChange,
+    removeSlotPhoto,
+    saveAllModalPhotos,
+    renderUnitPhotoShowcase,
+    previewFullPhoto,
+    openUnitStudioModal,
+    setPhotoShowcaseMode,
+    stepStage3DSlot,
+    selectStudioSlot
+} from './pbi_unit_photos.js?v=20261124';
+import { buildIsometricVehicleSvg, mountUnit3DViewer } from './pbi_unit_3d.js?v=20261124';
 
 import { 
     enrichAssets, 
@@ -2828,6 +2833,7 @@ function renderVra1(vraPerf, monthlyData) {
                 <td class="font-bold text-blue-600 dark:text-sky-400 px-2.5 py-1.5 whitespace-nowrap">
                     <div class="flex items-center gap-1.5 flex-wrap">
                         <span>${u.kode_unit}</span>
+                        ${photoCount > 0 ? `<button type="button" onclick="event.stopPropagation(); window.pns.openUnitStudioModal('${u.kode_unit}', {initialTab:'photos'})" class="px-1.5 py-0.2 rounded-[3px] text-[9px] font-mono font-semibold bg-teal-50 text-[#0E5E63] dark:bg-teal-950/60 dark:text-[#2DD4BF] border border-teal-200 dark:border-teal-800 hover:opacity-80 cursor-pointer" title="Lihat ${photoCount}/3 Foto HD & 3D"><i class="ph-bold ph-camera mr-0.5"></i>${photoCount}</button>` : ''}
                         ${u.odometer_reset_count > 0 ? `<span class="px-1.5 py-0.2 rounded text-[9px] font-semibold bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 border border-amber-300/60" title="Odometer di-reset ${u.odometer_reset_count}x (mulai dari 0)">${u.odometer_reset_count}x Reset</span>` : ''}
                         ${u.salah_input_count > 0 ? `<span class="px-1.5 py-0.2 rounded text-[9px] font-semibold bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300 border border-rose-300/60" title="${u.salah_input_count} kali salah input (aktif = 0)">${u.salah_input_count}x err</span>` : ''}
                         <i class="ph-bold ph-arrow-square-out text-[11px] text-blue-500 opacity-0 group-hover:opacity-100 transition"></i>
@@ -3418,14 +3424,15 @@ function renderVra2(vraPerf, totalLiter) {
             statusIcon = 'ph-user-switch';
         }
 
-        const unitPhotos = (typeof getUnitPhotos === 'function') ? getUnitPhotos(u.kode_unit) : [];
-        const photoCount = Array.isArray(unitPhotos) ? unitPhotos.length : 0;
+        const unitPhotos = (typeof getUnitPhotos === 'function') ? getUnitPhotos(u.kode_unit) : { count: 0 };
+        const photoCount = unitPhotos ? (unitPhotos.count || 0) : 0;
 
         return `
             <tr onclick="window.pns.drillToUnit('${u.kode_unit}')" class="hover:bg-slate-50/90 dark:hover:bg-slate-800/60 transition text-xs border-b border-slate-100 dark:border-slate-800/80 cursor-pointer group" title="Klik untuk Drill-Through ke Profil Unit ${u.kode_unit}">
                 <td data-sort-value="${u.kode_unit || ''}" class="font-bold text-sky-600 dark:text-sky-400 px-3 py-2.5 truncate font-mono">
                     <div class="flex items-center gap-1.5 truncate">
                         <span>${u.kode_unit}</span>
+                        ${photoCount > 0 ? `<button type="button" onclick="event.stopPropagation(); window.pns.openUnitStudioModal('${u.kode_unit}', {initialTab:'photos'})" class="px-1.5 py-0.2 rounded-[3px] text-[8.5px] font-mono font-semibold bg-teal-50 text-[#0E5E63] dark:bg-teal-950/60 dark:text-[#2DD4BF] border border-teal-200 dark:border-teal-800 cursor-pointer shrink-0" title="${photoCount}/3 Foto HD — Klik untuk buka Galeri & 3D"><i class="ph-bold ph-camera mr-0.5"></i>${photoCount}</button>` : ''}
                         ${u.odometer_reset_count > 0 ? `<span class="px-1.5 py-0.2 rounded text-[8.5px] font-semibold bg-amber-50 text-amber-700 border border-amber-200" title="Odometer di-reset ${u.odometer_reset_count}x">${u.odometer_reset_count}x</span>` : ''}
                         ${u.salah_input_count > 0 ? `<span class="px-1.5 py-0.2 rounded text-[8.5px] font-semibold bg-rose-50 text-rose-700 border border-rose-200" title="${u.salah_input_count} kali salah input">${u.salah_input_count}x err</span>` : ''}
                         <i class="ph-bold ph-arrow-square-out text-[11px] text-sky-500 opacity-0 group-hover:opacity-100 transition shrink-0 ml-auto"></i>
@@ -3910,162 +3917,10 @@ function renderVraCategoryDetail(category, vra, fuel, assets) {
 }
 
 // -------------------------------------------------------------
-// SVG VECTOR GENERATOR FOR VRA VEHICLES
+// 3D ISOMETRIC VECTOR GENERATOR FOR VRA VEHICLES
 // -------------------------------------------------------------
 export function getVehicleSvgByType(kategori = '', unitCode = '', isDark = false) {
-
-    const k = (String(kategori || '') + ' ' + String(unitCode || '')).toUpperCase();
-    const primaryColor = isDark ? '#38bdf8' : '#0284c7';
-    const accentColor = isDark ? '#818cf8' : '#4f46e5';
-    const wheelColor = isDark ? '#0f172a' : '#334155';
-
-    if (k.includes('SPEEDBOAT') || k.includes('TUGBOAT') || k.includes('KAPAL') || k.includes('SB-') || k.includes('TB-')) {
-        return `
-            <svg class="w-full h-24" viewBox="0 0 200 90" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M20 50L45 72H165L185 45H20V50Z" fill="${primaryColor}" opacity="0.85"/>
-                <path d="M50 45L65 25H125L140 45H50Z" fill="${accentColor}"/>
-                <rect x="75" y="30" width="18" height="10" rx="2" fill="#e2e8f0"/>
-                <rect x="100" y="30" width="18" height="10" rx="2" fill="#e2e8f0"/>
-                <line x1="10" y1="78" x2="190" y2="78" stroke="#06b6d4" stroke-width="3" stroke-dasharray="8 4"/>
-                <circle cx="150" cy="58" r="4" fill="#ffffff"/>
-            </svg>
-        `;
-    }
-
-    if (k.includes('EXCAVATOR') || k.includes('EXC-')) {
-        return `
-            <svg class="w-full h-24" viewBox="0 0 200 90" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <rect x="40" y="42" width="70" height="28" rx="6" fill="${primaryColor}"/>
-                <rect x="50" y="24" width="35" height="20" rx="4" fill="${accentColor}"/>
-                <rect x="55" y="28" width="16" height="12" rx="2" fill="#f8fafc"/>
-                <rect x="30" y="68" width="90" height="14" rx="7" fill="${wheelColor}"/>
-                <path d="M100 35L145 18L175 48L185 62" stroke="${primaryColor}" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
-                <path d="M175 48L185 62L168 65Z" fill="${wheelColor}"/>
-            </svg>
-        `;
-    }
-
-    if (k.includes('GENSET') || k.includes('POMPA') || k.includes('ALKON') || k.includes('GS-')) {
-        return `
-            <svg class="w-full h-24" viewBox="0 0 200 90" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <rect x="35" y="20" width="130" height="52" rx="8" fill="${primaryColor}" opacity="0.9"/>
-                <rect x="45" y="30" width="40" height="32" rx="4" fill="${wheelColor}"/>
-                <circle cx="65" cy="46" r="10" fill="${accentColor}"/>
-                <line x1="100" y1="32" x2="150" y2="32" stroke="#ffffff" stroke-width="3" stroke-linecap="round"/>
-                <line x1="100" y1="42" x2="150" y2="42" stroke="#ffffff" stroke-width="3" stroke-linecap="round"/>
-                <line x1="100" y1="52" x2="135" y2="52" stroke="#ffffff" stroke-width="3" stroke-linecap="round"/>
-                <rect x="30" y="70" width="140" height="8" rx="4" fill="${wheelColor}"/>
-            </svg>
-        `;
-    }
-
-    if (k.includes('MOTOR') || k.includes('MTR-') || k.includes('SEPEDA')) {
-        return `
-            <svg class="w-full h-24" viewBox="0 0 200 90" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="50" cy="62" r="16" stroke="${wheelColor}" stroke-width="6" fill="none"/>
-                <circle cx="150" cy="62" r="16" stroke="${wheelColor}" stroke-width="6" fill="none"/>
-                <path d="M50 62L85 45L115 45L150 62" stroke="${primaryColor}" stroke-width="5" stroke-linecap="round"/>
-                <path d="M85 45L100 28L130 28" stroke="${accentColor}" stroke-width="4" stroke-linecap="round"/>
-                <rect x="80" y="40" width="30" height="15" rx="3" fill="${primaryColor}"/>
-            </svg>
-        `;
-    }
-
-    if (k.includes('TRUCK') || k.includes('DUMP') || k.includes('TANGKI') || k.includes('HINO') || k.includes('FUSO') || k.includes('DT-')) {
-        return `
-            <svg class="w-full h-24" viewBox="0 0 200 90" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M25 32H105V64H25V32Z" fill="${accentColor}"/>
-                <path d="M105 40H145L165 52V64H105V40Z" fill="${primaryColor}"/>
-                <rect x="120" y="44" width="22" height="12" rx="2" fill="#f8fafc"/>
-                <circle cx="55" cy="68" r="12" fill="${wheelColor}"/>
-                <circle cx="55" cy="68" r="5" fill="#e2e8f0"/>
-                <circle cx="85" cy="68" r="12" fill="${wheelColor}"/>
-                <circle cx="85" cy="68" r="5" fill="#e2e8f0"/>
-                <circle cx="145" cy="68" r="12" fill="${wheelColor}"/>
-                <circle cx="145" cy="68" r="5" fill="#e2e8f0"/>
-            </svg>
-        `;
-    }
-
-    if (k.includes('KNAPSACK') || k.includes('POTONG') || k.includes('RUMPUT') || k.includes('MPR') || k.includes('BRUSH') || k.includes('MOWER')) {
-        return `
-            <svg class="w-full h-24" viewBox="0 0 200 90" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <!-- Backpack Engine & Tank -->
-                <rect x="35" y="24" width="34" height="42" rx="7" fill="${primaryColor}"/>
-                <rect x="42" y="18" width="14" height="7" rx="3" fill="${accentColor}"/>
-                <rect x="31" y="30" width="5" height="30" rx="2.5" fill="${wheelColor}"/>
-                <circle cx="52" cy="45" r="9" fill="${accentColor}" opacity="0.9"/>
-                <circle cx="52" cy="45" r="4" fill="#ffffff"/>
-                <!-- Flexible Drive Shaft Tube -->
-                <path d="M69 56 C 85 68, 105 52, 130 38 L 172 16" stroke="${wheelColor}" stroke-width="4" stroke-linecap="round"/>
-                <!-- Handle Bar & Throttle -->
-                <path d="M115 46 L 122 36 L 132 42" stroke="${primaryColor}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-                <rect x="119" y="32" width="6" height="5" rx="1.5" fill="#f59e0b"/>
-                <!-- Shield & Cutting Blade -->
-                <path d="M165 20 L 178 12 L 184 24 Z" fill="#ef4444"/>
-                <ellipse cx="176" cy="17" rx="16" ry="5" transform="rotate(-30 176 17)" fill="#94a3b8" stroke="${primaryColor}" stroke-width="2"/>
-                <circle cx="176" cy="17" r="3" fill="#ffffff"/>
-                <!-- Grass blades detail -->
-                <path d="M158 32 L 162 24 M 168 34 L 173 23 M 179 33 L 182 25" stroke="#10b981" stroke-width="2.5" stroke-linecap="round"/>
-            </svg>
-        `;
-    }
-
-    if (k.includes('TRAKTOR') || k.includes('TRACTOR') || k.includes('TRK-')) {
-        return `
-            <svg class="w-full h-24" viewBox="0 0 200 90" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <!-- Hood & Engine Body -->
-                <path d="M50 38 H 115 V 60 H 50 Z" fill="${primaryColor}"/>
-                <path d="M100 20 H 135 V 50 H 100 Z" fill="${accentColor}"/>
-                <rect x="105" y="24" width="22" height="18" rx="2" fill="#f8fafc"/>
-                <path d="M96 14 H 140 V 20 H 96 Z" fill="${wheelColor}"/>
-                <!-- Exhaust pipe -->
-                <rect x="62" y="16" width="5" height="22" rx="2" fill="${wheelColor}"/>
-                <path d="M64 16 L 68 12" stroke="${wheelColor}" stroke-width="3" stroke-linecap="round"/>
-                <!-- Front small wheel -->
-                <circle cx="60" cy="62" r="14" fill="${wheelColor}"/>
-                <circle cx="60" cy="62" r="6" fill="#e2e8f0"/>
-                <!-- Rear huge tractor wheel -->
-                <circle cx="140" cy="54" r="24" fill="${wheelColor}"/>
-                <circle cx="140" cy="54" r="12" fill="${accentColor}"/>
-                <circle cx="140" cy="54" r="5" fill="#ffffff"/>
-            </svg>
-        `;
-    }
-
-    if (k.includes('FORKLIFT') || k.includes('FL-')) {
-        return `
-            <svg class="w-full h-24" viewBox="0 0 200 90" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <!-- Mast & forks -->
-                <rect x="145" y="15" width="6" height="55" rx="2" fill="${wheelColor}"/>
-                <rect x="151" y="55" width="28" height="5" rx="2" fill="${wheelColor}"/>
-                <!-- Chassis & Cabin -->
-                <path d="M50 45 H 142 V 64 H 50 Z" fill="${primaryColor}"/>
-                <path d="M75 22 H 125 V 45 H 75 Z" fill="${accentColor}"/>
-                <rect x="82" y="26" width="35" height="15" rx="2" fill="#f8fafc"/>
-                <!-- Counterweight -->
-                <path d="M42 36 H 58 V 64 H 42 Z" fill="#f59e0b"/>
-                <!-- Wheels -->
-                <circle cx="68" cy="66" r="12" fill="${wheelColor}"/>
-                <circle cx="68" cy="66" r="5" fill="#e2e8f0"/>
-                <circle cx="132" cy="66" r="12" fill="${wheelColor}"/>
-                <circle cx="132" cy="66" r="5" fill="#e2e8f0"/>
-            </svg>
-        `;
-    }
-
-    // Default Passenger Car / Mobil / Avanza / Hilux
-    return `
-        <svg class="w-full h-24" viewBox="0 0 200 90" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M30 52L55 32H135L165 52H175V66H25V52H30Z" fill="${primaryColor}"/>
-            <path d="M60 36L72 50H100V36H60Z" fill="#f8fafc"/>
-            <path d="M106 36V50H130L122 36H106Z" fill="#f8fafc"/>
-            <circle cx="60" cy="66" r="12" fill="${wheelColor}"/>
-            <circle cx="60" cy="66" r="5" fill="#e2e8f0"/>
-            <circle cx="140" cy="66" r="12" fill="${wheelColor}"/>
-            <circle cx="140" cy="66" r="5" fill="#e2e8f0"/>
-        </svg>
-    `;
+    return buildIsometricVehicleSvg(kategori, unitCode, isDark);
 }
 
 // -------------------------------------------------------------
@@ -4600,7 +4455,19 @@ function renderVra4(assets, vra, fuel, maint) {
     if (subtitleEl) subtitleEl.innerText = `Unit: ${unit.kode_unit} (${unit.nama_asset_detail || unit.nama_asset || unit.kode_unit})`;
 
     const svgEl = document.getElementById('pbi-vra4-vehicle-svg');
-    if (svgEl) svgEl.innerHTML = getVehicleSvgByType(unit.kode_kategori, unit.kode_unit, isDark);
+    if (svgEl) {
+        const unitCatInfo = `${unit.sub_kategori || ''} ${unit.nama_asset_detail || unit.nama_asset || ''} ${unit.kode_kategori || ''}`;
+        const mounted = mountUnit3DViewer(svgEl, {
+            unitCode: unit.kode_unit,
+            kategori: unitCatInfo,
+            isDark,
+            compact: true,
+            onExpand: () => openUnitStudioModal(unit.kode_unit, { initialTab: '3d' })
+        });
+        if (!mounted) {
+            svgEl.innerHTML = getVehicleSvgByType(unitCatInfo, unit.kode_unit, isDark);
+        }
+    }
 
     setElText('pbi-vra4-cost-per-km', unit.total_cost_per_km > 0 ? formatRp(unit.total_cost_per_km) + '/KM' : 'Rp 0/KM');
     setElText('pbi-vra4-tot-liter', formatNum(unit.total_liter, 0) + ' L');
@@ -8218,11 +8085,15 @@ function renderAssetDetail(assets, maint) {
                 badgeClass = 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300';
             }
 
+            const aPhotos = (typeof getUnitPhotos === 'function') ? getUnitPhotos(a.kode_asset) : { count: 0 };
+            const aPhotoCnt = aPhotos ? (aPhotos.count || 0) : 0;
+
             return `
                 <tr onclick="window.pns.selectSpotlightAsset('${a.kode_asset}')" class="hover:bg-emerald-50/60 dark:hover:bg-emerald-950/30 transition text-xs border-b border-slate-100 dark:border-slate-800 cursor-pointer group" title="Klik untuk fokus Spotlight pada aset ${a.kode_asset}">
                     <td class="px-3.5 py-2.5 font-bold text-blue-600 dark:text-sky-400 whitespace-nowrap">
                         <div class="flex items-center gap-1.5 font-mono">
                             <span>${a.kode_asset}</span>
+                            ${aPhotoCnt > 0 ? `<button type="button" onclick="event.stopPropagation(); window.pns.openUnitStudioModal('${a.kode_asset}', {initialTab:'photos'})" class="px-1.5 py-0.2 rounded-[3px] text-[8.5px] font-semibold bg-teal-50 text-[#0E5E63] dark:bg-teal-950/60 dark:text-[#2DD4BF] border border-teal-200 dark:border-teal-800 cursor-pointer" title="Lihat ${aPhotoCnt}/3 Foto HD & 3D"><i class="ph-bold ph-camera mr-0.5"></i>${aPhotoCnt}</button>` : ''}
                             <i class="ph-bold ph-cursor-click text-[10px] text-emerald-500 opacity-0 group-hover:opacity-100 transition"></i>
                         </div>
                     </td>
@@ -11936,7 +11807,7 @@ const copyDepReportToClipboard = () => {};
 const exportDepReportToExcel = () => {};
 
 window.pns = Object.assign(window.pns || {}, {
-    // Photo management
+    // Photo & 3D management
     getUnitPhotos,
     saveUnitPhotos,
     openUnitPhotoModal,
@@ -11946,6 +11817,21 @@ window.pns = Object.assign(window.pns || {}, {
     saveAllModalPhotos,
     renderUnitPhotoShowcase,
     previewFullPhoto,
+    openUnitStudioModal,
+    setPhotoShowcaseMode,
+    stepStage3DSlot,
+    selectStudioSlot,
+    getCurrentUnitCode: () => {
+        const sel = document.getElementById('slicer-vra4-unit-select');
+        return sel?.dataset?.targetUnit || sel?.value || '';
+    },
+    getCurrentUnitCategory: (unitCode) => {
+        const target = String(unitCode || '').trim().toUpperCase();
+        const found = (pbiData.vra4SummaryCache || []).find(u => u.kode_unit === target);
+        if (found) return `${found.sub_kategori || ''} ${found.nama_asset_detail || found.nama_asset || ''} ${found.kode_kategori || ''}`;
+        const am = pbiData.assetMap ? pbiData.assetMap.get(target) : null;
+        return am ? `${am.nama_asset || ''} ${am.kategori || ''}` : '';
+    },
 
     // VRA 2 Actions
     exportVra2Csv,
@@ -12200,6 +12086,7 @@ window.switchAssetSubView = (subId, btn) => window.pns.switchView(subId);
 
 window.switchPbiTab = (tabId, btn) => window.pns.switchView(tabId);
 window.openUnitPhotoModal = openUnitPhotoModal;
+window.openUnitStudioModal = openUnitStudioModal;
 window.closeUnitPhotoModal = closeUnitPhotoModal;
 window.saveAllModalPhotos = saveAllModalPhotos;
 window.removeSlotPhoto = removeSlotPhoto;

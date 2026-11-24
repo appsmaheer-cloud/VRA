@@ -1,0 +1,44 @@
+{
+    "unit": "PNS-SBF-40",
+    "source_folder": "Estate 3/SBF-40",
+    "photo1": "./img/unit_photos/PNS-SBF-40/slot_1.jpg",
+    "photo2": "./img/unit_photos/PNS-SBF-40/slot_2.jpg",
+    "photo3": "./img/unit_photos/PNS-SBF-40/slot_3.jpg",
+    "slots": {
+        "photo1": {
+            "url": "./img/unit_photos/PNS-SBF-40/slot_1.jpg",
+            "label": "Hull / Body Kapal",
+            "width": 900,
+            "height": 1600,
+            "kb": 279.7,
+            "is_hd": true,
+            "source_file": "PNS-SBF-40 (Body).jpeg",
+            "exif_normalized": false
+        },
+        "photo2": {
+            "url": "./img/unit_photos/PNS-SBF-40/slot_2.jpg",
+            "label": "Mesin Outboard (Sisi)",
+            "width": 900,
+            "height": 1600,
+            "kb": 316.6,
+            "is_hd": true,
+            "source_file": "PNS-SBF-40 (2).jpeg",
+            "exif_normalized": true
+        },
+        "photo3": {
+            "url": "./img/unit_photos/PNS-SBF-40/slot_3.jpg",
+            "label": "Mesin Outboard (Belakang)",
+            "width": 900,
+            "height": 1600,
+            "kb": 346.7,
+            "is_hd": true,
+            "source_file": "PNS-SBF-40 (1).jpeg",
+            "exif_normalized": true
+        }
+    },
+    "count": 3,
+    "hd_count": 3,
+    "quality_tier": "HD",
+    "note": "",
+    "updated_at": "2026-11-24T05:55:28+00:00"
+}

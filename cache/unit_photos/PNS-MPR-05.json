@@ -1,0 +1,44 @@
+{
+    "unit": "PNS-MPR-05",
+    "source_folder": "Estate 1-2/PNS-MPR-05",
+    "photo1": "./img/unit_photos/PNS-MPR-05/slot_1.jpg",
+    "photo2": "./img/unit_photos/PNS-MPR-05/slot_2.jpg",
+    "photo3": "./img/unit_photos/PNS-MPR-05/slot_3.jpg",
+    "slots": {
+        "photo1": {
+            "url": "./img/unit_photos/PNS-MPR-05/slot_1.jpg",
+            "label": "Keseluruhan Unit",
+            "width": 429,
+            "height": 318,
+            "kb": 47.1,
+            "is_hd": false,
+            "source_file": "PNS-MPR-05 (3).jpeg",
+            "exif_normalized": false
+        },
+        "photo2": {
+            "url": "./img/unit_photos/PNS-MPR-05/slot_2.jpg",
+            "label": "Batang & Pisau",
+            "width": 441,
+            "height": 332,
+            "kb": 49.3,
+            "is_hd": false,
+            "source_file": "PNS-MPR-05 (2).jpeg",
+            "exif_normalized": false
+        },
+        "photo3": {
+            "url": "./img/unit_photos/PNS-MPR-05/slot_3.jpg",
+            "label": "Kompartemen Mesin",
+            "width": 444,
+            "height": 333,
+            "kb": 53.9,
+            "is_hd": false,
+            "source_file": "PNS-MPR-05 (1).jpeg",
+            "exif_normalized": false
+        }
+    },
+    "count": 3,
+    "hd_count": 0,
+    "quality_tier": "LOW_RES",
+    "note": "",
+    "updated_at": "2026-11-24T05:55:28+00:00"
+}

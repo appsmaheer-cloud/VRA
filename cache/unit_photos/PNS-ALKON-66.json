@@ -1,0 +1,44 @@
+{
+    "unit": "PNS-ALKON-66",
+    "source_folder": "Central/PNS-ALKON-66",
+    "photo1": "./img/unit_photos/PNS-ALKON-66/slot_1.jpg",
+    "photo2": "./img/unit_photos/PNS-ALKON-66/slot_2.jpg",
+    "photo3": "./img/unit_photos/PNS-ALKON-66/slot_3.jpg",
+    "slots": {
+        "photo1": {
+            "url": "./img/unit_photos/PNS-ALKON-66/slot_1.jpg",
+            "label": "Tampak Samping",
+            "width": 1200,
+            "height": 1600,
+            "kb": 386,
+            "is_hd": true,
+            "source_file": "PNS-ALKON-66 (Samping).jpeg",
+            "exif_normalized": false
+        },
+        "photo2": {
+            "url": "./img/unit_photos/PNS-ALKON-66/slot_2.jpg",
+            "label": "Tampak Atas",
+            "width": 1200,
+            "height": 1600,
+            "kb": 354.6,
+            "is_hd": true,
+            "source_file": "PNS-ALKON-66 (Atas).jpeg",
+            "exif_normalized": false
+        },
+        "photo3": {
+            "url": "./img/unit_photos/PNS-ALKON-66/slot_3.jpg",
+            "label": "Kompartemen Mesin",
+            "width": 1200,
+            "height": 1600,
+            "kb": 282.6,
+            "is_hd": true,
+            "source_file": "PNS-ALKON-66 (Mesin).jpeg",
+            "exif_normalized": false
+        }
+    },
+    "count": 3,
+    "hd_count": 3,
+    "quality_tier": "HD",
+    "note": "",
+    "updated_at": "2026-11-24T05:55:28+00:00"
+}

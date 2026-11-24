@@ -1,0 +1,35 @@
+{
+    "unit": "PNS-MPR-03",
+    "source_folder": "Estate 1-2/PNS-MPR-03",
+    "photo1": "./img/unit_photos/PNS-MPR-03/slot_1.jpg",
+    "photo2": "./img/unit_photos/PNS-MPR-03/slot_2.jpg",
+    "photo3": null,
+    "slots": {
+        "photo1": {
+            "url": "./img/unit_photos/PNS-MPR-03/slot_1.jpg",
+            "label": "Unit & Stik Potong",
+            "width": 365,
+            "height": 472,
+            "kb": 61.8,
+            "is_hd": false,
+            "source_file": "PNS-MPR-03 (1).jpeg",
+            "exif_normalized": false
+        },
+        "photo2": {
+            "url": "./img/unit_photos/PNS-MPR-03/slot_2.jpg",
+            "label": "Kompartemen Mesin",
+            "width": 357,
+            "height": 465,
+            "kb": 57.1,
+            "is_hd": false,
+            "source_file": "PNS-MPR-03 (2).jpeg",
+            "exif_normalized": false
+        },
+        "photo3": null
+    },
+    "count": 2,
+    "hd_count": 0,
+    "quality_tier": "LOW_RES",
+    "note": "",
+    "updated_at": "2026-11-24T05:55:28+00:00"
+}

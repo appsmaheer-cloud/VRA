@@ -1,0 +1,35 @@
+{
+    "unit": "PNS-MTR-85",
+    "source_folder": "Estate 1-2/PNS-MTR-85",
+    "photo1": "./img/unit_photos/PNS-MTR-85/slot_1.jpg",
+    "photo2": "./img/unit_photos/PNS-MTR-85/slot_2.jpg",
+    "photo3": null,
+    "slots": {
+        "photo1": {
+            "url": "./img/unit_photos/PNS-MTR-85/slot_1.jpg",
+            "label": "Tampak Depan",
+            "width": 1200,
+            "height": 1600,
+            "kb": 243.4,
+            "is_hd": true,
+            "source_file": "PNS-MTR-85 (Depan).jpeg",
+            "exif_normalized": false
+        },
+        "photo2": {
+            "url": "./img/unit_photos/PNS-MTR-85/slot_2.jpg",
+            "label": "Tampak Samping",
+            "width": 1600,
+            "height": 1200,
+            "kb": 277.1,
+            "is_hd": true,
+            "source_file": "PNS-MTR-85 (Samping).jpeg",
+            "exif_normalized": false
+        },
+        "photo3": null
+    },
+    "count": 2,
+    "hd_count": 2,
+    "quality_tier": "HD",
+    "note": "",
+    "updated_at": "2026-11-24T05:55:28+00:00"
+}

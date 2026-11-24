@@ -1,0 +1,44 @@
+{
+    "unit": "PNS-MTR-108",
+    "source_folder": "Central/PNS-MTR-108",
+    "photo1": "./img/unit_photos/PNS-MTR-108/slot_1.jpg",
+    "photo2": "./img/unit_photos/PNS-MTR-108/slot_2.jpg",
+    "photo3": "./img/unit_photos/PNS-MTR-108/slot_3.jpg",
+    "slots": {
+        "photo1": {
+            "url": "./img/unit_photos/PNS-MTR-108/slot_1.jpg",
+            "label": "Tampak Depan",
+            "width": 900,
+            "height": 1600,
+            "kb": 240.8,
+            "is_hd": true,
+            "source_file": "PNS-MTR-108 (Depan).jpeg",
+            "exif_normalized": false
+        },
+        "photo2": {
+            "url": "./img/unit_photos/PNS-MTR-108/slot_2.jpg",
+            "label": "Tampak Samping",
+            "width": 1600,
+            "height": 900,
+            "kb": 252.2,
+            "is_hd": true,
+            "source_file": "PNS-MTR-108 (Samping).jpeg",
+            "exif_normalized": false
+        },
+        "photo3": {
+            "url": "./img/unit_photos/PNS-MTR-108/slot_3.jpg",
+            "label": "Kompartemen Mesin",
+            "width": 1600,
+            "height": 900,
+            "kb": 169.8,
+            "is_hd": true,
+            "source_file": "PNS-MTR-108 (Mesin).jpeg",
+            "exif_normalized": false
+        }
+    },
+    "count": 3,
+    "hd_count": 3,
+    "quality_tier": "HD",
+    "note": "",
+    "updated_at": "2026-11-24T05:55:28+00:00"
+}

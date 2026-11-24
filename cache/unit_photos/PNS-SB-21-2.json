@@ -1,0 +1,44 @@
+{
+    "unit": "PNS-SB-21-2",
+    "source_folder": "Central/PNS-SB-21-2",
+    "photo1": "./img/unit_photos/PNS-SB-21-2/slot_1.jpg",
+    "photo2": "./img/unit_photos/PNS-SB-21-2/slot_2.jpg",
+    "photo3": "./img/unit_photos/PNS-SB-21-2/slot_3.jpg",
+    "slots": {
+        "photo1": {
+            "url": "./img/unit_photos/PNS-SB-21-2/slot_1.jpg",
+            "label": "Tampak Samping",
+            "width": 1600,
+            "height": 1200,
+            "kb": 386.6,
+            "is_hd": true,
+            "source_file": "PNS-SB-21-2 (Samping).jpeg",
+            "exif_normalized": false
+        },
+        "photo2": {
+            "url": "./img/unit_photos/PNS-SB-21-2/slot_2.jpg",
+            "label": "Tampak Belakang",
+            "width": 1600,
+            "height": 1200,
+            "kb": 323.1,
+            "is_hd": true,
+            "source_file": "PNS-SB-21-2 (Belakang).jpeg",
+            "exif_normalized": false
+        },
+        "photo3": {
+            "url": "./img/unit_photos/PNS-SB-21-2/slot_3.jpg",
+            "label": "Kompartemen Mesin",
+            "width": 1600,
+            "height": 1200,
+            "kb": 287.6,
+            "is_hd": true,
+            "source_file": "PNS-SB-21-2 (Mesin).jpeg",
+            "exif_normalized": false
+        }
+    },
+    "count": 3,
+    "hd_count": 3,
+    "quality_tier": "HD",
+    "note": "",
+    "updated_at": "2026-11-24T05:55:28+00:00"
+}

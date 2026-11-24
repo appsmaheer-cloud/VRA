@@ -1,0 +1,44 @@
+{
+    "unit": "PNS-FAC-TRUCK-HINO-02",
+    "source_folder": "Factory/PNS-FAC-TRUCK-HINO-02",
+    "photo1": "./img/unit_photos/PNS-FAC-TRUCK-HINO-02/slot_1.jpg",
+    "photo2": "./img/unit_photos/PNS-FAC-TRUCK-HINO-02/slot_2.jpg",
+    "photo3": "./img/unit_photos/PNS-FAC-TRUCK-HINO-02/slot_3.jpg",
+    "slots": {
+        "photo1": {
+            "url": "./img/unit_photos/PNS-FAC-TRUCK-HINO-02/slot_1.jpg",
+            "label": "Tampak Depan",
+            "width": 780,
+            "height": 1040,
+            "kb": 100.7,
+            "is_hd": true,
+            "source_file": "PNS-FAC-TRUCK-HINO-02 (Depan).jpeg",
+            "exif_normalized": false
+        },
+        "photo2": {
+            "url": "./img/unit_photos/PNS-FAC-TRUCK-HINO-02/slot_2.jpg",
+            "label": "Tampak Samping",
+            "width": 1040,
+            "height": 780,
+            "kb": 91.5,
+            "is_hd": true,
+            "source_file": "PNS-FAC-TRUCK-HINO-02 (Samping).jpeg",
+            "exif_normalized": false
+        },
+        "photo3": {
+            "url": "./img/unit_photos/PNS-FAC-TRUCK-HINO-02/slot_3.jpg",
+            "label": "Kompartemen Mesin",
+            "width": 1280,
+            "height": 720,
+            "kb": 111.6,
+            "is_hd": true,
+            "source_file": "PNS-FAC-TRUCK-HINO-02 (Mesin).jpeg",
+            "exif_normalized": false
+        }
+    },
+    "count": 3,
+    "hd_count": 3,
+    "quality_tier": "HD",
+    "note": "",
+    "updated_at": "2026-11-24T05:55:28+00:00"
+}

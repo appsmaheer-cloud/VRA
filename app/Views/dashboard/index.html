@@ -3287,8 +3287,8 @@
                     <div
                         class="vra4-glass vra4-hero-gradient p-4 sm:p-6 flex flex-col lg:flex-row items-center justify-between gap-4 sm:gap-6 shrink-0 vra4-fade-in vra4-fade-in-d1">
                         <div class="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6 flex-1 w-full min-w-0">
-                            <!-- Vehicle SVG -->
-                            <div class="w-full sm:w-56 h-28 shrink-0 flex items-center justify-center p-2 bg-white/50 dark:bg-slate-800/40 rounded-xl border border-white/60 dark:border-slate-700/40 shadow-xs vra4-float mx-auto sm:mx-0"
+                            <!-- Interactive 3D Vehicle Model -->
+                            <div class="w-full sm:w-64 h-32 shrink-0 flex items-center justify-center bg-[#F8FAFC] dark:bg-[#262626] rounded-[4px] border border-[#D8DCE3] dark:border-[#444444] mx-auto sm:mx-0 overflow-hidden"
                                 id="pbi-vra4-vehicle-svg"></div>
                             <div class="space-y-2 flex-1 w-full min-w-0 text-center sm:text-left">
                                 <!-- Badges row -->
@@ -3331,10 +3331,15 @@
                                         title="Lihat Riwayat Servis & Part Unit Ini">
                                         <i class="ph-bold ph-wrench"></i> Log Servis & Part
                                     </button>
+                                    <button type="button" onclick="window.pns.openUnitStudioModal(window.pns.getCurrentUnitCode(), { initialTab: 'photos' })"
+                                        class="group px-3 py-1.5 rounded-[4px] bg-teal-50 dark:bg-teal-950/40 hover:bg-[#0E5E63] hover:text-white text-[#0E5E63] dark:text-[#2DD4BF] text-[11px] font-semibold border border-teal-200/80 dark:border-teal-800/60 transition flex items-center gap-1.5 cursor-pointer"
+                                        title="Lihat Galeri Foto HD & Model 3D">
+                                        <i class="ph-bold ph-cube"></i> Galeri HD &amp; 3D
+                                    </button>
                                     <button type="button" onclick="window.pns.openUnitPhotoModal()"
-                                        class="group px-3 py-1.5 rounded-[10px] bg-cyan-50/80 dark:bg-cyan-950/40 hover:bg-cyan-600 hover:text-white text-cyan-700 dark:text-cyan-300 text-[11px] font-bold border border-cyan-200/60 dark:border-cyan-800/60 transition-all duration-200 flex items-center gap-1.5 cursor-pointer shadow-xs"
-                                        title="Kelola 3 Foto Unit Kendaraan">
-                                        <i class="ph-bold ph-camera"></i> Kelola 3 Foto
+                                        class="role-admin-only group px-3 py-1.5 rounded-[4px] bg-cyan-50/80 dark:bg-cyan-950/40 hover:bg-cyan-600 hover:text-white text-cyan-700 dark:text-cyan-300 text-[11px] font-semibold border border-cyan-200/60 dark:border-cyan-800/60 transition flex items-center gap-1.5 cursor-pointer"
+                                        title="Kelola / Upload 3 Foto Unit Kendaraan">
+                                        <i class="ph-bold ph-camera"></i> Kelola Foto
                                     </button>
                                     <button type="button" id="btn-vra4-drill-asset"
                                         onclick="window.pns.drillFromVra4('asset')"
@@ -3465,12 +3470,12 @@
                             </div>
                         </div>
 
-                        <!-- Card 8: Verifikasi Fisik 3 Foto -->
-                        <div onclick="window.pns.openUnitPhotoModal()" class="pns-card p-3 flex flex-col justify-between shadow-2xs border-t-2 border-t-teal-500 bg-white dark:bg-slate-900 rounded-xl cursor-pointer hover:border-teal-400 group transition-all" title="Klik untuk mengelola 3 foto fisik unit">
+                        <!-- Card 8: Verifikasi Fisik 3 Foto HD & 3D -->
+                        <div onclick="window.pns.openUnitStudioModal(window.pns.getCurrentUnitCode(), { initialTab: 'photos' })" class="pns-card p-3 flex flex-col justify-between shadow-2xs border-t-2 border-t-teal-500 bg-white dark:bg-slate-900 rounded-xl cursor-pointer hover:border-teal-400 group transition-all" title="Klik untuk membuka Galeri Foto HD & Model 3D">
                             <span class="text-[9.5px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block truncate">Foto Kendaraan</span>
-                            <div class="my-1 flex items-baseline justify-between">
-                                <span class="text-base font-semibold font-mono text-teal-600 dark:text-teal-400" id="vra4-kpi-photo-count">0/3 Foto</span>
-                                <span class="text-[9px] font-bold text-teal-600 dark:text-teal-400 group-hover:underline">Kelola →</span>
+                            <div class="my-1 flex items-baseline justify-between gap-1">
+                                <span class="text-sm sm:text-base font-semibold font-mono text-teal-600 dark:text-teal-400 whitespace-nowrap" id="vra4-kpi-photo-count">0/3 Foto</span>
+                                <span class="text-[9px] font-bold text-teal-600 dark:text-teal-400 group-hover:underline whitespace-nowrap shrink-0">Galeri →</span>
                             </div>
                             <div class="text-[9px] text-slate-400 font-medium truncate pt-1 border-t border-slate-100 dark:border-slate-800 flex items-center gap-1">
                                 <i class="ph-bold ph-camera text-teal-500"></i> Verifikasi Fisik
@@ -9737,7 +9742,7 @@
     <!-- ==================================================== -->
     <!-- POWER BI APPLICATION SCRIPT -->
     <!-- ==================================================== -->
-    <script type="module" src="./public/js/pbi_main.js?v=20261120"></script>
+    <script type="module" src="./public/js/pbi_main.js?v=20261124"></script>
 
     <script>
         document.addEventListener("DOMContentLoaded", function () {
@@ -9884,7 +9889,7 @@
               </span>
               <span id="slot-status-pill-1"></span>
             </div>
-            <div class="relative aspect-4/3 w-full rounded-xl overflow-hidden bg-slate-200 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center">
+            <div class="relative aspect-[4/3] w-full rounded-xl overflow-hidden bg-slate-200 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center">
               <img id="modal-photo-preview-1" class="w-full h-full object-cover hidden" alt="Foto 1">
               <div id="modal-photo-empty-1" class="text-center p-3 text-slate-400 flex flex-col items-center">
                 <i class="ph-bold ph-car text-3xl mb-1 text-slate-300 dark:text-slate-600"></i>
@@ -9916,7 +9921,7 @@
               </span>
               <span id="slot-status-pill-2"></span>
             </div>
-            <div class="relative aspect-4/3 w-full rounded-xl overflow-hidden bg-slate-200 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center">
+            <div class="relative aspect-[4/3] w-full rounded-xl overflow-hidden bg-slate-200 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center">
               <img id="modal-photo-preview-2" class="w-full h-full object-cover hidden" alt="Foto 2">
               <div id="modal-photo-empty-2" class="text-center p-3 text-slate-400 flex flex-col items-center">
                 <i class="ph-bold ph-gauge text-3xl mb-1 text-slate-300 dark:text-slate-600"></i>
@@ -9948,7 +9953,7 @@
               </span>
               <span id="slot-status-pill-3"></span>
             </div>
-            <div class="relative aspect-4/3 w-full rounded-xl overflow-hidden bg-slate-200 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center">
+            <div class="relative aspect-[4/3] w-full rounded-xl overflow-hidden bg-slate-200 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center">
               <img id="modal-photo-preview-3" class="w-full h-full object-cover hidden" alt="Foto 3">
               <div id="modal-photo-empty-3" class="text-center p-3 text-slate-400 flex flex-col items-center">
                 <i class="ph-bold ph-engine text-3xl mb-1 text-slate-300 dark:text-slate-600"></i>
