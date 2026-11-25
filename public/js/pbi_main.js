@@ -4688,16 +4688,18 @@ function renderVra4(assets, vra, fuel, maint) {
             });
         }
     }
-    unitMaintList.forEach(m => {
-        const d = m.tanggal;
-        if (!d) return;
-        if (vra4YearFilter !== 'ALL' && !d.startsWith(vra4YearFilter)) return;
-        if (vra4MonthFilter !== 'ALL') {
-            const parts = d.split('-');
-            if (parts.length < 2 || parts[1] !== vra4MonthFilter) return;
-        }
-        periodMtc += (Number(m.nominal) || 0);
-    });
+    if (vra4StatusFilter !== 'STANDBY' && vra4StatusFilter !== 'INVALID') {
+        unitMaintList.forEach(m => {
+            const d = m.tanggal;
+            if (!d) return;
+            if (vra4YearFilter !== 'ALL' && !d.startsWith(vra4YearFilter)) return;
+            if (vra4MonthFilter !== 'ALL') {
+                const parts = d.split('-');
+                if (parts.length < 2 || parts[1] !== vra4MonthFilter) return;
+            }
+            periodMtc += (Number(m.nominal) || 0);
+        });
+    }
 
     setElText('pbi-vra4-p-run', formatNum(periodRun, 1) + ' Jam');
     setElText('pbi-vra4-p-down', formatNum(periodDown, 1) + ' Jam');
@@ -4765,7 +4767,8 @@ function renderVra4(assets, vra, fuel, maint) {
                 }
 
                 let mtcNominal = 0;
-                if (row.tanggal && !mtcShownDates.has(row.tanggal)) {
+                const rowStatusStr = String(row.status_kerja_calc || '');
+                if (!isSalahInput && rowStatusStr !== 'Standby' && row.tanggal && !mtcShownDates.has(row.tanggal)) {
                     mtcNominal = unitMaintByDate.get(row.tanggal) || 0;
                     if (mtcNominal > 0) mtcShownDates.add(row.tanggal);
                 }

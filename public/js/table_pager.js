@@ -167,8 +167,9 @@
             if (tr.style.display === 'none') tr.style.display = '';
         });
 
-        // Tampilkan pager bar jika baris > 10 atau pengguna sudah sempat memilih mode tampil
-        const shouldShowBar = total > 10 || (state.userTouchedSize && total > 0);
+        // Tampilkan pager bar jika viewport tidak hidden dan baris > 10
+        const isViewportHidden = state.viewport && state.viewport.classList && state.viewport.classList.contains('hidden');
+        const shouldShowBar = !isViewportHidden && (total > 10 || (state.userTouchedSize && total > 0));
         if (state.bar) {
             state.bar.style.display = shouldShowBar ? 'flex' : 'none';
             if (shouldShowBar) {
@@ -252,6 +253,11 @@
             });
             tbodyObserver.observe(tbody, { childList: true });
             state.observer = tbodyObserver;
+
+            const vpObserver = new MutationObserver(function () {
+                renderPage(state, false);
+            });
+            vpObserver.observe(viewport, { attributes: true, attributeFilter: ['class'] });
         }
 
         renderPage(state, false);
