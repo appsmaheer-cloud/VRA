@@ -56,10 +56,13 @@ import {
     measureJamKerjaPerUnit, 
     measureUnitTcoLifetimeSummary, 
     inferSubKategori,
-    measureVraCategoryDetail 
-} from './vra-measures.js?v=20261029_fix2';
+    measureVraCategoryDetail,
+    doesActivityRequireBbm,
+    sanitizeFuelRowsForVra,
+    evaluateUnitNonAktifOrMutasi
+} from './vra-measures.js?v=20261125_r1';
 import { enrichMaintenance, normalizeMaintenanceDate, measureMaintenanceSummary, measureBiayaPerKategori, measureBiayaPerKategoriMaterial, measureBiayaPerSubKategoriMaterial, measureBiayaPerJenisServices, measureBiayaPerUnit, measureBiayaPerSection, measureTrendBulanan, measureTrendHierarchical, measureMaintenanceMaterialDetail, measureMaintenanceServiceBreakdown, measureMaintenanceFrequencyReport, measureServiceSimulation } from './maintenance-measures.js?v=20261029_fix2';
-import { measureBbmPerUnit, measureRasioKonsumsiBbm, measureFuelDetailLog, measureFuelAnomalyAudit, measureFuelBenchmarkingReport, measureVraFuelComparison } from './fuel-measures.js?v=20261029_fix2';
+import { measureBbmPerUnit, measureRasioKonsumsiBbm, measureFuelDetailLog, measureFuelAnomalyAudit, measureFuelBenchmarkingReport, measureVraFuelComparison } from './fuel-measures.js?v=20261125_r1';
 import { 
     renderSvgSparkline, 
     renderSvgGauge, 
@@ -138,7 +141,7 @@ export const formatRp = (v) => {
     const n = Number(v) || 0;
     if (Math.abs(n) >= 1_000_000_000) return `Rp ${(n / 1_000_000_000).toFixed(2)} M`;
     if (Math.abs(n) >= 1_000_000) return `Rp ${(n / 1_000_000).toFixed(2)} Jt`;
-    return `Rp ${n.toLocaleString('id-ID')}`;
+    return `Rp ${Math.round(n).toLocaleString('id-ID')}`;
 };
 
 export const formatPct = (v) => `${(Number(v) || 0).toFixed(2)}%`;
@@ -338,7 +341,15 @@ function expandCompactGasPayload(type, gasJson) {
 // Helper: Extract Fuel BKB rows directly from VRA activity records
 function extractFuelFromVraRows(vraList) {
     return (vraList || [])
-        .filter(r => (Number(r.quantity_bahan_bakar) > 0 || Number(r.bbm_liter) > 0 || (r.no_bkb && r.no_bkb !== '-')))
+        .filter(r => {
+            const isValid = !(r.aktif === 0 || String(r.aktif) === '0' || r.is_salah_input);
+            if (!isValid) return false;
+            const reqBbm = r.requires_bbm !== undefined
+                ? Boolean(r.requires_bbm)
+                : doesActivityRequireBbm(r.nama_aktivitas || r.aktivitas, r.nama_kegiatan || r.kegiatan, r.kode_unit, r.sub_kategori, r.keterangan_tambahan);
+            if (!reqBbm) return false;
+            return (Number(r.quantity_bahan_bakar) > 0 || Number(r.bbm_liter) > 0);
+        })
         .map((r, idx) => ({
             id: 900000 + idx,
             no_bkb: r.no_bkb || `BKB-VRA-${r.tanggal || ''}-${idx}`,
@@ -1401,7 +1412,8 @@ export function applyPbiFilters() {
     };
 
     const filteredVra = pbiData.vra.filter(r => filterTrx(r, false));
-    const filteredFuel = pbiData.fuel.filter(r => filterTrx(r, false));
+    const rawFilteredFuel = pbiData.fuel.filter(r => filterTrx(r, false));
+    const filteredFuel = sanitizeFuelRowsForVra(rawFilteredFuel, filteredVra, pbiData.assetMap);
     const filteredMaint = pbiData.maintenance.filter(r => filterTrx(r, true));
 
     const fuelByUnit = measureBbmPerUnit(filteredFuel);
@@ -4423,9 +4435,20 @@ function renderVra4(assets, vra, fuel, maint) {
     const salahInputBadgeEl = document.getElementById('pbi-vra4-badge-salah-input');
     if (salahInputBadgeEl) {
         if (unit.salah_input_count > 0) {
-            salahInputBadgeEl.innerHTML = `<i class="ph-bold ph-warning-circle mr-1"></i>${unit.salah_input_count}x Salah Input (aktif=0)`;
+            salahInputBadgeEl.innerHTML = `<i class="ph-bold ph-warning-circle mr-1"></i>${unit.salah_input_count}x Tidak Valid / Salah Input`;
+            salahInputBadgeEl.title = 'Klik untuk menampilkan baris log yang Tidak Valid / Salah Input';
+            salahInputBadgeEl.style.cursor = 'pointer';
+            salahInputBadgeEl.onclick = () => {
+                const stSel = document.getElementById('slicer-vra4-status');
+                if (stSel) {
+                    stSel.value = (stSel.value === 'INVALID') ? 'ALL' : 'INVALID';
+                    onVra4FilterChange();
+                    document.getElementById('table-pbi-vra4-daily')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }
+            };
             salahInputBadgeEl.classList.remove('hidden');
         } else {
+            salahInputBadgeEl.onclick = null;
             salahInputBadgeEl.classList.add('hidden');
         }
     }
@@ -4497,7 +4520,8 @@ function renderVra4(assets, vra, fuel, maint) {
     // TAB 1: RENDER LOG PROGRES HARIAN UNIT TERPILIH (using fast Map lookups)
     const unitMaps = getUnitIndexMaps(vra, fuel, maint);
     const unitVraList = unitMaps.vraByUnit.get(selectedUnitCode) || [];
-    const unitFuelList = unitMaps.fuelByUnit.get(selectedUnitCode) || [];
+    const rawUnitFuelList = unitMaps.fuelByUnit.get(selectedUnitCode) || [];
+    const unitFuelList = sanitizeFuelRowsForVra(rawUnitFuelList, unitVraList, pbiData.assetMap);
     const unitMaintList = unitMaps.maintByUnit.get(selectedUnitCode) || [];
 
     const unitFuelByDate = new Map();
@@ -4588,67 +4612,82 @@ function renderVra4(assets, vra, fuel, maint) {
             return parts.length >= 2 && parts[1] === vra4MonthFilter;
         });
     }
-    // Filter by Status Kerja only (aktif tidak difilter dari tampilan log)
+    // Filter by Status Kerja & Validitas
     if (vra4StatusFilter === 'OPERATING') {
-        filteredLogs = filteredLogs.filter(v => (v.status_kerja_calc === 'Operating' || (!v.is_downtime && !v.status_kerja_calc.includes('Standby'))));
+        filteredLogs = filteredLogs.filter(v => !(v.aktif === 0 || String(v.aktif) === '0' || v.is_salah_input) && !v.is_downtime);
     } else if (vra4StatusFilter === 'STANDBY') {
-        filteredLogs = filteredLogs.filter(v => v.status_kerja_calc === 'Standby' || (v.aktivitas || '').toLowerCase().includes('standby'));
+        filteredLogs = filteredLogs.filter(v => !(v.aktif === 0 || String(v.aktif) === '0' || v.is_salah_input) && (v.status_kerja_calc === 'Standby' || (v.aktivitas || '').toLowerCase().includes('standby')));
     } else if (vra4StatusFilter === 'BREAKDOWN') {
-        filteredLogs = filteredLogs.filter(v => v.status_kerja_calc.includes('Breakdown') || (v.aktivitas || '').toLowerCase().includes('breakdown') || (v.aktivitas || '').toLowerCase().includes('rusak'));
+        filteredLogs = filteredLogs.filter(v => !(v.aktif === 0 || String(v.aktif) === '0' || v.is_salah_input) && (v.status_kerja_calc.includes('Breakdown') || v.status_kerja_calc.includes('Service') || v.status_kerja_calc.includes('Inspeksi')));
+    } else if (vra4StatusFilter === 'INVALID') {
+        filteredLogs = filteredLogs.filter(v => (v.aktif === 0 || String(v.aktif) === '0' || v.is_salah_input));
     }
 
     if (vra4SearchQuery.trim() !== '') {
         const q = vra4SearchQuery.toLowerCase();
         filteredLogs = filteredLogs.filter(v => 
             (v.aktivitas && v.aktivitas.toLowerCase().includes(q)) ||
+            (v.nama_kegiatan && v.nama_kegiatan.toLowerCase().includes(q)) ||
             (v.tujuan && v.tujuan.toLowerCase().includes(q)) ||
             (v.tanggal && v.tanggal.toLowerCase().includes(q)) ||
-            (v.status_kerja_calc && v.status_kerja_calc.toLowerCase().includes(q))
+            (v.status_kerja_calc && v.status_kerja_calc.toLowerCase().includes(q)) ||
+            (v.validation_reason && v.validation_reason.toLowerCase().includes(q))
         );
     }
 
     // Calculate Periodic Performance Summary Ribbon
-    // Aturan:
-    // 1. Lakukan calculation untuk inputan benar (aktif = 1), semua 0 di takedown dari calculation
-    // 2. Kecuali 0 hanya menghitung calculation untuk inputan salah saja
+    // 1. Hanya log valid (isAktif = true) dihitung dalam Jam Run / Downtime / Jarak
+    // 2. Standby, Breakdown, Servis, Administratif, Motor Listrik, dan Salah Input memiliki 0 KM & 0 BBM
     let periodRun = 0, periodDown = 0, periodKm = 0;
     let periodValidCount = 0, periodSalahCount = 0;
+    const validBbmOpDatesInPeriod = new Set();
 
     filteredLogs.forEach(row => {
-        const isAktif = (row.aktif === undefined || row.aktif === null || Number(row.aktif) === 1 || String(row.aktif) === '1');
-        const durasiJam = Number(row.jam_kerja_calc || row.durasi || 0);
-        const hmAwal = Number(row.hm_awal) || 0;
-        const hmAkhir = Number(row.hm_akhir) || 0;
-        const deltaMeter = Math.max(0, hmAkhir - hmAwal);
+        const isSalah = (row.aktif === 0 || String(row.aktif) === '0' || row.is_salah_input);
+        const durasiJam = Number(row.jam_kerja_calc || 0);
+        const reqBbm = row.requires_bbm !== undefined
+            ? Boolean(row.requires_bbm)
+            : doesActivityRequireBbm(row.nama_aktivitas || row.aktivitas, row.nama_kegiatan, row.kode_unit, row.sub_kategori, row.keterangan_tambahan);
 
-        if (isAktif) {
-            // Kalkulasi untuk inputan benar
+        if (!isSalah) {
             periodValidCount++;
-            if (row.is_downtime || (row.status_kerja_calc || '').includes('Breakdown') || (row.status_kerja_calc || '').includes('Standby')) {
+            if (row.is_downtime) {
                 periodDown += durasiJam;
             } else {
                 periodRun += durasiJam;
+                if (reqBbm && row.tanggal) validBbmOpDatesInPeriod.add(row.tanggal);
             }
-            periodKm += Number(row.km_used || deltaMeter || 0);
+            periodKm += (!row.is_downtime && reqBbm) ? Number(row.km_used || row.hm_terpakai_calc || 0) : 0;
         } else {
-            // Aktif = 0: di-takedown dari calculation operasional (0 Jam, 0 KM)
-            // Hanya menghitung calculation untuk inputan salah saja
             periodSalahCount++;
         }
     });
 
-    // Kalkulasi BBM & Maintenance periode tanpa duplikasi baris
+    // Kalkulasi BBM & Maintenance periode:
+    // - Jika filter status adalah STANDBY / BREAKDOWN / INVALID atau unit murni Standby (periodRun === 0) atau Motor Listrik -> BBM wajib 0 L!
     let periodFuel = 0, periodMtc = 0;
-    unitFuelList.forEach(f => {
-        const d = f.tanggal_bkb || f.tanggal;
-        if (!d) return;
-        if (vra4YearFilter !== 'ALL' && !d.startsWith(vra4YearFilter)) return;
-        if (vra4MonthFilter !== 'ALL') {
-            const parts = d.split('-');
-            if (parts.length < 2 || parts[1] !== vra4MonthFilter) return;
+    const isNonBbmFilter = (vra4StatusFilter === 'STANDBY' || vra4StatusFilter === 'BREAKDOWN' || vra4StatusFilter === 'INVALID');
+    const isElectricSelected = unit.kode_kategori === 'MOTOR LISTRIK' || selectedUnitCode.toUpperCase().includes('MTRL');
+    if (!isNonBbmFilter && !isElectricSelected && periodRun > 0) {
+        unitFuelList.forEach(f => {
+            const d = f.tanggal_bkb || f.tanggal;
+            if (!d) return;
+            if (vra4YearFilter !== 'ALL' && !d.startsWith(vra4YearFilter)) return;
+            if (vra4MonthFilter !== 'ALL') {
+                const parts = d.split('-');
+                if (parts.length < 2 || parts[1] !== vra4MonthFilter) return;
+            }
+            if (vra4SearchQuery.trim() !== '' && !validBbmOpDatesInPeriod.has(d)) return;
+            periodFuel += (Number(f.jumlah_bkb_fix) || 0);
+        });
+        if (periodFuel === 0) {
+            filteredLogs.forEach(r => {
+                if (!(r.aktif === 0 || String(r.aktif) === '0' || r.is_salah_input) && r.requires_bbm && !r.is_downtime) {
+                    periodFuel += Number(r.quantity_bahan_bakar || r.bbm_liter || 0);
+                }
+            });
         }
-        periodFuel += (Number(f.jumlah_bkb_fix) || 0);
-    });
+    }
     unitMaintList.forEach(m => {
         const d = m.tanggal;
         if (!d) return;
@@ -4672,58 +4711,129 @@ function renderVra4(assets, vra, fuel, maint) {
         if (filteredLogs.length === 0) {
             dailyTbody.innerHTML = `<tr><td colspan="14" class="p-8 text-center text-slate-400">Tidak ada catatan log aktivitas yang cocok dengan kriteria filter untuk unit ${selectedUnitCode}</td></tr>`;
         } else {
-            const sortedLogs = [...filteredLogs].sort((a, b) => new Date(b.tanggal || 0) - new Date(a.tanggal || 0));
+            const sortedLogs = [...filteredLogs].sort((a, b) => {
+                const dc = String(b.tanggal || '').localeCompare(String(a.tanggal || ''));
+                if (dc !== 0) return dc;
+                return String(b.jam_awal || '').localeCompare(String(a.jam_awal || ''));
+            });
+
+            // Hitung alokasi BBM harian HANYA untuk baris operasional valid yang memerlukan BBM (tanpa duplikasi antar shift di tanggal sama)
+            const opDurByDate = new Map();
+            const inlineBbmByDate = new Map();
+            sortedLogs.forEach(r => {
+                const isSalah = (r.aktif === 0 || String(r.aktif) === '0' || r.is_salah_input);
+                const reqBbm = r.requires_bbm !== undefined
+                    ? Boolean(r.requires_bbm)
+                    : doesActivityRequireBbm(r.nama_aktivitas || r.aktivitas, r.nama_kegiatan, r.kode_unit, r.sub_kategori, r.keterangan_tambahan);
+                if (!isSalah && reqBbm && !r.is_downtime && r.tanggal) {
+                    opDurByDate.set(r.tanggal, (opDurByDate.get(r.tanggal) || 0) + Math.max(0.1, Number(r.jam_kerja_calc) || 0.1));
+                    inlineBbmByDate.set(r.tanggal, (inlineBbmByDate.get(r.tanggal) || 0) + (Number(r.quantity_bahan_bakar || r.bbm_liter) || 0));
+                }
+            });
+            const mtcShownDates = new Set();
+
             dailyTbody.innerHTML = sortedLogs.slice(0, 1000).map((row, idx) => {
                 const hmAwal = Number(row.hm_awal) || 0;
                 const hmAkhir = Number(row.hm_akhir) || 0;
-                const deltaMeter = Math.max(0, hmAkhir - hmAwal);
-                
-                let durasiJam = 0;
-                if (row.jam_awal && row.jam_selesai) {
-                    const p1 = row.jam_awal.split(':').map(Number);
-                    const p2 = row.jam_selesai.split(':').map(Number);
-                    durasiJam = Math.max(0, ((p2[0] * 60 + (p2[1] || 0)) - (p1[0] * 60 + (p1[1] || 0))) / 60);
-                } else if (deltaMeter > 0) {
-                    durasiJam = deltaMeter;
-                }
-                
-                const bbmLtr = unitFuelByDate.get(row.tanggal) || 0;
-                const mtcNominal = unitMaintByDate.get(row.tanggal) || 0;
-                const act = (row.aktivitas || '').trim() || '-';
-                const isBreakdown = act.toLowerCase().includes('breakdown') || act.toLowerCase().includes('rusak');
-                const isStandby = act.toLowerCase().includes('standby') || act.toLowerCase().includes('tunggu');
                 const isSalahInput = (row.aktif === 0 || String(row.aktif) === '0' || row.is_salah_input);
-                
-                const statusBadge = isBreakdown 
-                    ? '<span class="px-1.5 py-0.5 rounded text-[9.5px] font-bold bg-rose-100 dark:bg-rose-900/30 text-rose-600 dark:text-rose-400">Breakdown</span>'
-                    : (isStandby 
-                        ? '<span class="px-1.5 py-0.5 rounded text-[9.5px] font-bold bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400">Standby</span>'
-                        : '<span class="px-1.5 py-0.5 rounded text-[9.5px] font-bold bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400">Operating</span>');
+                const rawDeltaMeter = Math.max(0, hmAkhir - hmAwal);
+                const calcDeltaMeter = Number(row.hm_terpakai_calc || 0);
+                const durasiJam = isSalahInput ? Number(row.raw_jam_kerja || 0) : Number(row.jam_kerja_calc || 0);
+
+                const reqBbm = row.requires_bbm !== undefined
+                    ? Boolean(row.requires_bbm)
+                    : doesActivityRequireBbm(row.nama_aktivitas || row.aktivitas, row.nama_kegiatan, row.kode_unit, row.sub_kategori, row.keterangan_tambahan);
+
+                // Pengeluaran BBM: WAJIB 0 pada Standby, kegiatan Non-BBM, dan baris Tidak Valid / Salah Input
+                let bbmLtr = 0;
+                if (!isSalahInput && reqBbm && !row.is_downtime) {
+                    const rowInlineBbm = Number(row.quantity_bahan_bakar || row.bbm_liter || 0);
+                    const dateBkbTotal = unitFuelByDate.get(row.tanggal) || 0;
+                    const dateInlineTotal = inlineBbmByDate.get(row.tanggal) || 0;
+                    if (rowInlineBbm > 0 && dateBkbTotal === 0) {
+                        bbmLtr = rowInlineBbm;
+                    } else if (dateBkbTotal > 0) {
+                        if (dateInlineTotal > 0 && rowInlineBbm > 0) {
+                            bbmLtr = dateBkbTotal * (rowInlineBbm / dateInlineTotal);
+                        } else {
+                            const totDur = opDurByDate.get(row.tanggal) || 1;
+                            bbmLtr = dateBkbTotal * (Math.max(0.1, durasiJam || 0.1) / totDur);
+                        }
+                    } else {
+                        bbmLtr = rowInlineBbm;
+                    }
+                }
+
+                let mtcNominal = 0;
+                if (row.tanggal && !mtcShownDates.has(row.tanggal)) {
+                    mtcNominal = unitMaintByDate.get(row.tanggal) || 0;
+                    if (mtcNominal > 0) mtcShownDates.add(row.tanggal);
+                }
+
+                const actBase = (row.nama_aktivitas || row.aktivitas || '').trim() || '-';
+                const kegBase = (row.nama_kegiatan || '').trim();
+                const act = (kegBase && kegBase !== '-' && kegBase.toLowerCase() !== actBase.toLowerCase())
+                    ? `${actBase} — ${kegBase}`
+                    : actBase;
+
+                const stCalc = String(row.status_kerja_calc || '');
+                const isBreakdown = stCalc.includes('Breakdown');
+                const isStandby = stCalc === 'Standby';
+                const isServiceOrCheck = stCalc === 'Periodical Service' || stCalc === 'Checksheet & Inspeksi';
+                const isAdminNonaktif = stCalc === 'Nonaktif Sementara' || stCalc === 'Mutasi Out Section' || stCalc === 'Deaktivasi / Disposal';
+                const isWarming = stCalc === 'Warming Up';
+
+                let statusBadge = '<span class="px-1.5 py-0.5 rounded-[3px] text-[9.5px] font-semibold bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">Operating</span>';
+                if (isBreakdown) {
+                    statusBadge = '<span class="px-1.5 py-0.5 rounded-[3px] text-[9.5px] font-semibold bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800">Breakdown</span>';
+                } else if (isStandby) {
+                    statusBadge = '<span class="px-1.5 py-0.5 rounded-[3px] text-[9.5px] font-semibold bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800">Standby</span>';
+                } else if (isServiceOrCheck) {
+                    statusBadge = '<span class="px-1.5 py-0.5 rounded-[3px] text-[9.5px] font-semibold bg-sky-50 dark:bg-sky-950/50 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-800">Servis/Inspeksi</span>';
+                } else if (isAdminNonaktif) {
+                    statusBadge = '<span class="px-1.5 py-0.5 rounded-[3px] text-[9.5px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-300 dark:border-slate-700">Non-Aktif/Mutasi</span>';
+                } else if (isWarming) {
+                    statusBadge = '<span class="px-1.5 py-0.5 rounded-[3px] text-[9.5px] font-semibold bg-teal-50 dark:bg-teal-950/50 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-800">Warming Up</span>';
+                }
+
+                const valReasonSafe = String(row.validation_reason || (isSalahInput ? 'Salah Input (aktif=0)' : 'Valid')).replace(/"/g, '&quot;');
+                const bbmTakedown = Number(row.bbm_takedown_liter || 0);
 
                 const validitasBadge = isSalahInput
-                    ? '<span class="px-1.5 py-0.5 rounded text-[9.5px] font-bold bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300 border border-rose-200 dark:border-rose-800" title="Aktivitas Salah Input (aktif = 0) - Dikecualikan dari kalkulasi operasional">⚠️ Salah</span>'
-                    : '<span class="px-1.5 py-0.5 rounded text-[9.5px] font-bold bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800" title="Aktivitas Valid (aktif = 1)">✅ Valid</span>';
+                    ? `<span class="px-1.5 py-0.5 rounded-[3px] text-[9.5px] font-semibold bg-rose-50 text-rose-700 dark:bg-rose-950 dark:text-rose-300 border border-rose-200 dark:border-rose-800" title="${valReasonSafe}">⚠️ Salah Input</span>`
+                    : (bbmTakedown > 0
+                        ? `<span class="px-1.5 py-0.5 rounded-[3px] text-[9.5px] font-semibold bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300 border border-amber-200 dark:border-amber-800" title="${valReasonSafe}">Koreksi Non-BBM</span>`
+                        : '<span class="px-1.5 py-0.5 rounded-[3px] text-[9.5px] font-semibold bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800" title="Aktivitas Valid">Valid</span>');
 
-                let performansiBadge = '<span class="px-1.5 py-0.5 rounded text-[9.5px] font-bold bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300">-</span>';
+                let performansiBadge = '<span class="px-1.5 py-0.5 rounded-[3px] text-[9.5px] font-semibold bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300">-</span>';
                 if (isSalahInput) {
-                    performansiBadge = '<span class="px-1.5 py-0.5 rounded text-[9.5px] font-bold bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300">❌ Salah</span>';
+                    performansiBadge = `<span class="px-1.5 py-0.5 rounded-[3px] text-[9.5px] font-semibold bg-rose-50 text-rose-700 dark:bg-rose-950 dark:text-rose-300" title="${valReasonSafe}">Tidak Valid</span>`;
                 } else if (isBreakdown) {
-                    performansiBadge = '<span class="px-1.5 py-0.5 rounded text-[9.5px] font-bold bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300">🛑 Breakdown</span>';
+                    performansiBadge = '<span class="px-1.5 py-0.5 rounded-[3px] text-[9.5px] font-semibold bg-rose-50 text-rose-700 dark:bg-rose-950 dark:text-rose-300">Breakdown</span>';
                 } else if (isStandby) {
-                    performansiBadge = '<span class="px-1.5 py-0.5 rounded text-[9.5px] font-bold bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300">⏳ Standby</span>';
-                } else if (durasiJam >= 8) {
-                    performansiBadge = '<span class="px-1.5 py-0.5 rounded text-[9.5px] font-bold bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-300">⚡ Overtime</span>';
-                } else if (durasiJam > 0) {
-                    performansiBadge = '<span class="px-1.5 py-0.5 rounded text-[9.5px] font-bold bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">✅ Produktif</span>';
+                    performansiBadge = '<span class="px-1.5 py-0.5 rounded-[3px] text-[9.5px] font-semibold bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300">Siaga (0 BBM)</span>';
+                } else if (isServiceOrCheck || isAdminNonaktif) {
+                    performansiBadge = '<span class="px-1.5 py-0.5 rounded-[3px] text-[9.5px] font-semibold bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300">Non-Operasi (0 BBM)</span>';
+                } else if (durasiJam > 8) {
+                    performansiBadge = '<span class="px-1.5 py-0.5 rounded-[3px] text-[9.5px] font-semibold bg-indigo-50 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">Overtime</span>';
+                } else if (durasiJam > 0 || calcDeltaMeter > 0) {
+                    performansiBadge = '<span class="px-1.5 py-0.5 rounded-[3px] text-[9.5px] font-semibold bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">Produktif</span>';
                 }
 
                 const durasiDisplay = isSalahInput
-                    ? `<span class="line-through text-slate-400 block">${durasiJam > 0 ? durasiJam.toFixed(1) + ' J' : '-'}</span><span class="text-[8.5px] text-rose-600 dark:text-rose-400 font-bold block" title="Di-takedown dari kalkulasi">0 J (Takedown)</span>`
+                    ? `<span class="line-through text-slate-400 block">${durasiJam > 0 ? durasiJam.toFixed(1) + ' J' : '-'}</span><span class="text-[8.5px] text-rose-600 dark:text-rose-400 font-semibold block" title="${valReasonSafe}">0 J (Takedown)</span>`
                     : (durasiJam > 0 ? durasiJam.toFixed(1) + ' J' : '-');
 
                 const kmDisplay = isSalahInput
-                    ? `<span class="line-through text-slate-400 block">${deltaMeter > 0 ? formatNum(deltaMeter) : '-'}</span><span class="text-[8.5px] text-rose-600 dark:text-rose-400 font-bold block" title="Di-takedown dari kalkulasi">0 (Takedown)</span>`
-                    : (deltaMeter > 0 ? formatNum(deltaMeter) : '-');
+                    ? `<span class="line-through text-slate-400 block">${rawDeltaMeter > 0 ? formatNum(rawDeltaMeter) : '-'}</span><span class="text-[8.5px] text-rose-600 dark:text-rose-400 font-semibold block" title="${valReasonSafe}">0 (Takedown)</span>`
+                    : ((!row.is_downtime && calcDeltaMeter > 0) ? formatNum(calcDeltaMeter) : '-');
+
+                const rawBbmEntered = Number(row.raw_bbm_input || 0);
+                const bbmDisplay = (isSalahInput || !reqBbm || row.is_downtime)
+                    ? (rawBbmEntered > 0
+                        ? `<span class="line-through text-slate-400 block">${formatNum(rawBbmEntered, 1)} L</span><span class="text-[8.5px] text-rose-600 dark:text-rose-400 font-semibold block" title="BBM di-nolkan karena Standby / Non-BBM / Tidak Valid">0 L</span>`
+                        : '-')
+                    : (bbmLtr > 0 ? formatNum(bbmLtr, 1) + ' L' : '-');
 
                 const tAwal = (row.jam_awal || '').substring(0, 5) || '-';
                 const tSelesai = (row.jam_selesai || '').substring(0, 5) || '-';
@@ -4734,16 +4844,16 @@ function renderVra4(assets, vra, fuel, maint) {
                         <td class="px-1.5 py-1.5 text-center text-slate-400 font-mono">${idx + 1}</td>
                         <td class="px-2 py-1.5 text-center font-mono font-semibold text-slate-700 dark:text-slate-300 whitespace-nowrap">${row.tanggal || '-'}</td>
                         <td class="px-2 py-1.5 text-center font-mono text-slate-600 dark:text-slate-400 whitespace-nowrap">${jamDisplay}</td>
-                        <td class="px-2 py-1.5 text-right font-mono font-bold text-indigo-600 dark:text-indigo-400 whitespace-nowrap">${durasiDisplay}</td>
+                        <td class="px-2 py-1.5 text-right font-mono font-semibold text-indigo-600 dark:text-indigo-400 whitespace-nowrap">${durasiDisplay}</td>
                         <td class="px-2 py-1.5 text-right font-mono text-slate-600 dark:text-slate-300">${hmAwal > 0 ? formatNum(hmAwal) : '-'}</td>
                         <td class="px-2 py-1.5 text-right font-mono text-slate-600 dark:text-slate-300">${hmAkhir > 0 ? formatNum(hmAkhir) : '-'}</td>
-                        <td class="px-2 py-1.5 text-right font-mono font-bold text-emerald-600 whitespace-nowrap">${kmDisplay}</td>
-                        <td class="px-2.5 py-1.5 font-medium text-slate-800 dark:text-slate-200 truncate" title="${act}">${act}</td>
+                        <td class="px-2 py-1.5 text-right font-mono font-semibold text-emerald-600 whitespace-nowrap">${kmDisplay}</td>
+                        <td class="px-2.5 py-1.5 font-medium text-slate-800 dark:text-slate-200 truncate" title="${act}${isSalahInput ? ' • ' + valReasonSafe : ''}">${act}</td>
                         <td class="px-2 py-1.5 text-slate-600 dark:text-slate-400 truncate" title="${row.tujuan || '-'}">${row.tujuan || '-'}</td>
                         <td class="px-1.5 py-1.5 text-center whitespace-nowrap">${statusBadge}</td>
                         <td class="px-1.5 py-1.5 text-center whitespace-nowrap">${validitasBadge}</td>
-                        <td class="px-2 py-1.5 text-right font-mono text-amber-600 font-bold whitespace-nowrap">${bbmLtr > 0 ? formatNum(bbmLtr, 1) + ' L' : '-'}</td>
-                        <td class="px-2 py-1.5 text-right font-mono text-rose-600 font-bold whitespace-nowrap">${mtcNominal > 0 ? formatRp(mtcNominal) : '-'}</td>
+                        <td class="px-2 py-1.5 text-right font-mono text-amber-600 font-semibold whitespace-nowrap">${bbmDisplay}</td>
+                        <td class="px-2 py-1.5 text-right font-mono text-rose-600 font-semibold whitespace-nowrap">${mtcNominal > 0 ? formatRp(mtcNominal) : '-'}</td>
                         <td class="px-2 py-1.5 text-center whitespace-nowrap">${performansiBadge}</td>
                     </tr>
                 `;
@@ -8233,14 +8343,12 @@ let globalSearchActiveIndex = -1;
 let vra4QuickSearchActiveIndex = -1;
 
 function getSearchableUnitsList() {
+    if (pbiData && pbiData.cache && (!pbiData.vra4SummaryCache || pbiData.vra4SummaryCache.length === 0)) {
+        const { assets, vra, fuel, maint } = pbiData.cache;
+        pbiData.vra4SummaryCache = measureUnitTcoLifetimeSummary(assets, vra, fuel, maint, { excludeNonAktifMutasi: true });
+    }
     if (pbiData && pbiData.vra4SummaryCache && pbiData.vra4SummaryCache.length > 0) {
         return pbiData.vra4SummaryCache;
-    }
-    if (pbiData && pbiData.cache && pbiData.cache.vraPerf && pbiData.cache.vraPerf.unitTable && pbiData.cache.vraPerf.unitTable.length > 0) {
-        return pbiData.cache.vraPerf.unitTable;
-    }
-    if (pbiData && pbiData.cache && pbiData.cache.assets && pbiData.cache.assets.length > 0) {
-        return pbiData.cache.assets;
     }
     return [];
 }
@@ -8527,6 +8635,24 @@ if (typeof document !== 'undefined') {
 function drillToUnit(unitCode) {
     if (!unitCode) return;
     const clean = String(unitCode).trim();
+    if (pbiData && pbiData.cache) {
+        if (!pbiData.vra4SummaryCache) {
+            const { assets, vra, fuel, maint } = pbiData.cache;
+            pbiData.vra4SummaryCache = measureUnitTcoLifetimeSummary(assets, vra, fuel, maint, { excludeNonAktifMutasi: true });
+        }
+        const isActiveUnit = (pbiData.vra4SummaryCache || []).some(u => u.kode_unit === clean);
+        if (!isActiveUnit) {
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    icon: 'info',
+                    title: 'Unit Di-Takedown (Non-Aktif / Mutasi)',
+                    text: `Unit ${clean} berstatus Non-Aktif atau Mutasi sehingga dikecualikan dari daftar Profil Unit Aktif.`,
+                    confirmButtonColor: '#0E5E63'
+                });
+            }
+            return;
+        }
+    }
     vra4CatFilter = 'ALL';
     const catPicker = document.getElementById('slicer-vra4-cat-picker');
     if (catPicker) catPicker.value = 'ALL';

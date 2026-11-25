@@ -3,7 +3,7 @@
  * Measure untuk fact_bkb_fuel: total BBM, rasio konsumsi vs HM terpakai, deteksi anomali, log detail transaksi.
  */
 import { applyFilter, groupAggregate, Agg } from './core-measures.js?v=20261029_fix2';
-import { inferSubKategori } from './vra-measures.js';
+import { inferSubKategori, sanitizeFuelRowsForVra } from './vra-measures.js?v=20261125_r1';
 import { inferAssetLocation } from './asset-measures.js';
 
 /** Total pemakaian & biaya BBM per unit, dengan filter opsional */
@@ -51,13 +51,14 @@ export function measureRasioKonsumsiBbm(fuelByUnit, vraByUnit, ambangRasio = 1.5
  * Analisis Detail Log & Rasio BBM per Unit (Untuk View Detail BBM)
  */
 export function measureFuelDetailLog(fuelRows = [], vraRows = [], assetMap = new Map()) {
+  const cleanFuelRows = sanitizeFuelRowsForVra(fuelRows, vraRows, assetMap);
   const unitMap = new Map();
   const rawBkbLogs = [];
   let grandTotalLiter = 0;
   let grandTotalCost = 0;
 
-  // 1. Process Fuel Transactions
-  fuelRows.forEach(f => {
+  // 1. Process Validated Fuel Transactions (0 BBM on Standby & Non-BBM activities)
+  cleanFuelRows.forEach(f => {
     const code = (f.kode_unit || f.no_asset_manual || 'UNKNOWN').trim();
     const liter = Number(f.jumlah_bkb_fix) || Number(f.jumlah_liter) || Number(f.liter) || 0;
     const cost = Number(f.harga_bkb) || Number(f.total_biaya) || Number(f.biaya) || 0;
@@ -114,26 +115,18 @@ export function measureFuelDetailLog(fuelRows = [], vraRows = [], assetMap = new
     }
   });
 
-  // 2. Attach VRA mobility & duration data
+  // 2. Attach VRA mobility & duration data (strictly valid operating rows)
   vraRows.forEach(v => {
+    if (v.aktif === 0 || String(v.aktif) === '0' || v.is_salah_input || v.is_downtime) return;
     const code = (v.kode_unit || v.no_asset_manual || '').trim();
     if (unitMap.has(code)) {
       const u = unitMap.get(code);
-      const hm = Number(v.hm_terpakai_calc) || (v.hm_akhir && v.hm_awal ? Number(v.hm_akhir) - Number(v.hm_awal) : 0);
-      const jam = Number(v.jam_kerja_calc) || Number(v.total_durasi) || Number(v.durasi) || (hm > 0 ? hm : 0);
-      
-      let km = Number(v.km_used) || 0;
-      if (km === 0 && (Number(v.km_akhir) > Number(v.km_awal))) {
-        km = Number(v.km_akhir) - Number(v.km_awal);
-      }
-      
-      const isRoadVehicle = ['DUMP TRUCK', 'TRUCK', 'TRUCK TANGKI', 'MOBIL', 'SEPEDA MOTOR', 'MOTOR LISTRIK'].includes(u.kategori);
-      if (km === 0 && isRoadVehicle) {
-        km = (hm > 0 ? hm * 18 : (jam > 0 ? jam * 15 : 0));
-      }
+      const hm = Number(v.hm_terpakai_calc) || 0;
+      const jam = Number(v.jam_kerja_calc) || (hm > 0 && hm <= 24 ? hm : 0);
+      const km = Number(v.km_used) || 0;
 
       u.total_km += km > 0 ? km : 0;
-      u.total_jam += (hm > 0 ? hm : (jam > 0 ? jam : 0));
+      u.total_jam += jam > 0 ? jam : 0;
     }
   });
 
@@ -191,7 +184,7 @@ export function measureFuelDetailLog(fuelRows = [], vraRows = [], assetMap = new
   const avgLJam = totalJamAll > 0 && grandTotalLiter > 0 ? (grandTotalLiter / totalJamAll) : 0;
 
   // Rata-rata temporal BBM
-  const allDates = fuelRows.map(f => f.tanggal_bkb || f.tanggal).filter(Boolean).map(d => new Date(d)).filter(d => !isNaN(d));
+  const allDates = cleanFuelRows.map(f => f.tanggal_bkb || f.tanggal).filter(Boolean).map(d => new Date(d)).filter(d => !isNaN(d));
   let periodDays = 365;
   if (allDates.length > 1) {
     const minD = new Date(Math.min(...allDates));
@@ -341,9 +334,10 @@ export function measureVraFuelComparison(fuelRows = [], vraRows = [], assetMap =
   let totalFuelCost = 0;
   let totalVraHm = 0;
   let totalVraKm = 0;
+  const cleanFuelRows = sanitizeFuelRowsForVra(fuelRows, vraRows, assetMap);
 
-  // 1. Agregasi data BBM per unit
-  fuelRows.forEach(f => {
+  // 1. Agregasi data BBM per unit (0 BBM pada Standby / Non-BBM)
+  cleanFuelRows.forEach(f => {
     const code = String(f.kode_unit || f.no_asset_manual || 'UNKNOWN').trim();
     const liter = Number(f.jumlah_bkb_fix) || Number(f.jumlah_liter) || Number(f.liter) || 0;
     const cost = Number(f.harga_bkb) || Number(f.total_biaya) || Number(f.biaya) || 0;
@@ -378,17 +372,14 @@ export function measureVraFuelComparison(fuelRows = [], vraRows = [], assetMap =
     if (tgl && (!u.last_date || tgl > u.last_date)) u.last_date = tgl;
   });
 
-  // 2. Agregasi VRA data per unit
+  // 2. Agregasi VRA data per unit (hanya log operasional valid, kecualikan Standby & Salah Input)
   vraRows.forEach(v => {
+    if (v.aktif === 0 || String(v.aktif) === '0' || v.is_salah_input || v.is_downtime) return;
     const code = String(v.kode_unit || v.no_asset_manual || 'UNKNOWN').trim();
-    const hm = Number(v.hm_terpakai_calc) || (v.hm_akhir && v.hm_awal ? Number(v.hm_akhir) - Number(v.hm_awal) : 0);
-    const jam = Number(v.jam_kerja_calc) || Number(v.total_durasi) || Number(v.durasi) || (hm > 0 ? hm : 0);
-    const effectiveHm = hm > 0 ? hm : (jam > 0 ? jam : 0);
-
-    let km = Number(v.km_used) || 0;
-    if (km === 0 && Number(v.km_akhir) > Number(v.km_awal)) {
-      km = Number(v.km_akhir) - Number(v.km_awal);
-    }
+    const hm = Number(v.hm_terpakai_calc) || 0;
+    const jam = Number(v.jam_kerja_calc) || (hm > 0 && hm <= 24 ? hm : 0);
+    const effectiveHm = jam > 0 ? jam : hm;
+    const km = Number(v.km_used) || 0;
 
     totalVraHm += effectiveHm;
     totalVraKm += km;
@@ -414,9 +405,6 @@ export function measureVraFuelComparison(fuelRows = [], vraRows = [], assetMap =
 
     const u = unitMap.get(code);
     u.total_hm += effectiveHm;
-    if (km === 0 && ['DUMP TRUCK', 'TRUCK', 'TRUCK TANGKI', 'MOBIL', 'SEPEDA MOTOR'].includes(u.kategori)) {
-      km = effectiveHm > 0 ? effectiveHm * 18 : 0;
-    }
     u.total_km += km;
   });
 
@@ -435,7 +423,7 @@ export function measureVraFuelComparison(fuelRows = [], vraRows = [], assetMap =
     };
   });
 
-  fuelRows.forEach(f => {
+  cleanFuelRows.forEach(f => {
     const tgl = f.tanggal_bkb || f.tanggal;
     if (tgl) {
       const parts = String(tgl).split('-');
@@ -450,15 +438,16 @@ export function measureVraFuelComparison(fuelRows = [], vraRows = [], assetMap =
   });
 
   vraRows.forEach(v => {
+    if (v.aktif === 0 || String(v.aktif) === '0' || v.is_salah_input || v.is_downtime) return;
     const tgl = v.tanggal || v.tgl_operasional || v.tgl;
     if (tgl) {
       const parts = String(tgl).split('-');
       if (parts.length >= 2) {
         const m = parseInt(parts[1], 10) - 1;
         if (m >= 0 && m < 12) {
-          const hm = Number(v.hm_terpakai_calc) || (v.hm_akhir && v.hm_awal ? Number(v.hm_akhir) - Number(v.hm_awal) : 0);
-          const jam = Number(v.jam_kerja_calc) || Number(v.total_durasi) || (hm > 0 ? hm : 0);
-          monthlyCorrelation[m].vra_hm += (hm > 0 ? hm : (jam > 0 ? jam : 0));
+          const hm = Number(v.hm_terpakai_calc) || 0;
+          const jam = Number(v.jam_kerja_calc) || (hm > 0 && hm <= 24 ? hm : 0);
+          monthlyCorrelation[m].vra_hm += (jam > 0 ? jam : hm);
           monthlyCorrelation[m].vra_km += Number(v.km_used || 0);
         }
       }

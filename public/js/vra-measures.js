@@ -53,14 +53,227 @@ export function mapStatusVra(namaAktivitas = '', namaKegiatan = '') {
     const kLower = keg.toLowerCase();
     const aLower = akt.toLowerCase();
 
-    if (kLower === 'standby' || aLower === 'status standby' || aLower.includes('standby') || kLower.includes('standby')) return 'Standby';
-    if (kLower === 'running machine' || kLower.includes('warming') || aLower.includes('warming') || aLower.includes('running')) return 'Warming Up';
-    if (kLower.includes('mutasi out') || aLower.includes('mutasi out')) return 'Mutasi Out Section';
-    if (kLower.includes('nonaktif') || aLower.includes('nonaktif')) return 'Nonaktif Sementara';
-    if (kLower.includes('breakdown') || aLower.includes('breakdown') || kLower.includes('rusak') || aLower.includes('rusak')) return 'Breakdown - Rusak Total';
-    if (aLower.includes('operasional') || aLower.includes('operating') || kLower.includes('operasional') || kLower.includes('dinas') || aLower.includes('dinas')) return 'Operating';
+    if (kLower.includes('deaktivasi') || kLower.includes('disposal') || aLower.includes('deaktivasi') || aLower.includes('disposal')) return 'Deaktivasi / Disposal';
+    if (kLower.includes('mutasi out') || aLower.includes('mutasi out') || kLower.includes('mutasi') || aLower.includes('mutasi')) return 'Mutasi Out Section';
+    if (kLower.includes('nonaktif') || aLower.includes('nonaktif') || kLower.includes('tidak aktif') || aLower.includes('tidak aktif')) return 'Nonaktif Sementara';
+    if (kLower === 'standby' || aLower === 'status standby' || aLower.includes('standby') || kLower.includes('standby') || aLower.includes('stanby') || kLower.includes('stanby')) return 'Standby';
+    if (kLower.includes('breakdown') || aLower.includes('breakdown') || kLower.includes('rusak') || aLower.includes('rusak')) {
+        if (kLower.includes('rusak total')) return 'Breakdown - Rusak Total';
+        if (kLower.includes('idle')) return 'Breakdown - Idle';
+        return 'Breakdown - Maintenance';
+    }
+    if (aLower.includes('maintenance') || kLower.includes('periodical service') || kLower === 'reset km') return 'Periodical Service';
+    if (aLower.includes('check/inspeksi') || kLower.includes('checksheet') || kLower.includes('inspeksi')) return 'Checksheet & Inspeksi';
+    if (kLower === 'running machine' || kLower.includes('warming') || aLower.includes('warming') || aLower === 'status running') return 'Warming Up';
+    if (aLower.includes('administratif')) return 'Nonaktif Sementara';
+    if (aLower.includes('operasional') || aLower.includes('operating') || aLower.includes('transport') || kLower.includes('operasional') || kLower.includes('dinas') || aLower.includes('dinas')) return 'Operating';
 
     return keg || akt || 'Operating';
+}
+
+/**
+ * Menentukan apakah suatu aktivitas/kegiatan & unit memang memerlukan pengeluaran BBM.
+ * Aturan Bisnis:
+ * - Unit Standby / Siaga / Tunggu / Idle -> TIDAK memerlukan BBM (0 Liter, Rp 0)
+ * - Status Administratif (Nonaktif, Mutasi, Deaktivasi/Disposal) -> TIDAK memerlukan BBM
+ * - Status Breakdown / Kerusakan -> TIDAK memerlukan BBM
+ * - Status Maintenance / Periodical Service / Checksheet & Inspeksi / Reset KM -> TIDAK memerlukan BBM
+ * - Unit Motor Listrik (MTRL / LISTRIK) -> TIDAK memerlukan BBM
+ */
+export function doesActivityRequireBbm(aktivitas = '', kegiatan = '', unitCode = '', subKategori = '', keterangan = '') {
+    const u = String(unitCode || '').toUpperCase();
+    const sub = String(subKategori || '').toUpperCase();
+    if (u.includes('MTRL') || u.includes('LISTRIK') || sub === 'MOTOR LISTRIK') return false;
+
+    const combined = `${String(aktivitas || '')} | ${String(kegiatan || '')}`.toLowerCase();
+    if (/standby|stanby|siaga|tunggu|cadangan|\bidle\b|parkir/.test(combined)) return false;
+    if (/administratif|nonaktif|non[\s-]*aktif|tidak[\s-]*aktif|mutasi|deaktivasi|disposal/.test(combined)) return false;
+    if (/breakdown|rusak/.test(combined)) return false;
+    if (/status\s*maintenance|periodical\s*service|\bchecksheet\b|check\/inspeksi|\binspeksi\b|reset\s*km/.test(combined)) return false;
+
+    const ketLower = String(keterangan || '').toLowerCase();
+    if (/\btanpa\s*bbm\b|\bnon[\s-]*bbm\b/.test(ketLower)) return false;
+
+    return true;
+}
+
+/**
+ * Mengevaluasi apakah suatu unit harus di-takedown dari Profil Unit Aktif karena berstatus Non-Aktif atau Mutasi.
+ */
+export function evaluateUnitNonAktifOrMutasi(params = {}) {
+    const {
+        kodeUnit = '',
+        asset = {},
+        validCount = 0,
+        lastAktivitas = '',
+        lastKegiatan = '',
+        lastStatus = '',
+        lastDate = '',
+        maxDatasetDate = ''
+    } = params;
+
+    // 1. Cek manual override admin jika ada
+    let manualOverride = null;
+    if (typeof window !== 'undefined' && window.pns && typeof window.pns.getUnitManualStatus === 'function') {
+        manualOverride = window.pns.getUnitManualStatus(kodeUnit);
+    } else if (typeof localStorage !== 'undefined') {
+        try {
+            const overrides = JSON.parse(localStorage.getItem('pns_manual_unit_status_override') || '{}');
+            manualOverride = overrides[kodeUnit] || null;
+        } catch (_) {}
+    }
+    if (manualOverride && manualOverride.status) {
+        const mo = String(manualOverride.status).toLowerCase();
+        if (/mutasi|nonaktif|non[\s-]*aktif|tidak[\s-]*aktif|disposal|deaktivasi/.test(mo)) {
+            return { isTakedown: true, reason: `Override: ${manualOverride.status}` };
+        }
+        if (/operating|standby|aktif/.test(mo)) {
+            return { isTakedown: false, reason: '' };
+        }
+    }
+
+    // 2. Cek status master aset (Tidak aktif / Investigasi / Waiting To Disposal / Lost / Mutasi)
+    const stPemakaian = String(asset?.status_pemakaian || asset?.status || '').toLowerCase();
+    const kondisi = String(asset?.kondisi || asset?.kondisi_asset || '').toLowerCase();
+    if (/tidak[\s-]*aktif|non[\s-]*aktif|nonaktif|mutasi|disposal|deaktivasi|investigasi|afkir/.test(stPemakaian)) {
+        return { isTakedown: true, reason: asset?.status_pemakaian || 'Aset Non-Aktif / Disposal' };
+    }
+    if (/\blost\b|hilang|disposal|afkir/.test(kondisi)) {
+        return { isTakedown: true, reason: `Kondisi Aset: ${asset?.kondisi}` };
+    }
+
+    // 3. Cek apabila unit sama sekali tidak memiliki log valid (seluruh log aktif = 0 / salah input)
+    if (validCount <= 0) {
+        return { isTakedown: true, reason: 'Tidak Ada Aktivitas Valid (Non-Aktif)' };
+    }
+
+    // 4. Cek status/kegiatan terakhir di VRA (Mutasi Out Section, Nonaktif Sementara, Deaktivasi / Disposal, Rusak Total)
+    const lastCombined = `${lastAktivitas} | ${lastKegiatan} | ${lastStatus}`.toLowerCase();
+    if (/mutasi|nonaktif|non[\s-]*aktif|tidak[\s-]*aktif|deaktivasi|disposal|rusak\s*total/.test(lastCombined)) {
+        return { isTakedown: true, reason: lastKegiatan || lastAktivitas || lastStatus || 'Non-Aktif / Mutasi' };
+    }
+
+    // 5. Cek Aging >= 100 hari tanpa aktivitas relatif terhadap tanggal terbaru dataset
+    if (lastDate) {
+        const refStr = maxDatasetDate && maxDatasetDate >= lastDate ? maxDatasetDate : new Date().toISOString().slice(0, 10);
+        const dRef = new Date(refStr + 'T00:00:00');
+        const dLast = new Date(String(lastDate).slice(0, 10) + 'T00:00:00');
+        if (!isNaN(dRef.getTime()) && !isNaN(dLast.getTime())) {
+            const agingDays = Math.max(0, Math.floor((dRef - dLast) / 86400000));
+            if (agingDays >= 100) {
+                return { isTakedown: true, reason: `Nonaktif Aging ${agingDays} Hari` };
+            }
+        }
+    }
+
+    return { isTakedown: false, reason: '' };
+}
+
+/**
+ * Sanitasi & Deduplikasi Transaksi BBM (fact_bkb_fuel) terhadap Log VRA:
+ * 1. Menghapus duplikasi BKB-VRA-* jika pada tanggal & unit yang sama sudah ada nomor BKB gudang asli, serta duplikat baris identik.
+ * 2. Menolak pengeluaran BBM pada unit Motor Listrik atau baris yang keterangannya Standby / Non-BBM.
+ * 3. Menolak pengeluaran BBM pada tanggal di mana seluruh log VRA unit tersebut adalah Standby, Non-BBM, atau Tidak Valid (Salah Input).
+ * 4. Menolak pengeluaran BBM pada unit yang murni Standby / 0 jam operasional BBM sepanjang periode VRA aktif.
+ */
+export function sanitizeFuelRowsForVra(fuelRows = [], enrichedVra = [], assetMap = new Map()) {
+    if (!Array.isArray(fuelRows) || fuelRows.length === 0) return [];
+
+    const hasVraContext = Array.isArray(enrichedVra) && enrichedVra.length > 0;
+    const unitsInVra = new Set();
+    const unitsWithValidBbmOp = new Set();
+    const unitDateState = new Map(); // key: `${unit}|${date}` -> { hasValidBbmOp: bool, totalRows: int }
+
+    if (hasVraContext) {
+        enrichedVra.forEach(r => {
+            const u = String(r.kode_unit || r.no_asset_manual || '').trim();
+            const d = String(r.tanggal || '').slice(0, 10);
+            if (!u) return;
+            unitsInVra.add(u);
+
+            const isValid = !(r.aktif === 0 || String(r.aktif) === '0' || r.is_salah_input);
+            const reqBbm = r.requires_bbm !== undefined
+                ? Boolean(r.requires_bbm)
+                : doesActivityRequireBbm(r.nama_aktivitas || r.aktivitas, r.nama_kegiatan, u, r.sub_kategori, r.keterangan_tambahan);
+
+            if (isValid && reqBbm && ((Number(r.jam_kerja_calc) || 0) > 0 || (Number(r.hm_terpakai_calc) || 0) > 0)) {
+                unitsWithValidBbmOp.add(u);
+            }
+
+            if (d) {
+                const dk = `${u}|${d}`;
+                if (!unitDateState.has(dk)) unitDateState.set(dk, { hasValidBbmOp: false, totalRows: 0 });
+                const st = unitDateState.get(dk);
+                st.totalRows++;
+                if (isValid && reqBbm) {
+                    st.hasValidBbmOp = true;
+                }
+            }
+        });
+    }
+
+    // Catat (unit|tanggal) yang sudah memiliki BKB asli (bukan BKB-VRA-* sintetis)
+    const realBkbUnitDates = new Set();
+    fuelRows.forEach(f => {
+        const u = String(f.kode_unit || f.no_asset_manual || '').trim();
+        const d = String(f.tanggal_bkb || f.tanggal || '').slice(0, 10);
+        const bkb = String(f.no_bkb || f.nomor_bkb || '').trim();
+        const ltr = Number(f.jumlah_bkb_fix ?? f.jumlah_liter ?? f.liter ?? 0) || 0;
+        if (u && d && ltr > 0 && bkb && !bkb.startsWith('BKB-VRA-')) {
+            realBkbUnitDates.add(`${u}|${d}`);
+        }
+    });
+
+    const seenExactFuelKey = new Set();
+    const cleanFuel = [];
+
+    fuelRows.forEach(f => {
+        const u = String(f.kode_unit || f.no_asset_manual || '').trim();
+        if (!u) return;
+        const ltr = Number(f.jumlah_bkb_fix ?? f.jumlah_liter ?? f.liter ?? f.jumlah ?? 0) || 0;
+        if (ltr <= 0) return;
+
+        const d = String(f.tanggal_bkb || f.tanggal || '').slice(0, 10);
+        const bkb = String(f.no_bkb || f.nomor_bkb || '').trim();
+        const asset = assetMap ? (assetMap.get(u) || null) : null;
+        const subKat = inferSubKategori(u, asset);
+
+        // 1. Unit listrik atau keterangan eksplisit Standby/Non-BBM tidak boleh ada BBM
+        if (!doesActivityRequireBbm(f.aktivitas || f.keterangan || '', '', u, subKat)) {
+            return;
+        }
+
+        // 2. Cegah duplikasi BKB-VRA-* jika sudah ada BKB asli pada tanggal yang sama
+        if (bkb.startsWith('BKB-VRA-') && d && realBkbUnitDates.has(`${u}|${d}`)) {
+            return;
+        }
+
+        // 3. Cegah duplikasi baris BKB identik (contoh: nomor BKB + unit + tanggal + liter sama persis)
+        const exactKey = `${u}|${d}|${bkb}|${ltr.toFixed(3)}`;
+        if (bkb && bkb !== '-' && seenExactFuelKey.has(exactKey)) {
+            return;
+        }
+        seenExactFuelKey.add(exactKey);
+
+        // 4. Validasi silang terhadap status VRA unit & tanggal terkait
+        if (hasVraContext && unitsInVra.has(u)) {
+            // Jika unit murni Standby / Non-BBM (0 jam operasi ber-BBM), maka pengeluaran BBM wajib 0
+            if (!unitsWithValidBbmOp.has(u)) {
+                return;
+            }
+            // Jika pada tanggal tersebut unit tercatat di VRA namun HANYA Standby / Non-BBM / Tidak Valid, tolak BBM
+            if (d && unitDateState.has(`${u}|${d}`)) {
+                const st = unitDateState.get(`${u}|${d}`);
+                if (st.totalRows > 0 && !st.hasValidBbmOp) {
+                    return;
+                }
+            }
+        }
+
+        cleanFuel.push(f);
+    });
+
+    return cleanFuel;
 }
 
 function normalizeSheetTimeStr(val) {
@@ -82,15 +295,16 @@ function parseTimeMinutesSafe(val) {
     return Number(m[1]) * 60 + Number(m[2]) + (Number(m[3] || 0) / 60);
 }
 
-export function enrichVraRow(row, assetMap = null) {
+export function enrichVraRow(row, assetMap = null, seenShiftSet = null) {
     const hmAwal = Number(row.hm_awal) || 0;
     const hmAkhir = Number(row.hm_akhir) || 0;
-    const hmTerpakai = Math.max(0, Number(row.hm_terpakai) || (hmAkhir - hmAwal) || 0);
+    const rawDeltaHm = hmAkhir - hmAwal;
 
     const cleanJamAwal = normalizeSheetTimeStr(row.jam_awal);
     const cleanJamSelesai = normalizeSheetTimeStr(row.jam_selesai);
 
     let jamKerja = 0;
+    let isInvalidTime = false;
     const menitAwal = parseTimeMinutesSafe(cleanJamAwal);
     const menitSelesai = parseTimeMinutesSafe(cleanJamSelesai);
     if (menitAwal !== null && menitSelesai !== null) {
@@ -98,88 +312,157 @@ export function enrichVraRow(row, assetMap = null) {
         if (diffMinutes < 0 && String(row.jam_selesai || '').includes('1899')) {
             diffMinutes += 24 * 60;
         }
-        jamKerja = Math.max(0, diffMinutes / 60);
+        if (diffMinutes < 0) {
+            isInvalidTime = true;
+            jamKerja = 0;
+        } else {
+            jamKerja = Math.max(0, diffMinutes / 60);
+        }
     }
-    if ((!Number.isFinite(jamKerja) || jamKerja <= 0) && row.durasi) {
+    if (!isInvalidTime && (!Number.isFinite(jamKerja) || jamKerja <= 0) && row.durasi) {
         jamKerja = Number(row.durasi) || 0;
     }
-    if ((!Number.isFinite(jamKerja) || jamKerja <= 0) && row.jam_kerja) {
+    if (!isInvalidTime && (!Number.isFinite(jamKerja) || jamKerja <= 0) && row.jam_kerja) {
         const rawJk = Number(row.jam_kerja) || 0;
         if (rawJk > 0 && rawJk <= 24) {
             jamKerja = rawJk;
         }
     }
-    if ((!Number.isFinite(jamKerja) || jamKerja <= 0) && hmTerpakai > 0 && hmTerpakai <= 24) {
-        jamKerja = hmTerpakai;
-    }
-    if (!Number.isFinite(jamKerja) || jamKerja < 0) {
+    if (!Number.isFinite(jamKerja) || jamKerja < 0 || jamKerja > 24) {
+        if (jamKerja > 24) isInvalidTime = true;
         jamKerja = 0;
     }
 
-    const rawAktivitas = (row.aktivitas || row.nama_aktivitas || '').trim();
-    const rawKegiatan = (row.kegiatan || row.nama_kegiatan || '').trim();
+    const rawAktivitas = (row.nama_aktivitas || row.aktivitas || '').trim();
+    const rawKegiatan = (row.nama_kegiatan || row.kegiatan || '').trim();
+    const rawKet = (row.keterangan_tambahan || row.keterangan || '').trim();
     const statusKerja = mapStatusVra(rawAktivitas, rawKegiatan);
+
+    const unitCode = String(row.kode_unit || row.no_asset_manual || '').trim();
+    const asset = assetMap ? assetMap.get(unitCode) : null;
+    const subKategori = row.sub_kategori || inferSubKategori(unitCode, asset);
+    const isRoadVehicle = ['DUMP TRUCK', 'TRUCK', 'TRUCK TANGKI', 'MOBIL', 'SEPEDA MOTOR', 'MOTOR LISTRIK'].includes(subKategori);
+    const loc = asset ? (inferAssetLocation(asset) || asset.location || 'Tidak Terklasifikasi') : 'Tidak Terklasifikasi';
+    const locCategory = asset ? (asset.location_category || '') : '';
+    const namaBangunan = asset ? (asset.nama_bangunan || '') : '';
 
     let isDowntime = false;
     let isPlannedDown = true;
     if (statusKerja === 'Standby') {
         isDowntime = true;
         isPlannedDown = true;
-    } else if (statusKerja === 'Breakdown - Rusak Total' || statusKerja.toLowerCase().includes('breakdown')) {
+    } else if (statusKerja.toLowerCase().includes('breakdown')) {
         isDowntime = true;
         isPlannedDown = false;
-    } else if (statusKerja === 'Mutasi Out Section' || statusKerja === 'Nonaktif Sementara') {
+    } else if (statusKerja === 'Mutasi Out Section' || statusKerja === 'Nonaktif Sementara' || statusKerja === 'Deaktivasi / Disposal') {
         isDowntime = true;
         isPlannedDown = true;
-    } else if (statusKerja === 'Warming Up') {
-        isDowntime = false;
+    } else if (statusKerja === 'Periodical Service' || statusKerja === 'Checksheet & Inspeksi') {
+        isDowntime = true;
+        isPlannedDown = true;
     } else {
         isDowntime = false;
     }
 
-    const isOvertime = jamKerja > BATAS_JAM_NORMAL;
-    const kmVal = Number(row.km_used || (row.km_akhir && row.km_awal ? row.km_akhir - row.km_awal : hmTerpakai * 18)) || (jamKerja * 15);
-    const unitCode = String(row.kode_unit || row.no_asset_manual || '').trim();
-    const asset = assetMap ? assetMap.get(unitCode) : null;
-    const subKategori = row.sub_kategori || inferSubKategori(unitCode, asset);
-    const loc = asset ? (inferAssetLocation(asset) || asset.location || 'Tidak Terklasifikasi') : 'Tidak Terklasifikasi';
-    const locCategory = asset ? (asset.location_category || '') : '';
-    const namaBangunan = asset ? (asset.nama_bangunan || '') : '';
+    const requiresBbm = doesActivityRequireBbm(rawAktivitas, rawKegiatan, unitCode, subKategori, rawKet);
+    const rawBbmInput = Math.max(0, Number(row.quantity_bahan_bakar ?? row.bbm_liter ?? 0) || 0);
 
-    // Power BI Power Query exact rule:
-    // [aktif] = 1 maka Aktivitas yang dihitung
-    // [aktif] = 0 maka Aktivitas Salah Input
-    const rawAktif = row.aktif !== undefined && row.aktif !== null ? Number(row.aktif) : 1;
-    const isAktif = (rawAktif === 1);
+    // Audit Validitas & Deteksi Kesalahan Input (Multi-Rule Verification)
+    const rawAktifVal = (row.aktif !== undefined && row.aktif !== null && String(row.aktif).trim() !== '') ? Number(row.aktif) : 1;
+    const isSourceAktifZero = (rawAktifVal === 0) || String(row.status || '').toLowerCase().includes('salah');
+
+    const isResetKmRow = rawKegiatan.toLowerCase().includes('reset km') || (hmAwal > 500 && hmAkhir >= 0 && hmAkhir < 500);
+    const isNegativeHmTypo = (hmAwal > 0 && hmAkhir < hmAwal && !isResetKmRow);
+    const isHugeHmJump = (!isSourceAktifZero && ((hmAwal === 0 && hmAkhir > 5000) || rawDeltaHm > 2000));
+    const isZeroOpInput = (!isSourceAktifZero && requiresBbm && statusKerja === 'Operating' && jamKerja <= 0 && rawDeltaHm === 0 && Number(row.hm_terpakai || 0) <= 0 && rawBbmInput <= 0);
+
+    const tanggalClean = String(row.tanggal || row.tgl_aktivitas || '').split('T')[0];
+    let isDuplicateShift = false;
+    if (!isSourceAktifZero && seenShiftSet && unitCode && tanggalClean && cleanJamAwal && cleanJamSelesai) {
+        const shiftKey = `${unitCode}|${tanggalClean}|${cleanJamAwal}|${cleanJamSelesai}|${hmAwal}|${hmAkhir}|${rawAktivitas}|${rawKegiatan}`;
+        if (seenShiftSet.has(shiftKey)) {
+            isDuplicateShift = true;
+        } else {
+            seenShiftSet.add(shiftKey);
+        }
+    }
+
+    const validationReasons = [];
+    if (isSourceAktifZero) validationReasons.push('Salah Input Sistem (aktif=0)');
+    if (isInvalidTime) validationReasons.push('Jam Selesai < Jam Awal');
+    if (isNegativeHmTypo) validationReasons.push('KM/HM Akhir < Awal');
+    if (isHugeHmJump) validationReasons.push('Lonjakan Odometer Tidak Wajar');
+    if (isZeroOpInput) validationReasons.push('Operasional Durasi & Jarak 0');
+    if (isDuplicateShift) validationReasons.push('Duplikat Input Ganda');
+
+    const isAktif = validationReasons.length === 0;
+    const rawAktif = isAktif ? 1 : 0;
+
+    // Pastikan Standby, kegiatan Non-BBM, dan baris Tidak Valid memiliki pengeluaran BBM = 0 dan jarak sintetis = 0
+    const bbmTakedownLiter = (!requiresBbm && rawBbmInput > 0) ? rawBbmInput : 0;
+    const validBbmLiter = (isAktif && requiresBbm) ? rawBbmInput : 0;
+
+    let hmTerpakai = 0;
+    if (isAktif && !isDowntime) {
+        const calcDelta = isResetKmRow ? Math.max(0, hmAkhir) : Math.max(0, rawDeltaHm);
+        const rawHt = Math.max(0, Number(row.hm_terpakai) || 0);
+        hmTerpakai = calcDelta > 0 ? calcDelta : (rawHt <= 2000 ? rawHt : 0);
+        if (hmTerpakai > 2000) hmTerpakai = 0;
+    }
+
+    if (isAktif && !isDowntime && jamKerja <= 0 && hmTerpakai > 0 && hmTerpakai <= 24 && !isRoadVehicle) {
+        jamKerja = hmTerpakai;
+    }
+
+    const isOvertime = isAktif && !isDowntime && jamKerja > BATAS_JAM_NORMAL;
+    // Hanya hitung KM riil dari selisih odometer kendaraan darat pada aktivitas operasional valid (TANPA pengali jamKerja * 15 / * 18 palsu!)
+    let kmVal = 0;
+    if (isAktif && !isDowntime && requiresBbm && isRoadVehicle) {
+        const explicitKm = (row.km_akhir && row.km_awal) ? Math.max(0, Number(row.km_akhir) - Number(row.km_awal)) : 0;
+        kmVal = explicitKm > 0 ? explicitKm : hmTerpakai;
+        if (kmVal > 2000) kmVal = 0;
+    }
+
+    const validationNote = !isAktif
+        ? validationReasons.join('; ')
+        : (bbmTakedownLiter > 0 ? `BBM ${bbmTakedownLiter} L di-takedown (Kegiatan Non-BBM)` : 'Valid');
 
     return {
         ...row,
         kode_unit: unitCode,
-        tanggal: String(row.tanggal || row.tgl_aktivitas || '').split('T')[0],
+        tanggal: tanggalClean,
         jam_awal: cleanJamAwal,
         jam_selesai: cleanJamSelesai,
         aktivitas: rawAktivitas || 'Operasional Unit',
         nama_aktivitas: rawAktivitas,
         nama_kegiatan: rawKegiatan,
         sub_kategori: subKategori,
-        jam_kerja_calc: Number((Number.isFinite(jamKerja) ? jamKerja : 0).toFixed(2)),
+        jam_kerja_calc: isAktif ? Number((Number.isFinite(jamKerja) ? jamKerja : 0).toFixed(2)) : 0,
+        raw_jam_kerja: Number((Number.isFinite(jamKerja) ? jamKerja : 0).toFixed(2)),
         hm_terpakai_calc: Number((Number.isFinite(hmTerpakai) ? hmTerpakai : 0).toFixed(2)),
         status_kerja_calc: statusKerja,
         is_downtime: isDowntime,
         is_planned_down: isPlannedDown,
         is_overtime: isOvertime,
         km_used: Number.isFinite(kmVal) ? kmVal : 0,
+        requires_bbm: requiresBbm,
+        raw_bbm_input: rawBbmInput,
+        bbm_takedown_liter: bbmTakedownLiter,
+        quantity_bahan_bakar: validBbmLiter,
+        bbm_liter: validBbmLiter,
         lokasi: loc,
         location_category: locCategory,
         nama_bangunan: namaBangunan,
         aktif: rawAktif,
         is_aktif: isAktif,
-        is_salah_input: !isAktif
+        is_salah_input: !isAktif,
+        validation_reason: validationNote
     };
 }
 
 export function enrichVraRows(rows, assetMap = null) {
-    return rows.map(r => enrichVraRow(r, assetMap));
+    const seenShiftSet = new Set();
+    return (rows || []).map(r => enrichVraRow(r, assetMap, seenShiftSet));
 }
 
 export function measureVraPerformance(enrichedVra, fuelMap = new Map()) {
@@ -776,7 +1059,10 @@ export function measureVraHierarchicalActivity(enrichedVra, fuelMap = new Map(),
                 unitHm += data.total_hm;
 
                 const fuel = fuelMap.get(unit) || { total_liter: 0 };
-                const petrol = data.total_durasi > 0 && fuel.total_liter > 0 ? (fuel.total_liter * (data.total_durasi / Math.max(1, unitDurasi))) : (data.km_used * 0.35);
+                const reqActBbm = doesActivityRequireBbm(act, '', unit, subKat);
+                const petrol = (reqActBbm && data.total_durasi > 0 && fuel.total_liter > 0)
+                    ? (fuel.total_liter * (data.total_durasi / Math.max(1, unitDurasi)))
+                    : 0;
 
                 actItems.push({
                     name: act,
@@ -792,7 +1078,7 @@ export function measureVraHierarchicalActivity(enrichedVra, fuelMap = new Map(),
             subKatHm += unitHm;
 
             const unitFuel = fuelMap.get(unit) || { total_liter: 0 };
-            const uPetrol = unitFuel.total_liter > 0 ? unitFuel.total_liter : (unitKm * 0.35);
+            const uPetrol = unitFuel.total_liter > 0 ? unitFuel.total_liter : 0;
 
             unitItems.push({
                 kode_unit: unit,
@@ -858,16 +1144,27 @@ export function measureDistribusiStatusKerja(rows, filters = {}) {
  * - KM/Day, Avg KM/Day, Total Liter, Cost Petrol, Cost MTC, Total Cost, Jml Service
  * - Lt/KM, KM/Lt, Petrol Cost/KM, MTC Cost/KM, Total Cost/KM
  */
-export function measureUnitTcoLifetimeSummary(assets, vra, fuel, maintenance) {
+export function measureUnitTcoLifetimeSummary(assets, vra, fuel, maintenance, opts = { excludeNonAktifMutasi: true }) {
     const assetMap = new Map();
-    assets.forEach(a => {
+    (assets || []).forEach(a => {
         if (a.kode_unit) assetMap.set(String(a.kode_unit).trim(), a);
         if (a.no_asset_manual) assetMap.set(String(a.no_asset_manual).trim(), a);
         if (a.kode_asset) assetMap.set(String(a.kode_asset).trim(), a);
     });
 
+    // Pastikan data BBM telah disanitasi (0 BBM pada Standby / kegiatan Non-BBM / duplikat BKB-VRA-*)
+    const sanitizedFuel = sanitizeFuelRowsForVra(fuel || [], vra || [], assetMap);
+
+    let maxDatasetDate = '';
+    (vra || []).forEach(v => {
+        const isVal = !(v.aktif === 0 || String(v.aktif) === '0' || v.is_salah_input);
+        if (isVal && v.tanggal && v.tanggal > maxDatasetDate) {
+            maxDatasetDate = v.tanggal;
+        }
+    });
+
     const vraGroup = new Map();
-    vra.forEach(v => {
+    (vra || []).forEach(v => {
         const u = String(v.kode_unit || '').trim();
         if (!u) return;
         if (!vraGroup.has(u)) vraGroup.set(u, []);
@@ -875,7 +1172,7 @@ export function measureUnitTcoLifetimeSummary(assets, vra, fuel, maintenance) {
     });
 
     const fuelGroup = new Map();
-    fuel.forEach(f => {
+    sanitizedFuel.forEach(f => {
         const u = String(f.no_asset_manual || f.kode_unit || '').trim();
         if (!u) return;
         if (!fuelGroup.has(u)) fuelGroup.set(u, []);
@@ -883,7 +1180,7 @@ export function measureUnitTcoLifetimeSummary(assets, vra, fuel, maintenance) {
     });
 
     const maintGroup = new Map();
-    maintenance.forEach(m => {
+    (maintenance || []).forEach(m => {
         const u = String(m.kode_unit || m.kode_asset || '').trim();
         if (!u) return;
         if (!maintGroup.has(u)) maintGroup.set(u, []);
@@ -893,11 +1190,11 @@ export function measureUnitTcoLifetimeSummary(assets, vra, fuel, maintenance) {
     // Include all units from VRA transactions (fact_vra)
     const allUnitCodes = [...new Set(vraGroup.keys())].filter(Boolean).sort();
 
-    return allUnitCodes.map(code => {
+    const mappedUnits = allUnitCodes.map(code => {
         const asset = assetMap.get(code) || {};
         const rawVraList = vraGroup.get(code) || [];
-        // Filter strictly to valid activities (aktif = 1)
-        const vraList = rawVraList.filter(v => v.aktif === undefined || v.aktif === null || Number(v.aktif) === 1 || String(v.aktif) === '1');
+        // Filter strictly to valid activities (tidak termasuk salah input / tidak valid)
+        const vraList = rawVraList.filter(v => !(v.aktif === 0 || String(v.aktif) === '0' || v.is_salah_input));
         const salahInputList = rawVraList.filter(v => v.aktif === 0 || String(v.aktif) === '0' || v.is_salah_input);
         const salahInputCount = salahInputList.length;
         const validInputCount = vraList.length;
@@ -999,27 +1296,31 @@ export function measureUnitTcoLifetimeSummary(assets, vra, fuel, maintenance) {
 
             const hw = Number(v.hm_awal ?? v.km_awal ?? 0);
             const hk = Number(v.hm_akhir ?? v.km_akhir ?? 0);
+            const st = String(v.status_kerja_calc || v.status || '').toLowerCase();
+            const isRowNonOperating = Boolean(v.is_downtime) || st.includes('standby') || st.includes('breakdown') || st.includes('rusak') || st.includes('nonaktif') || st.includes('mutasi') || st.includes('disposal') || st.includes('service') || st.includes('inspeksi');
 
-            // Detect reset KM
+            // Detect genuine Reset KM (rollover ke angka kecil < 500 atau kegiatan eksplisit Reset KM)
             let isReset = false;
-            if (hw > 0 && hk < hw && hk >= 0) {
+            if ((v.nama_kegiatan || '').toLowerCase().includes('reset km') || (hw > 500 && hk >= 0 && hk < 500)) {
                 isReset = true;
-            } else if (prevMeter !== null && prevMeter > 500 && hw < prevMeter * 0.2 && hw < 100) {
+            } else if (prevMeter !== null && prevMeter > 500 && hw > 0 && hw < prevMeter * 0.2 && hw < 500) {
                 isReset = true;
             }
 
             let delta = 0;
-            if (isReset) {
-                resetKmCount++;
-                resetKmEvents.push({
-                    tanggal: tgl,
-                    from: hw > 0 ? hw : prevMeter,
-                    to: hk,
-                    ket: v.keterangan_tambahan || v.aktivitas || 'Reset Odometer'
-                });
-                delta = Math.max(0, hk - 0); // Mulai dari NOL
-            } else {
-                delta = Math.max(0, hk - hw);
+            if (!isRowNonOperating) {
+                if (isReset) {
+                    resetKmCount++;
+                    resetKmEvents.push({
+                        tanggal: tgl,
+                        from: hw > 0 ? hw : prevMeter,
+                        to: hk,
+                        ket: v.keterangan_tambahan || v.aktivitas || 'Reset Odometer'
+                    });
+                    delta = Math.max(0, hk - 0);
+                } else if (hk >= hw && (hk - hw) <= 2000 && !(hw === 0 && hk > 5000)) {
+                    delta = Math.max(0, hk - hw);
+                }
             }
             if (hk > 0) prevMeter = hk;
 
@@ -1028,23 +1329,23 @@ export function measureUnitTcoLifetimeSummary(assets, vra, fuel, maintenance) {
 
             totalHm += delta;
 
-            let kmRow = Number(v.km_used || 0);
-            if (kmRow === 0 && isRoadVehicle) {
-                kmRow = delta > 0 ? delta : (Number(v.jam_kerja_calc || 0) * 18);
+            let kmRow = 0;
+            if (!isRowNonOperating && isRoadVehicle) {
+                kmRow = Number(v.km_used || 0) > 0 ? Number(v.km_used) : delta;
+                if (kmRow > 2000) kmRow = 0;
             }
-            totalKm += (isReset ? delta : kmRow);
+            totalKm += (isReset && isRoadVehicle ? delta : kmRow);
 
-            const jam = Number(v.jam_kerja_calc || v.durasi || 0);
+            const jam = Number(v.jam_kerja_calc || 0);
             totalDurasi += jam;
 
-            const st = String(v.status_kerja_calc || v.status || '').toLowerCase();
-            if (st.includes('operating') || st.includes('jalan') || st.includes('angkut')) {
+            if (!isRowNonOperating) {
                 if (tgl) activeDays.add(tgl);
                 totalOperatingJam += jam;
             } else if (st.includes('standby') || st.includes('tunggu')) {
                 totalStandbyJam += jam;
-            } else if (st.includes('breakdown') || st.includes('rusak') || st.includes('maint')) {
-                if (tgl) breakdownDays.add(tgl);
+            } else if (st.includes('breakdown') || st.includes('rusak') || st.includes('maint') || st.includes('service')) {
+                if (tgl && (st.includes('breakdown') || st.includes('rusak'))) breakdownDays.add(tgl);
                 totalDownJam += jam;
             }
         });
@@ -1059,21 +1360,39 @@ export function measureUnitTcoLifetimeSummary(assets, vra, fuel, maintenance) {
 
         const jmlTrx = vraList.length;
         const jmlHari = Math.max(1, uniqueDays.size);
-        const hariAktif = Math.max(1, activeDays.size);
+        const hariAktif = activeDays.size;
         const hariBreakdown = breakdownDays.size;
 
         const effectiveKm = isRoadVehicle ? totalKm : totalHm;
         const kmPerDay = hariAktif > 0 ? (effectiveKm / hariAktif) : 0;
         const avgKmDay = jmlHari > 0 ? (effectiveKm / jmlHari) : 0;
 
-        // 4. Fuel Aggregations
+        // 4. Fuel Aggregations — Untuk unit murni Standby / Non-BBM (totalOperatingJam === 0) atau Motor Listrik, BBM wajib 0!
         let totalLiter = 0, costPetrol = 0;
-        fuelList.forEach(f => {
-            const ltr = Number(f.jumlah_bkb_fix || f.jumlah || f.total_liter || 0);
-            const cst = Number(f.harga_bkb || f.total_biaya || 0);
-            totalLiter += ltr;
-            costPetrol += cst > 0 ? cst : (ltr * 13500);
-        });
+        const isElectricUnit = unitCategory === 'MOTOR LISTRIK' || code.toUpperCase().includes('MTRL');
+        if (!isElectricUnit && totalOperatingJam > 0) {
+            fuelList.forEach(f => {
+                const ltr = Number(f.jumlah_bkb_fix || f.jumlah_liter || f.jumlah || f.total_liter || 0);
+                const cst = Number(f.harga_bkb || f.total_biaya || 0);
+                if (ltr > 0) {
+                    totalLiter += ltr;
+                    costPetrol += cst > 0 ? cst : (ltr * 6800);
+                }
+            });
+            // Fallback ke akumulasi BBM langsung pada baris VRA operasional valid jika fuelList kosong
+            if (totalLiter === 0) {
+                vraList.forEach(v => {
+                    if (v.requires_bbm && !v.is_downtime) {
+                        const ltr = Number(v.quantity_bahan_bakar || v.bbm_liter || 0);
+                        if (ltr > 0) {
+                            totalLiter += ltr;
+                            const isBensin = /MTR|ALKON|MPR|KNAPSACK|AVANZA|GRAN MAX|SPEEDBOAT|SB-|SBF/i.test(code);
+                            costPetrol += ltr * (isBensin ? 10000 : 6800);
+                        }
+                    }
+                });
+            }
+        }
 
         // 5. Maintenance Aggregations
         let costMaint = 0;
@@ -1158,13 +1477,34 @@ export function measureUnitTcoLifetimeSummary(assets, vra, fuel, maintenance) {
             total_cost_per_km: totalCostPerKm,
             liter_per_hm: literPerHm,
 
-            // Input Validation & Salah Input Counter (aktif = 0)
+            // Input Validation & Salah Input Counter
             salah_input_count: salahInputCount,
             valid_input_count: validInputCount,
             total_input_count: rawVraList.length,
-            salah_input_rate_pct: salahInputRatePct
+            salah_input_rate_pct: salahInputRatePct,
+            ...(() => {
+                const td = evaluateUnitNonAktifOrMutasi({
+                    kodeUnit: code,
+                    asset,
+                    validCount: validInputCount,
+                    lastAktivitas: effectiveLatestVra.nama_aktivitas || effectiveLatestVra.aktivitas || '',
+                    lastKegiatan: effectiveLatestVra.nama_kegiatan || '',
+                    lastStatus: effectiveLatestVra.status_kerja_calc || effectiveLatestVra.status || '',
+                    lastDate: latestValidVra ? latestValidVra.tanggal : '',
+                    maxDatasetDate
+                });
+                return {
+                    is_takedown_nonaktif_mutasi: td.isTakedown,
+                    takedown_reason: td.reason
+                };
+            })()
         };
     });
+
+    if (opts && opts.excludeNonAktifMutasi === false) {
+        return mappedUnits;
+    }
+    return mappedUnits.filter(u => !u.is_takedown_nonaktif_mutasi);
 }
 
 /**
@@ -1287,13 +1627,11 @@ export function measureVraCategoryDetail(categoryName, enrichedVra = [], fuelMap
     unitList.forEach(code => {
         const uFuel = fuelMap.get(code) || { total_liter: 0, total_biaya: 0 };
         const uObj = unitDataMap.get(code);
-        let lit = uFuel.total_liter || 0;
-        let cost = uFuel.total_biaya || 0;
+        const isElec = catUpper === 'MOTOR LISTRIK' || code.toUpperCase().includes('MTRL');
+        let lit = (!isElec && uObj.operating_jam > 0) ? (uFuel.total_liter || 0) : 0;
+        let cost = (!isElec && uObj.operating_jam > 0) ? (uFuel.total_biaya || 0) : 0;
 
-        if (lit === 0 && uObj.total_km > 0) {
-            lit = uObj.total_km * 0.35;
-            cost = lit * HARGA_BBM_PER_LITER;
-        } else if (cost === 0 && lit > 0) {
+        if (cost === 0 && lit > 0) {
             cost = lit * HARGA_BBM_PER_LITER;
         }
 
