@@ -4209,10 +4209,32 @@
                         </div>
                     </div>
 
-                    <!-- Interactive Slicers Bar: Kategori, Kuadran Preset, dan Pencarian -->
+                    <!-- Interactive Slicers Bar: Sumber BBM (BKB Site vs SPBU Luar), Kategori, Kuadran Preset, dan Pencarian -->
                     <div
-                        class="flex flex-wrap items-center justify-between px-4 py-2.5 bg-white dark:bg-slate-900 rounded-[12px] border border-slate-200/90 dark:border-slate-800 shadow-xs shrink-0 gap-3">
-                        <div class="flex flex-wrap items-center gap-2.5 flex-1 min-w-0">
+                        class="flex flex-wrap items-center justify-between px-4 py-2.5 bg-white dark:bg-slate-900 rounded-[12px] border border-slate-200/90 dark:border-slate-800 shadow-xs shrink-0 gap-2.5">
+                        <div class="flex flex-wrap items-center gap-2 flex-1 min-w-0">
+                            <!-- Sumber BBM Mode Toggle (BKB Gudang Site vs Kendaraan Luar Site / SPBU Luar) -->
+                            <div
+                                class="flex items-center bg-slate-100 dark:bg-slate-800 p-0.5 rounded-[12px] border border-teal-200/80 dark:border-teal-800/60 shrink-0">
+                                <button type="button" onclick="window.pns.setFuelVraSourceMode('BKB_SITE')"
+                                    id="btn-fv-src-bkb_site"
+                                    class="px-2.5 py-1 text-[10.5px] font-bold rounded-lg bg-[#0E5E63] text-white shadow-2xs transition cursor-pointer flex items-center gap-1"
+                                    title="Fokus rekonsiliasi unit yang menerima BKB Gudang Site">
+                                    <span>🏢 Unit BKB Gudang Site</span>
+                                </button>
+                                <button type="button" onclick="window.pns.setFuelVraSourceMode('SPBU_LUAR')"
+                                    id="btn-fv-src-spbu_luar"
+                                    class="px-2.5 py-1 text-[10.5px] font-bold rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition cursor-pointer flex items-center gap-1"
+                                    title="Laporan khusus kendaraan luar site / HO / RO / beli BBM di SPBU luar">
+                                    <span>⛽ Luar Site / SPBU Luar</span>
+                                </button>
+                                <button type="button" onclick="window.pns.setFuelVraSourceMode('ALL')"
+                                    id="btn-fv-src-all"
+                                    class="px-2.5 py-1 text-[10.5px] font-bold rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition cursor-pointer">
+                                    <span>📊 Semua Unit</span>
+                                </button>
+                            </div>
+
                             <!-- Kategori Slicer -->
                             <div
                                 class="flex items-center bg-slate-50 dark:bg-slate-800/80 rounded-[12px] px-3 py-1.5 border border-slate-200/90 dark:border-slate-700/80 shrink-0 shadow-2xs">
@@ -4276,8 +4298,7 @@
                             </div>
                             <div class="flex-1 min-w-0">
                                 <span
-                                    class="text-xs font-bold uppercase tracking-wider text-cyan-800 dark:text-cyan-300 block">VRA
-                                    & Fuel Correlation Intelligence Diagnosis:</span>
+                                    class="text-xs font-bold uppercase tracking-wider text-cyan-800 dark:text-cyan-300 block">Rekonsiliasi 3-Arah: BKB Gudang Site vs Input BBM Driver VRA vs Output Kerja</span>
                                 <p class="text-xs text-slate-700 dark:text-slate-300 mt-0.5 leading-relaxed font-medium"
                                     id="pbi-fv-intel-text">
                                     Memuat analisis komparasi korelasi jam kerja VRA terhadap pengeluaran bahan bakar...
@@ -4322,19 +4343,19 @@
                             </div>
                         </div>
 
-                        <!-- Card 2: Fuel Consumption & Cost -->
+                        <!-- Card 2: Output BKB Gudang (Site) -->
                         <div
                             class="pns-kpi-card pns-kpi-purple p-4 border-t-4 border-t-purple-600 shadow-xs flex flex-col justify-between hover:-translate-y-1 hover:shadow-lg transition-all duration-300">
                             <div>
                                 <div class="flex items-center justify-between">
-                                    <span
-                                        class="text-[10px] font-medium text-slate-400 dark:text-slate-500 uppercase tracking-wider block truncate">Input
-                                        Konsumsi BBM</span>
+                                    <span id="pbi-fv-card2-title"
+                                        class="text-[10px] font-medium text-slate-400 dark:text-slate-500 uppercase tracking-wider block truncate">Output
+                                        BKB Gudang (Site)</span>
                                     <i class="ph-bold ph-gas-pump text-purple-600 text-sm"></i>
                                 </div>
                                 <div class="mt-2">
                                     <span
-                                        class="text-lg font-bold tracking-tight text-purple-600 dark:text-purple-400 block tracking-tight font-mono"
+                                        class="text-lg font-bold tracking-tight text-purple-600 dark:text-purple-400 block font-mono"
                                         id="pbi-fv-total-liter">0 L</span>
                                     <span class="text-[11px] font-bold text-slate-500 block mt-1 font-mono"
                                         id="pbi-fv-total-cost">Total Biaya: Rp 0</span>
@@ -4342,63 +4363,95 @@
                             </div>
                             <div
                                 class="mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[10.5px]">
-                                <span class="text-slate-400 font-medium">Harga Rerata</span>
-                                <span class="text-purple-600 dark:text-purple-400 font-bold" id="pbi-fv-avg-price">Rp
-                                    6.800 / L</span>
+                                <span class="text-slate-400 font-medium">Rerata &amp; Trx</span>
+                                <span class="text-purple-600 dark:text-purple-400 font-bold" id="pbi-fv-avg-price">Rp 6.800 / L</span>
                             </div>
                         </div>
 
-                        <!-- Card 3: Rasio Efisiensi L/HM & KM/L -->
+                        <!-- Card 3: Input BBM Driver (Form VRA) & Selisih Rekonsiliasi -->
+                        <div
+                            class="pns-kpi-card pns-kpi-amber p-4 border-t-4 border-t-amber-500 shadow-xs flex flex-col justify-between hover:-translate-y-1 hover:shadow-lg transition-all duration-300">
+                            <div>
+                                <div class="flex items-center justify-between">
+                                    <span
+                                        class="text-[10px] font-medium text-slate-400 dark:text-slate-500 uppercase tracking-wider block truncate">Input
+                                        BBM Driver (VRA)</span>
+                                    <i class="ph-bold ph-git-diff text-amber-600 text-sm"></i>
+                                </div>
+                                <div class="mt-2">
+                                    <span
+                                        class="text-lg font-bold tracking-tight text-amber-600 dark:text-amber-400 block font-mono"
+                                        id="pbi-fv-driver-liter">0 L</span>
+                                    <span class="text-[11px] font-bold text-slate-500 block mt-1 font-mono"
+                                        id="pbi-fv-rekon-selisih">Selisih (BKB - Driver): 0 L</span>
+                                </div>
+                            </div>
+                            <div
+                                class="mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[10.5px]">
+                                <span class="text-slate-400 font-medium">Rekon Unit</span>
+                                <span class="text-amber-700 dark:text-amber-300 font-bold" id="pbi-fv-rekon-match-stat">0 Sesuai • 0 Selisih</span>
+                            </div>
+                        </div>
+
+                        <!-- Card 4: Rasio BBM Terhadap Output (BKB vs Driver & Beban Biaya) -->
                         <div
                             class="pns-kpi-card pns-kpi-emerald p-4 border-t-4 border-t-emerald-500 shadow-xs flex flex-col justify-between hover:-translate-y-1 hover:shadow-lg transition-all duration-300">
                             <div>
                                 <div class="flex items-center justify-between">
                                     <span
                                         class="text-[10px] font-medium text-slate-400 dark:text-slate-500 uppercase tracking-wider block truncate">Rasio
-                                        Efisiensi Rata-Rata</span>
+                                        BBM vs Output</span>
                                     <i class="ph-bold ph-gauge text-emerald-600 text-sm"></i>
                                 </div>
                                 <div class="mt-2">
                                     <span
-                                        class="text-lg font-bold tracking-tight text-emerald-600 dark:text-emerald-400 block tracking-tight font-mono"
-                                        id="pbi-fv-avg-ratio">0.00 L/HM</span>
+                                        class="text-lg font-bold tracking-tight text-emerald-600 dark:text-emerald-400 block font-mono"
+                                        id="pbi-fv-avg-ratio">0,00 L/Jam</span>
                                     <span class="text-[11px] font-bold text-slate-500 block mt-1 font-mono"
-                                        id="pbi-fv-ratio-eval">Standar: &lt; 2.50 L/HM</span>
+                                        id="pbi-fv-ratio-eval">Driver: 0,00 L/Jam • Rp 0 / HM</span>
                                 </div>
                             </div>
                             <div
                                 class="mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[10.5px]">
-                                <span class="text-slate-400 font-medium">Transport Rerata</span>
+                                <span class="text-slate-400 font-medium" id="pbi-fv-cost-per-hm">Rp 0 / HM</span>
                                 <span class="text-emerald-600 dark:text-emerald-400 font-bold"
-                                    id="pbi-fv-transport-ratio">0.00 KM/L</span>
+                                    id="pbi-fv-transport-ratio">0,00 KM/L</span>
                             </div>
+                            <span id="pbi-fv-cost-per-km" class="hidden"></span>
+                            <span id="pbi-fv-potential-waste" class="hidden"></span>
                         </div>
+                    </div>
 
-                        <!-- Card 4: Operating Cost / HM -->
-                        <div
-                            class="pns-kpi-card pns-kpi-amber p-4 border-t-4 border-t-amber-500 shadow-xs flex flex-col justify-between hover:-translate-y-1 hover:shadow-lg transition-all duration-300">
-                            <div>
-                                <div class="flex items-center justify-between">
-                                    <span
-                                        class="text-[10px] font-medium text-slate-400 dark:text-slate-500 uppercase tracking-wider block truncate">Beban
-                                        Biaya per Jam Kerja</span>
-                                    <i class="ph-bold ph-coins text-amber-600 text-sm"></i>
-                                </div>
-                                <div class="mt-2">
-                                    <span
-                                        class="text-lg font-bold tracking-tight text-amber-600 dark:text-amber-400 block tracking-tight font-mono"
-                                        id="pbi-fv-cost-per-hm">Rp 0 / HM</span>
-                                    <span class="text-[11px] font-bold text-slate-500 block mt-1 font-mono"
-                                        id="pbi-fv-cost-per-km">Biaya per KM: Rp 0 / KM</span>
+                    <!-- Panel Khusus: Laporan BBM Kendaraan Luar Site (SPBU Luar / Tanpa BKB Gudang) -->
+                    <div id="panel-fv-spbu-luar-summary"
+                        class="pns-card p-3.5 border border-sky-200/80 dark:border-sky-800/60 bg-sky-50/40 dark:bg-sky-950/20 space-y-2.5 shrink-0">
+                        <div class="flex flex-wrap items-center justify-between gap-2">
+                            <div class="flex items-center gap-2 min-w-0">
+                                <span class="w-7 h-7 rounded-[6px] bg-sky-600 text-white flex items-center justify-center shrink-0 text-xs">
+                                    <i class="ph-bold ph-map-pin-line"></i>
+                                </span>
+                                <div class="min-w-0">
+                                    <span class="text-xs font-bold text-slate-800 dark:text-slate-100 block">
+                                        Laporan Kendaraan Luar Site / SPBU Luar (Tanpa Pengeluaran BKB Gudang)
+                                    </span>
+                                    <span class="text-[10.5px] text-slate-500 dark:text-slate-400 block">
+                                        Dipisahkan dari selisih rekon BKB gudang site karena pembelian BBM dilakukan di SPBU luar / kantor cabang / motor listrik.
+                                    </span>
                                 </div>
                             </div>
-                            <div
-                                class="mt-3 pt-2.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[10.5px]">
-                                <span class="text-slate-400 font-medium">Potensi Inefisiensi</span>
-                                <span class="text-rose-600 dark:text-rose-400 font-bold" id="pbi-fv-potential-waste">Rp
-                                    0</span>
+                            <div class="flex flex-wrap items-center gap-2 shrink-0">
+                                <span id="pbi-fv-spbu-luar-stat"
+                                    class="px-2.5 py-1 rounded-[4px] text-[10.5px] font-mono font-semibold bg-white dark:bg-slate-800 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-800">
+                                    0 Unit • 0 L • 0 KM
+                                </span>
+                                <button type="button" onclick="window.pns.setFuelVraSourceMode('SPBU_LUAR')"
+                                    class="px-2.5 py-1 rounded-[4px] bg-sky-600 hover:bg-sky-700 text-white text-[11px] font-semibold transition flex items-center gap-1 cursor-pointer">
+                                    <i class="ph-bold ph-funnel"></i>
+                                    <span>Lihat Tabel Unit Luar Site</span>
+                                </button>
                             </div>
                         </div>
+                        <div id="pbi-fv-spbu-luar-cards" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-2"></div>
                     </div>
 
                     <!-- Analytical Visualizations Row: Dual-Axis Correlation Chart + Quadrant Scatter Plot -->
@@ -4410,17 +4463,19 @@
                                 class="flex flex-wrap items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800 shrink-0 gap-2">
                                 <div>
                                     <span
-                                        class="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200 block">Korelasi
-                                        Dual-Axis: Jam Kerja VRA (HM) vs Konsumsi Solar (Liter)</span>
-                                    <span class="text-[10.5px] text-slate-400 font-medium">Membandingkan tren jam kerja
-                                        operasional dengan volume konsumsi bahan bakar bulanan</span>
+                                        class="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200 block">Tren
+                                        Rekonsiliasi Bulanan: Jam Kerja VRA vs BKB Gudang vs Input Driver</span>
+                                    <span class="text-[10.5px] text-slate-400 font-medium">Membandingkan output jam operasi dengan pengeluaran BKB gudang dan laporan input driver</span>
                                 </div>
-                                <div class="flex items-center gap-1.5">
+                                <div class="flex flex-wrap items-center gap-2">
                                     <span class="flex items-center gap-1 text-[10px] font-bold text-cyan-600"><span
-                                            class="w-2.5 h-2.5 rounded-sm bg-cyan-500"></span> Jam Kerja (HM)</span>
+                                            class="w-2.5 h-2.5 rounded-sm bg-cyan-500"></span> Jam Kerja</span>
                                     <span
-                                        class="flex items-center gap-1 text-[10px] font-bold text-purple-600 ml-2"><span
-                                            class="w-2.5 h-2.5 rounded-sm bg-purple-500"></span> Konsumsi BBM (L)</span>
+                                        class="flex items-center gap-1 text-[10px] font-bold text-purple-600"><span
+                                            class="w-2.5 h-2.5 rounded-sm bg-purple-500"></span> BKB Gudang (L)</span>
+                                    <span
+                                        class="flex items-center gap-1 text-[10px] font-bold text-amber-600"><span
+                                            class="w-2.5 h-2.5 rounded-sm bg-amber-500"></span> Input Driver (L)</span>
                                 </div>
                             </div>
                             <div class="w-full h-[300px] overflow-hidden mt-2" id="chart-pbi-fv-dual-axis"></div>
@@ -4467,22 +4522,18 @@
                                 <thead
                                     class="sticky top-0 bg-slate-50/95 dark:bg-slate-800/95 backdrop-blur-xs text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-700">
                                     <tr>
-                                        <th class="px-3.5 py-2.5 min-w-[130px]">Kode Unit</th>
-                                        <th class="px-3.5 py-2.5 min-w-[160px]">Nama Asset</th>
-                                        <th class="px-3.5 py-2.5 min-w-[110px]">Kategori VRA</th>
-                                        <th class="px-3.5 py-2.5 text-right font-bold text-cyan-600 min-w-[90px]">Jam
-                                            Kerja (HM)</th>
-                                        <th class="px-3.5 py-2.5 text-right min-w-[90px]">Jarak (KM)</th>
-                                        <th class="px-3.5 py-2.5 text-right font-bold text-purple-600 min-w-[100px]">BBM
-                                            (Liter)</th>
-                                        <th class="px-3.5 py-2.5 text-right font-bold min-w-[110px]">Total Biaya</th>
-                                        <th class="px-3.5 py-2.5 text-right font-bold text-emerald-600 min-w-[90px]">
-                                            Rasio Aktual</th>
-                                        <th class="px-3.5 py-2.5 text-right min-w-[90px]">Standar VRA</th>
-                                        <th class="px-3.5 py-2.5 text-right min-w-[90px]">Deviasi (%)</th>
-                                        <th class="px-3.5 py-2.5 text-right font-bold text-amber-600 min-w-[100px]">
-                                            Biaya / HM</th>
-                                        <th class="px-3.5 py-2.5 text-center min-w-[120px]">Status Kuadran</th>
+                                        <th class="px-3 py-2.5 min-w-[125px]">Kode Unit</th>
+                                        <th class="px-3 py-2.5 min-w-[155px]">Nama Unit &amp; Lokasi</th>
+                                        <th class="px-3 py-2.5 min-w-[95px]">Kategori</th>
+                                        <th class="px-3 py-2.5 text-right font-bold text-cyan-600 min-w-[82px]">Output Jam</th>
+                                        <th class="px-3 py-2.5 text-right min-w-[82px]">Output KM</th>
+                                        <th class="px-3 py-2.5 text-right font-bold text-purple-600 min-w-[92px]">BKB Gudang (L)</th>
+                                        <th class="px-3 py-2.5 text-right font-bold text-amber-600 min-w-[92px]">Input Driver (L)</th>
+                                        <th class="px-3 py-2.5 text-right font-bold min-w-[105px]">Selisih (BKB-Drv)</th>
+                                        <th class="px-3 py-2.5 text-right font-bold min-w-[100px]">Biaya BBM</th>
+                                        <th class="px-3 py-2.5 text-right font-bold text-emerald-600 min-w-[86px]">Rasio BKB</th>
+                                        <th class="px-3 py-2.5 text-right min-w-[86px]">Rasio Driver</th>
+                                        <th class="px-3 py-2.5 text-center min-w-[140px]">Status Rekon / Sumber</th>
                                     </tr>
                                 </thead>
                                 <tbody id="table-pbi-fuel-vra-body"></tbody>
@@ -9302,7 +9353,7 @@
     <!-- ==================================================== -->
     <!-- POWER BI APPLICATION SCRIPT -->
     <!-- ==================================================== -->
-    <script type="module" src="./public/js/pbi_main.js?v=20261125_r2"></script>
+    <script type="module" src="./public/js/pbi_main.js?v=20261125_r3"></script>
 
     <script>
         document.addEventListener("DOMContentLoaded", function () {

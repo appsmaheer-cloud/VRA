@@ -212,15 +212,14 @@ export function sanitizeFuelRowsForVra(fuelRows = [], enrichedVra = [], assetMap
         });
     }
 
-    // Catat (unit|tanggal) yang sudah memiliki BKB asli (bukan BKB-VRA-* sintetis)
-    const realBkbUnitDates = new Set();
+    // Catat unit yang memiliki BKB gudang asli (bukan BKB-VRA-* sintetis)
+    const unitsWithRealBkb = new Set();
     fuelRows.forEach(f => {
         const u = String(f.kode_unit || f.no_asset_manual || '').trim();
-        const d = String(f.tanggal_bkb || f.tanggal || '').slice(0, 10);
         const bkb = String(f.no_bkb || f.nomor_bkb || '').trim();
-        const ltr = Number(f.jumlah_bkb_fix ?? f.jumlah_liter ?? f.liter ?? 0) || 0;
-        if (u && d && ltr > 0 && bkb && !bkb.startsWith('BKB-VRA-')) {
-            realBkbUnitDates.add(`${u}|${d}`);
+        const ltr = Number(f.jumlah_bkb_fix ?? f.jumlah_liter ?? f.liter ?? f.jumlah ?? 0) || 0;
+        if (u && ltr > 0 && bkb && !bkb.startsWith('BKB-VRA-')) {
+            unitsWithRealBkb.add(u);
         }
     });
 
@@ -235,6 +234,8 @@ export function sanitizeFuelRowsForVra(fuelRows = [], enrichedVra = [], assetMap
 
         const d = String(f.tanggal_bkb || f.tanggal || '').slice(0, 10);
         const bkb = String(f.no_bkb || f.nomor_bkb || '').trim();
+        const sec = String(f.section || f.cost_section || '').trim().toUpperCase();
+        const isSyntheticVraBkb = bkb.startsWith('BKB-VRA-');
         const asset = assetMap ? (assetMap.get(u) || null) : null;
         const subKat = inferSubKategori(u, asset);
 
@@ -243,13 +244,13 @@ export function sanitizeFuelRowsForVra(fuelRows = [], enrichedVra = [], assetMap
             return;
         }
 
-        // 2. Cegah duplikasi BKB-VRA-* jika sudah ada BKB asli pada tanggal yang sama
-        if (bkb.startsWith('BKB-VRA-') && d && realBkbUnitDates.has(`${u}|${d}`)) {
+        // 2. Unit BKB Gudang Site: pakai 100% BKB Gudang Asli (tolak seluruh baris sintetis BKB-VRA-* agar tidak tercampur input driver)
+        if (unitsWithRealBkb.has(u) && isSyntheticVraBkb) {
             return;
         }
 
-        // 3. Cegah duplikasi baris BKB identik (contoh: nomor BKB + unit + tanggal + liter sama persis)
-        const exactKey = `${u}|${d}|${bkb}|${ltr.toFixed(3)}`;
+        // 3. Cegah duplikasi baris BKB kembar identik (sertakan section agar pembagian biaya sah GA/HR tetap terjaga)
+        const exactKey = `${u}|${d}|${bkb}|${ltr.toFixed(3)}|${sec}`;
         if (bkb && bkb !== '-' && seenExactFuelKey.has(exactKey)) {
             return;
         }
@@ -257,12 +258,12 @@ export function sanitizeFuelRowsForVra(fuelRows = [], enrichedVra = [], assetMap
 
         // 4. Validasi silang terhadap status VRA unit & tanggal terkait
         if (hasVraContext && unitsInVra.has(u)) {
-            // Jika unit murni Standby / Non-BBM (0 jam operasi ber-BBM), maka pengeluaran BBM wajib 0
+            // Jika unit murni Standby / Non-BBM (0 jam operasi ber-BBM), pengeluaran BBM wajib 0
             if (!unitsWithValidBbmOp.has(u)) {
                 return;
             }
-            // Jika pada tanggal tersebut unit tercatat di VRA namun HANYA Standby / Non-BBM / Tidak Valid, tolak BBM
-            if (d && unitDateState.has(`${u}|${d}`)) {
+            // Untuk BKB sintetis / input SPBU luar (unit non-BKB gudang), tolak jika pada tanggal tersebut unit hanya Standby/Invalid
+            if (!unitsWithRealBkb.has(u) && d && unitDateState.has(`${u}|${d}`)) {
                 const st = unitDateState.get(`${u}|${d}`);
                 if (st.totalRows > 0 && !st.hasValidBbmOp) {
                     return;
@@ -1367,32 +1368,49 @@ export function measureUnitTcoLifetimeSummary(assets, vra, fuel, maintenance, op
         const kmPerDay = hariAktif > 0 ? (effectiveKm / hariAktif) : 0;
         const avgKmDay = jmlHari > 0 ? (effectiveKm / jmlHari) : 0;
 
-        // 4. Fuel Aggregations — Untuk unit murni Standby / Non-BBM (totalOperatingJam === 0) atau Motor Listrik, BBM wajib 0!
+        // 4. Fuel Aggregations — Pisahkan BKB Gudang Asli vs Input Driver (SPBU Luar)
         let totalLiter = 0, costPetrol = 0;
+        let bkbGudangLiter = 0, bkbGudangRp = 0, bkbGudangTrx = 0;
+        let driverBbmLiter = 0, driverBbmTrx = 0;
         const isElectricUnit = unitCategory === 'MOTOR LISTRIK' || code.toUpperCase().includes('MTRL');
         if (!isElectricUnit && totalOperatingJam > 0) {
+            vraList.forEach(v => {
+                if (v.requires_bbm && !v.is_downtime) {
+                    const dl = Number(v.quantity_bahan_bakar || v.bbm_liter || 0);
+                    if (dl > 0) {
+                        driverBbmLiter += dl;
+                        driverBbmTrx++;
+                    }
+                }
+            });
             fuelList.forEach(f => {
                 const ltr = Number(f.jumlah_bkb_fix || f.jumlah_liter || f.jumlah || f.total_liter || 0);
                 const cst = Number(f.harga_bkb || f.total_biaya || 0);
+                const bkbNo = String(f.no_bkb || f.nomor_bkb || '').trim();
+                const isRealBkb = Boolean(bkbNo && bkbNo !== '-' && !bkbNo.startsWith('BKB-VRA-'));
                 if (ltr > 0) {
+                    const rowCost = cst > 0 ? cst : (ltr * 6800);
                     totalLiter += ltr;
-                    costPetrol += cst > 0 ? cst : (ltr * 6800);
+                    costPetrol += rowCost;
+                    if (isRealBkb) {
+                        bkbGudangLiter += ltr;
+                        bkbGudangRp += rowCost;
+                        bkbGudangTrx++;
+                    }
                 }
             });
             // Fallback ke akumulasi BBM langsung pada baris VRA operasional valid jika fuelList kosong
-            if (totalLiter === 0) {
-                vraList.forEach(v => {
-                    if (v.requires_bbm && !v.is_downtime) {
-                        const ltr = Number(v.quantity_bahan_bakar || v.bbm_liter || 0);
-                        if (ltr > 0) {
-                            totalLiter += ltr;
-                            const isBensin = /MTR|ALKON|MPR|KNAPSACK|AVANZA|GRAN MAX|SPEEDBOAT|SB-|SBF/i.test(code);
-                            costPetrol += ltr * (isBensin ? 10000 : 6800);
-                        }
-                    }
-                });
+            if (totalLiter === 0 && driverBbmLiter > 0) {
+                const isBensin = /MTR|ALKON|MPR|KNAPSACK|AVANZA|GRAN MAX|SPEEDBOAT|SB-|SBF/i.test(code);
+                totalLiter = driverBbmLiter;
+                costPetrol = driverBbmLiter * (isBensin ? 10000 : 6800);
             }
         }
+        const sumberBbmType = isElectricUnit
+            ? 'NON_BBM'
+            : (bkbGudangLiter > 0 ? 'BKB_GUDANG' : (driverBbmLiter > 0 ? 'SPBU_LUAR' : 'LUAR_TANPA_BKB'));
+        const rekonSelisihLiter = bkbGudangLiter > 0 ? Number((bkbGudangLiter - driverBbmLiter).toFixed(1)) : 0;
+        const rekonSelisihPct = bkbGudangLiter > 0 ? Number((((driverBbmLiter - bkbGudangLiter) / bkbGudangLiter) * 100).toFixed(1)) : 0;
 
         // 5. Maintenance Aggregations
         let costMaint = 0;
@@ -1466,6 +1484,14 @@ export function measureUnitTcoLifetimeSummary(assets, vra, fuel, maintenance, op
 
             total_liter: totalLiter,
             cost_petrol: costPetrol,
+            bkb_gudang_liter: bkbGudangLiter,
+            bkb_gudang_rp: bkbGudangRp,
+            bkb_gudang_trx: bkbGudangTrx,
+            driver_bbm_liter: driverBbmLiter,
+            driver_bbm_trx: driverBbmTrx,
+            sumber_bbm_type: sumberBbmType,
+            rekon_selisih_liter: rekonSelisihLiter,
+            rekon_selisih_pct: rekonSelisihPct,
             cost_maintenance: costMaint,
             total_cost: totalCost,
             jumlah_service: jmlService,

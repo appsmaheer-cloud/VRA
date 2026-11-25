@@ -60,9 +60,9 @@ import {
     doesActivityRequireBbm,
     sanitizeFuelRowsForVra,
     evaluateUnitNonAktifOrMutasi
-} from './vra-measures.js?v=20261125_r1';
+} from './vra-measures.js?v=20261125_r2';
 import { enrichMaintenance, normalizeMaintenanceDate, measureMaintenanceSummary, measureBiayaPerKategori, measureBiayaPerKategoriMaterial, measureBiayaPerSubKategoriMaterial, measureBiayaPerJenisServices, measureBiayaPerUnit, measureBiayaPerSection, measureTrendBulanan, measureTrendHierarchical, measureMaintenanceMaterialDetail, measureMaintenanceServiceBreakdown, measureMaintenanceFrequencyReport, measureServiceSimulation } from './maintenance-measures.js?v=20261029_fix2';
-import { measureBbmPerUnit, measureRasioKonsumsiBbm, measureFuelDetailLog, measureFuelAnomalyAudit, measureFuelBenchmarkingReport, measureVraFuelComparison } from './fuel-measures.js?v=20261125_r1';
+import { measureBbmPerUnit, measureRasioKonsumsiBbm, measureFuelDetailLog, measureFuelAnomalyAudit, measureFuelBenchmarkingReport, measureVraFuelComparison } from './fuel-measures.js?v=20261125_r2';
 import { 
     renderSvgSparkline, 
     renderSvgGauge, 
@@ -1882,6 +1882,7 @@ let fuelKatFilter = 'ALL';
 let fuelTypeFilter = 'ALL'; // ALL | SOLAR | BENSIN
 let fuelSearchQuery = '';
 let fuelDetailFilter = 'ALL';
+let fuelVraSourceMode = 'BKB_SITE'; // 'BKB_SITE' | 'SPBU_LUAR' | 'ALL'
 let fuelVraKatFilter = 'ALL';
 let fuelVraQuadrantFilter = 'ALL';
 let fuelVraSearchQuery = '';
@@ -2626,6 +2627,24 @@ export function onFuelVraSearch(query) {
     }
 }
 
+export function setFuelVraSourceMode(mode = 'BKB_SITE') {
+    fuelVraSourceMode = mode || 'BKB_SITE';
+    const mapId = { BKB_SITE: 'bkb_site', SPBU_LUAR: 'spbu_luar', ALL: 'all' };
+    ['BKB_SITE', 'SPBU_LUAR', 'ALL'].forEach(m => {
+        const btn = document.getElementById(`btn-fv-src-${mapId[m]}`);
+        if (!btn) return;
+        if (m === fuelVraSourceMode) {
+            btn.className = 'px-2.5 py-1 text-[10.5px] font-bold rounded-lg bg-[#0E5E63] text-white shadow-2xs transition cursor-pointer flex items-center gap-1';
+        } else {
+            btn.className = 'px-2.5 py-1 text-[10.5px] font-bold rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition cursor-pointer flex items-center gap-1';
+        }
+    });
+    if (pbiData.cache) {
+        const { fuel, vra, assets } = pbiData.cache;
+        renderFuelVraComparison(fuel, vra, assets);
+    }
+}
+
 export function setFuelVraQuadrant(quad) {
     fuelVraQuadrantFilter = quad || 'ALL';
     ['all', 'prima', 'kritis', 'heavy', 'standby'].forEach(q => {
@@ -2651,17 +2670,22 @@ export function setFuelVraQuadrant(quad) {
 
 export function exportFuelVraCsv() {
     if (!pbiData.cache) return;
-    const { fuel, vra, assets } = pbiData.cache;
+    const { fuel, vra } = pbiData.cache;
     const rep = measureVraFuelComparison(fuel, vra, pbiData.assetMap);
-    let csv = 'Kode Unit,Nama Asset,Kategori VRA,Jam Kerja (HM),Jarak (KM),Konsumsi BBM (L),Total Biaya (Rp),Rasio Riil,Target VRA,Deviasi (%),Biaya/HM (Rp),Kuadran,Status\n';
-    rep.comparisonList.forEach(u => {
-        csv += `"${u.kode_unit}","${(u.nama_asset||'').replace(/"/g, '""')}","${u.kategori || ''}",${u.total_hm},${u.total_km},${u.total_liter},${u.total_biaya},${u.actual_ratio},${u.target_ratio},${u.deviation_pct},${u.cost_per_hm},"${u.quadrant}","${u.status_label}"\n`;
+    let rows = rep.comparisonList;
+    if (fuelVraSourceMode === 'BKB_SITE') rows = rows.filter(u => u.sumber_bbm_mode === 'BKB_SITE');
+    else if (fuelVraSourceMode === 'SPBU_LUAR') rows = rows.filter(u => u.sumber_bbm_mode === 'SPBU_LUAR');
+    if (fuelVraKatFilter !== 'ALL') rows = rows.filter(u => u.kategori === fuelVraKatFilter);
+
+    let csv = 'Kode Unit,Nama Asset,Lokasi,Kategori VRA,Sumber BBM,Output Jam,Output KM,BKB Gudang (L),Input Driver (L),Selisih BKB-Driver (L),Selisih (%),Biaya BBM (Rp),Rasio BKB,Rasio Driver,Satuan Rasio,Status Rekon,Status Kuadran\n';
+    rows.forEach(u => {
+        csv += `"${u.kode_unit}","${(u.nama_asset||'').replace(/"/g, '""')}","${u.lokasi || ''}","${u.kategori || ''}","${u.sumber_bbm_mode}",${u.total_hm},${u.total_km},${u.bkb_liter},${u.driver_liter},${u.selisih_liter},${u.selisih_pct},${u.total_biaya},${u.actual_ratio_bkb},${u.actual_ratio_driver},"${u.ratio_unit}","${u.rekon_label}","${u.status_label}"\n`;
     });
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `pns_fuel_vra_comparison_${new Date().toISOString().slice(0,10)}.csv`;
+    a.download = `pns_rekon_bbm_vra_${fuelVraSourceMode.toLowerCase()}_${new Date().toISOString().slice(0,10)}.csv`;
     a.click();
     URL.revokeObjectURL(url);
 }
@@ -4498,7 +4522,14 @@ function renderVra4(assets, vra, fuel, maint) {
     }
 
     setElText('vra4-kpi-fuel-cost', formatRp(unit.cost_petrol));
-    setElText('vra4-kpi-fuel-liter', `${formatNum(unit.total_liter, 0)} L`);
+    const vra4FuelSubText = unit.sumber_bbm_type === 'NON_BBM'
+        ? '0 L (Motor Listrik)'
+        : (unit.sumber_bbm_type === 'BKB_GUDANG'
+            ? `${formatNum(unit.bkb_gudang_liter, 0)} L BKB • Driver: ${formatNum(unit.driver_bbm_liter, 0)} L`
+            : (unit.driver_bbm_liter > 0
+                ? `${formatNum(unit.driver_bbm_liter, 0)} L (SPBU Luar / Input Driver)`
+                : '0 L (Luar Site / Tanpa BKB)'));
+    setElText('vra4-kpi-fuel-liter', vra4FuelSubText);
 
     setElText('vra4-kpi-maint-cost', formatRp(unit.cost_maintenance));
     setElText('vra4-kpi-maint-count', `${unit.jumlah_service || 0}x Servis`);
@@ -5653,17 +5684,23 @@ export function renderFuelVraComparison(fuel, vra, assets) {
     if (!fuel || !vra) return;
     const assetMap = pbiData.assetMap || new Map();
 
-    // Populate Kategori dropdown dynamically if not yet populated
+    // Sync Source Mode button visual state
+    const mapId = { BKB_SITE: 'bkb_site', SPBU_LUAR: 'spbu_luar', ALL: 'all' };
+    ['BKB_SITE', 'SPBU_LUAR', 'ALL'].forEach(m => {
+        const btn = document.getElementById(`btn-fv-src-${mapId[m]}`);
+        if (!btn) return;
+        btn.className = (m === fuelVraSourceMode)
+            ? 'px-2.5 py-1 text-[10.5px] font-bold rounded-lg bg-[#0E5E63] text-white shadow-2xs transition cursor-pointer flex items-center gap-1'
+            : 'px-2.5 py-1 text-[10.5px] font-bold rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition cursor-pointer flex items-center gap-1';
+    });
+
+    // Measure comprehensive 3-Way Reconciliation (BKB Gudang vs Driver VRA vs Output Kerja)
+    const rep = measureVraFuelComparison(fuel, vra, assetMap);
+
+    // Populate Kategori dropdown dynamically if empty
     const katSelect = document.getElementById('slicer-fuel-vra-kat');
     if (katSelect && katSelect.options.length <= 1) {
-        const kats = [...new Set(fuel.map(f => {
-            const asset = assetMap.get(f.no_asset_manual || f.kode_unit);
-            return inferSubKategori(f.no_asset_manual || f.kode_unit, asset);
-        }).concat(vra.map(v => {
-            const asset = assetMap.get(v.no_asset_manual || v.kode_unit);
-            return inferSubKategori(v.no_asset_manual || v.kode_unit, asset);
-        })).filter(Boolean))].sort();
-
+        const kats = [...new Set(rep.comparisonList.map(u => u.kategori).filter(Boolean))].sort();
         kats.forEach(k => {
             const opt = document.createElement('option');
             opt.value = k;
@@ -5672,64 +5709,113 @@ export function renderFuelVraComparison(fuel, vra, assets) {
         });
     }
 
-    // Measure comprehensive VRA vs Fuel Comparison
-    const rep = measureVraFuelComparison(fuel, vra, assetMap);
+    // Filter rows by Source Mode, Kategori, Kuadran & Search
     let comparisonList = rep.comparisonList;
-
-    // Filter by Kategori
+    if (fuelVraSourceMode === 'BKB_SITE') {
+        comparisonList = comparisonList.filter(u => u.sumber_bbm_mode === 'BKB_SITE');
+    } else if (fuelVraSourceMode === 'SPBU_LUAR') {
+        comparisonList = comparisonList.filter(u => u.sumber_bbm_mode === 'SPBU_LUAR');
+    }
     if (fuelVraKatFilter !== 'ALL') {
         comparisonList = comparisonList.filter(u => u.kategori === fuelVraKatFilter);
     }
-
-    // Filter by Quadrant
     if (fuelVraQuadrantFilter !== 'ALL') {
         comparisonList = comparisonList.filter(u => u.quadrant === fuelVraQuadrantFilter);
     }
-
-    // Filter by Search Query
     if (fuelVraSearchQuery.trim() !== '') {
         const q = fuelVraSearchQuery.toLowerCase();
-        comparisonList = comparisonList.filter(u => 
+        comparisonList = comparisonList.filter(u =>
             (u.kode_unit && u.kode_unit.toLowerCase().includes(q)) ||
             (u.nama_asset && u.nama_asset.toLowerCase().includes(q)) ||
-            (u.kategori && u.kategori.toLowerCase().includes(q))
+            (u.kategori && u.kategori.toLowerCase().includes(q)) ||
+            (u.lokasi && u.lokasi.toLowerCase().includes(q))
         );
     }
 
-    // Update Banner & KPI Scorecards
-    const summary = rep.summary;
+    // Active Summary for KPI Cards based on Source Mode
+    const activeSummary = fuelVraSourceMode === 'BKB_SITE'
+        ? rep.bkb_site_summary
+        : (fuelVraSourceMode === 'SPBU_LUAR' ? rep.spbu_luar_summary : rep.summary);
+    const bkbSum = rep.bkb_site_summary;
+    const spbuSum = rep.spbu_luar_summary;
+
     setElText('pbi-fv-unit-count', formatNum(comparisonList.length));
     setElText('table-pbi-fv-count', formatNum(comparisonList.length));
 
-    const diagText = summary.anomaly_count > 0 
-        ? `Tercatat ${formatNum(summary.total_units)} unit armada aktif dengan jam kerja ${formatNum(summary.total_vra_hm, 1)} HM. Terdeteksi ${summary.anomaly_count} unit mengalami deviasi konsumsi solar (potensi pemborosan ${formatRp(summary.total_waste_cost_rp)}). Beban biaya armada rata-rata ${formatRp(summary.overall_cost_per_hm)} / Jam Operasi.`
-        : `Tercatat ${formatNum(summary.total_units)} unit beroperasi dalam rentang efisiensi tinggi. Rata-rata beban operasional bahan bakar armada sangat terkendali di ${formatRp(summary.overall_cost_per_hm)} / HM.`;
+    const diagText = fuelVraSourceMode === 'SPBU_LUAR'
+        ? `Laporan Khusus Kendaraan Luar Site / SPBU Luar (${spbuSum.total_units} unit aktif tanpa BKB gudang): total ${formatNum(spbuSum.total_vra_km, 0)} KM & ${formatNum(spbuSum.total_vra_hm, 1)} Jam. Terinput ${formatNum(spbuSum.driver_liter, 0)} L BBM SPBU Luar (estimasi ${formatRp(spbuSum.driver_estimasi_cost)}). Unit ini dipisahkan agar tidak bias ke selisih BKB gudang site.`
+        : `Rekon BKB Gudang Site (${bkbSum.total_units} unit ber-BKB): Output BKB Gudang ${formatNum(bkbSum.bkb_liter, 0)} L (${formatRp(bkbSum.bkb_cost)}) vs Input Driver ${formatNum(bkbSum.driver_liter, 0)} L → Selisih bersih ${bkbSum.net_selisih_liter > 0 ? '+' : ''}${formatNum(bkbSum.net_selisih_liter, 0)} L (${bkbSum.net_selisih_pct}%). Kendaraan Luar Site (${spbuSum.total_units} unit) dipisahkan di panel laporan SPBU Luar.`;
     setElText('pbi-fv-intel-text', diagText);
-    setElText('pbi-fv-intel-score', `Efisiensi: ${summary.efficiency_score}%`);
+    setElText('pbi-fv-intel-score', `Sesuai ≤10%: ${bkbSum.match_unit_count}/${bkbSum.total_units} Unit`);
 
-    setElText('pbi-fv-total-hm', `${formatNum(summary.total_vra_hm, 1)} HM`);
-    setElText('pbi-fv-total-km', `${formatNum(summary.total_vra_km, 0)} KM Tempuh`);
-    setElText('pbi-fv-unit-cov', `${formatNum(summary.total_units)} Unit Armada`);
+    // Card 1: Output Kerja VRA
+    setElText('pbi-fv-total-hm', `${formatNum(activeSummary.total_vra_hm, 1)} Jam`);
+    setElText('pbi-fv-total-km', `${formatNum(activeSummary.total_vra_km, 0)} KM Tempuh`);
+    setElText('pbi-fv-unit-cov', `${formatNum(activeSummary.total_units)} Unit (${fuelVraSourceMode === 'BKB_SITE' ? 'BKB Site' : (fuelVraSourceMode === 'SPBU_LUAR' ? 'Luar Site' : 'Semua')})`);
 
-    setElText('pbi-fv-total-liter', `${formatNum(summary.total_fuel_liter, 0)} L`);
-    setElText('pbi-fv-total-cost', `Total Biaya: ${formatRp(summary.total_fuel_cost)}`);
-    const avgPrice = summary.total_fuel_liter > 0 ? summary.total_fuel_cost / summary.total_fuel_liter : 6800;
-    setElText('pbi-fv-avg-price', `Harga Rerata: ${formatRp(avgPrice)} / L`);
+    // Card 2: Output BKB Gudang (atau Estimasi SPBU Luar saat mode SPBU_LUAR)
+    const isSpbuMode = fuelVraSourceMode === 'SPBU_LUAR';
+    setElText('pbi-fv-card2-title', isSpbuMode ? 'BBM SPBU Luar (Driver)' : 'Output BKB Gudang (Site)');
+    const c2Liter = isSpbuMode ? activeSummary.driver_liter : activeSummary.bkb_liter;
+    const c2Cost = isSpbuMode ? activeSummary.driver_estimasi_cost : activeSummary.bkb_cost;
+    const c2Trx = isSpbuMode ? activeSummary.driver_trx_count : activeSummary.bkb_trx_count;
+    setElText('pbi-fv-total-liter', `${formatNum(c2Liter, 0)} L`);
+    setElText('pbi-fv-total-cost', `Biaya: ${formatRp(c2Cost)}`);
+    const avgPrice = c2Liter > 0 ? c2Cost / c2Liter : 6800;
+    setElText('pbi-fv-avg-price', `${formatRp(avgPrice)}/L • ${formatNum(c2Trx)} Trx`);
 
-    setElText('pbi-fv-avg-ratio', `${summary.overall_l_hm.toFixed(2)} L/HM`);
-    setElText('pbi-fv-ratio-eval', summary.overall_l_hm <= 3.0 ? '✅ Dalam Batas Standar Efisien' : '⚠️ Di Atas Standar Armada');
-    setElText('pbi-fv-transport-ratio', `${summary.overall_km_l.toFixed(2)} KM/L`);
+    // Card 3: Input BBM Driver & Selisih Rekon
+    setElText('pbi-fv-driver-liter', `${formatNum(activeSummary.driver_liter, 0)} L`);
+    if (isSpbuMode) {
+        setElText('pbi-fv-rekon-selisih', '0 L BKB Gudang (100% Luar Site)');
+        setElText('pbi-fv-rekon-match-stat', `${spbuSum.units.filter(u => u.driver_liter > 0).length} Isi Driver • ${spbuSum.units.filter(u => u.driver_liter === 0).length} 0/Listrik`);
+    } else {
+        const netSign = activeSummary.net_selisih_liter > 0 ? '+' : '';
+        setElText('pbi-fv-rekon-selisih', `Selisih (BKB-Drv): ${netSign}${formatNum(activeSummary.net_selisih_liter, 0)} L (${activeSummary.net_selisih_pct}%)`);
+        setElText('pbi-fv-rekon-match-stat', `${activeSummary.match_unit_count} Sesuai • ${activeSummary.under_input_count + activeSummary.over_input_count} Selisih`);
+    }
 
-    setElText('pbi-fv-cost-per-hm', `${formatRp(summary.overall_cost_per_hm)} / HM`);
-    const costPerKm = summary.total_vra_km > 0 ? Math.round(summary.total_fuel_cost / summary.total_vra_km) : 0;
-    setElText('pbi-fv-cost-per-km', `Biaya per KM: ${formatRp(costPerKm)} / KM`);
-    setElText('pbi-fv-potential-waste', formatRp(summary.total_waste_cost_rp));
+    // Card 4: Rasio BBM BKB vs Driver
+    const ratioBkbShow = isSpbuMode ? activeSummary.overall_driver_l_hm : activeSummary.overall_bkb_l_hm;
+    const kmLShow = isSpbuMode ? activeSummary.overall_driver_km_l : activeSummary.overall_bkb_km_l;
+    setElText('pbi-fv-avg-ratio', `${ratioBkbShow.toFixed(2)} L/Jam`);
+    setElText('pbi-fv-ratio-eval', `Driver: ${activeSummary.overall_driver_l_hm.toFixed(2)} L/Jam • ${activeSummary.overall_driver_km_l.toFixed(2)} KM/L`);
+    setElText('pbi-fv-cost-per-hm', `${formatRp(activeSummary.overall_cost_per_hm)} / Jam`);
+    setElText('pbi-fv-transport-ratio', `${kmLShow.toFixed(2)} KM/L`);
+    setElText('pbi-fv-potential-waste', formatRp(activeSummary.total_waste_cost_rp));
 
-    // 1. Render Dual-Axis Mixed Chart (Bar: VRA HM, Area/Line: BBM Liter)
+    // Render Panel Khusus Kendaraan Luar Site / SPBU Luar
+    const spbuLuarStatEl = document.getElementById('pbi-fv-spbu-luar-stat');
+    if (spbuLuarStatEl) {
+        spbuLuarStatEl.textContent = `${spbuSum.total_units} Unit • ${formatNum(spbuSum.driver_liter, 0)} L Driver • ${formatNum(spbuSum.total_vra_km, 0)} KM`;
+    }
+    const spbuCardsEl = document.getElementById('pbi-fv-spbu-luar-cards');
+    if (spbuCardsEl) {
+        spbuCardsEl.innerHTML = (rep.spbuLuarUnits || []).map(u => {
+            const subRatio = u.actual_ratio_driver > 0 ? `${u.actual_ratio_driver.toFixed(2)} ${u.ratio_unit}` : (u.is_electric ? 'Listrik (0 BBM)' : 'Belum Input BBM');
+            return `
+                <button type="button" onclick="window.pns.drillToUnit('${u.kode_unit}')"
+                    class="text-left p-2.5 rounded-[6px] bg-white dark:bg-[#2A2A2A] border border-sky-200/80 dark:border-slate-700 hover:border-[#0E5E63] transition cursor-pointer">
+                    <div class="flex items-center justify-between gap-1">
+                        <span class="font-mono font-bold text-[11px] text-[#0E5E63] dark:text-[#2DD4BF] truncate">${u.kode_unit}</span>
+                        <span class="px-1.5 py-0.2 rounded text-[9px] font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">${u.lokasi}</span>
+                    </div>
+                    <div class="text-[10px] text-slate-500 dark:text-slate-400 truncate mt-0.5" title="${u.nama_asset}">${u.nama_asset}</div>
+                    <div class="mt-1.5 pt-1 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[10px] font-mono">
+                        <span class="font-bold text-sky-700 dark:text-sky-400">${formatNum(u.driver_liter, 0)} L</span>
+                        <span class="text-slate-600 dark:text-slate-300">${formatNum(u.total_km, 0)} KM</span>
+                    </div>
+                    <div class="text-[9.5px] font-mono text-slate-500 dark:text-slate-400 mt-0.5 truncate">${subRatio}</div>
+                </button>
+            `;
+        }).join('');
+    }
+
+    // 1. Render 3-Way Monthly Correlation Chart (VRA Jam Kerja vs BKB Gudang vs Input Driver)
     const months = rep.monthlyCorrelation.map(m => m.monthName);
     const vHmSeries = rep.monthlyCorrelation.map(m => Math.round(m.vra_hm));
-    const fLiterSeries = rep.monthlyCorrelation.map(m => Math.round(m.fuel_liter));
-    const costHmSeries = rep.monthlyCorrelation.map(m => m.cost_per_hm);
+    const bkbSeries = rep.monthlyCorrelation.map(m => Math.round(m.bkb_liter));
+    const drvSeries = rep.monthlyCorrelation.map(m => Math.round(m.driver_liter + (fuelVraSourceMode === 'BKB_SITE' ? 0 : m.spbu_luar_liter)));
 
     renderApex('#chart-pbi-fv-dual-axis', {
         chart: {
@@ -5738,58 +5824,52 @@ export function renderFuelVraComparison(fuel, vra, assets) {
             toolbar: { show: false }
         },
         stroke: {
-            width: [0, 2.5, 2],
+            width: [0, 2.5, 2.5],
             curve: 'smooth'
         },
         plotOptions: {
             bar: {
-                columnWidth: '40%',
+                columnWidth: '42%',
                 borderRadius: 4
             }
         },
         fill: {
-            opacity: [0.85, 0.35, 1],
-            gradient: {
-                inverseColors: false,
-                shade: 'light',
-                type: 'vertical',
-                opacityFrom: 0.6,
-                opacityTo: 0.05
-            }
+            opacity: [0.85, 0.25, 1]
         },
         series: [
             {
-                name: 'Jam Kerja VRA (HM)',
+                name: 'Output Jam Kerja VRA',
                 type: 'column',
                 data: vHmSeries
             },
             {
-                name: 'Konsumsi BBM (Liter)',
+                name: 'Output BKB Gudang (L)',
                 type: 'area',
-                data: fLiterSeries
+                data: bkbSeries
             },
             {
-                name: 'Beban Biaya (Rp/HM)',
+                name: 'Input BBM Driver VRA (L)',
                 type: 'line',
-                data: costHmSeries
+                data: drvSeries
             }
         ],
-        colors: ['#0ea5e9', '#a855f7', '#f59e0b'],
+        colors: ['#0ea5e9', '#9333ea', '#f59e0b'],
         xaxis: {
             categories: months,
             labels: { style: { fontSize: '11px', fontWeight: 600 } }
         },
         yaxis: [
             {
-                title: { text: 'Jam Kerja VRA (HM)', style: { color: '#0ea5e9', fontSize: '10px', fontWeight: 700 } },
-                labels: { formatter: v => formatCompactNum(v) + ' HM', style: { fontSize: '10px' } }
+                title: { text: 'Output Jam Kerja', style: { color: '#0ea5e9', fontSize: '10px', fontWeight: 700 } },
+                labels: { formatter: v => formatCompactNum(v) + ' J', style: { fontSize: '10px' } }
             },
             {
                 opposite: true,
-                title: { text: 'Bahan Bakar (Liter)', style: { color: '#a855f7', fontSize: '10px', fontWeight: 700 } },
+                title: { text: 'Volume BBM (Liter)', style: { color: '#9333ea', fontSize: '10px', fontWeight: 700 } },
                 labels: { formatter: v => formatCompactNum(v) + ' L', style: { fontSize: '10px' } }
             },
             {
+                opposite: true,
                 show: false
             }
         ],
@@ -5798,9 +5878,9 @@ export function renderFuelVraComparison(fuel, vra, assets) {
             intersect: false,
             y: {
                 formatter: (val, opts) => {
-                    if (opts.seriesIndex === 0) return `${formatNum(val, 0)} HM`;
-                    if (opts.seriesIndex === 1) return `${formatNum(val, 0)} Liter`;
-                    if (opts.seriesIndex === 2) return formatRp(val) + ' / HM';
+                    if (opts.seriesIndex === 0) return `${formatNum(val, 0)} Jam`;
+                    if (opts.seriesIndex === 1) return `${formatNum(val, 0)} L BKB`;
+                    if (opts.seriesIndex === 2) return `${formatNum(val, 0)} L Driver`;
                     return val;
                 }
             }
@@ -5814,10 +5894,21 @@ export function renderFuelVraComparison(fuel, vra, assets) {
     });
 
     // 2. Render Quadrant Scatter Plot
-    const primaPoints = rep.quadrants.prima.map(u => ({ x: Math.round(u.total_hm), y: Math.round(u.total_liter), unit: u.kode_unit, name: u.nama_asset, ratio: u.actual_ratio, dev: u.deviation_pct }));
-    const kritisPoints = rep.quadrants.kritis.map(u => ({ x: Math.round(u.total_hm), y: Math.round(u.total_liter), unit: u.kode_unit, name: u.nama_asset, ratio: u.actual_ratio, dev: u.deviation_pct }));
-    const heavyPoints = rep.quadrants.heavy.map(u => ({ x: Math.round(u.total_hm), y: Math.round(u.total_liter), unit: u.kode_unit, name: u.nama_asset, ratio: u.actual_ratio, dev: u.deviation_pct }));
-    const standbyPoints = rep.quadrants.standby.map(u => ({ x: Math.round(u.total_hm), y: Math.round(u.total_liter), unit: u.kode_unit, name: u.nama_asset, ratio: u.actual_ratio, dev: u.deviation_pct }));
+    const mapScatterPt = (u) => ({
+        x: Math.round(u.total_hm),
+        y: Math.round(u.sumber_bbm_mode === 'BKB_SITE' ? u.bkb_liter : u.driver_liter),
+        unit: u.kode_unit,
+        name: u.nama_asset,
+        bkb: Math.round(u.bkb_liter),
+        drv: Math.round(u.driver_liter),
+        sel: u.selisih_liter,
+        ratio: `${u.actual_ratio} ${u.ratio_unit}`
+    });
+    const activeIdsSet = new Set(comparisonList.map(u => u.kode_unit));
+    const primaPoints = rep.quadrants.prima.filter(u => activeIdsSet.has(u.kode_unit)).map(mapScatterPt);
+    const kritisPoints = rep.quadrants.kritis.filter(u => activeIdsSet.has(u.kode_unit)).map(mapScatterPt);
+    const heavyPoints = rep.quadrants.heavy.filter(u => activeIdsSet.has(u.kode_unit)).map(mapScatterPt);
+    const standbyPoints = rep.quadrants.standby.filter(u => activeIdsSet.has(u.kode_unit)).map(mapScatterPt);
 
     renderApex('#chart-pbi-fv-scatter', {
         chart: {
@@ -5830,16 +5921,16 @@ export function renderFuelVraComparison(fuel, vra, assets) {
             { name: 'Prima & Efisien', data: primaPoints },
             { name: 'Kritis (Boros/Idle)', data: kritisPoints },
             { name: 'Beban Berat', data: heavyPoints },
-            { name: 'Standby / Cadangan', data: standbyPoints }
+            { name: 'Aktivitas Rendah', data: standbyPoints }
         ],
         colors: ['#10b981', '#ef4444', '#8b5cf6', '#94a3b8'],
         xaxis: {
             tickAmount: 5,
-            title: { text: 'Jam Kerja VRA (HM)', style: { fontSize: '10px', fontWeight: 700 } },
-            labels: { formatter: val => formatCompactNum(val) + ' HM', style: { fontSize: '10px' } }
+            title: { text: 'Output Jam Kerja VRA', style: { fontSize: '10px', fontWeight: 700 } },
+            labels: { formatter: val => formatCompactNum(val) + ' J', style: { fontSize: '10px' } }
         },
         yaxis: {
-            title: { text: 'Konsumsi Solar (Liter)', style: { fontSize: '10px', fontWeight: 700 } },
+            title: { text: 'Volume BBM (Liter)', style: { fontSize: '10px', fontWeight: 700 } },
             labels: { formatter: val => formatCompactNum(val) + ' L', style: { fontSize: '10px' } }
         },
         markers: {
@@ -5847,7 +5938,7 @@ export function renderFuelVraComparison(fuel, vra, assets) {
             hover: { size: 9 }
         },
         tooltip: {
-            custom: function({ series, seriesIndex, dataPointIndex, w }) {
+            custom: function({ seriesIndex, dataPointIndex, w }) {
                 const pt = w.config.series[seriesIndex].data[dataPointIndex];
                 if (!pt) return '';
                 return `
@@ -5855,16 +5946,20 @@ export function renderFuelVraComparison(fuel, vra, assets) {
                         <div class="font-semibold text-cyan-400 font-mono">${pt.unit}</div>
                         <div class="text-[11px] text-slate-300 font-semibold truncate max-w-[200px]">${pt.name || '-'}</div>
                         <div class="border-t border-slate-700/80 pt-1 mt-1 flex justify-between gap-3 text-[10.5px]">
-                            <span class="text-slate-400">Jam VRA:</span>
-                            <span class="font-bold font-mono text-cyan-300">${formatNum(pt.x, 0)} HM</span>
+                            <span class="text-slate-400">Output VRA:</span>
+                            <span class="font-bold font-mono text-cyan-300">${formatNum(pt.x, 0)} Jam</span>
                         </div>
                         <div class="flex justify-between gap-3 text-[10.5px]">
-                            <span class="text-slate-400">Konsumsi:</span>
-                            <span class="font-bold font-mono text-purple-300">${formatNum(pt.y, 0)} L</span>
+                            <span class="text-slate-400">BKB Gudang:</span>
+                            <span class="font-bold font-mono text-purple-300">${formatNum(pt.bkb, 0)} L</span>
+                        </div>
+                        <div class="flex justify-between gap-3 text-[10.5px]">
+                            <span class="text-slate-400">Input Driver:</span>
+                            <span class="font-bold font-mono text-amber-300">${formatNum(pt.drv, 0)} L</span>
                         </div>
                         <div class="flex justify-between gap-3 text-[10.5px]">
                             <span class="text-slate-400">Rasio:</span>
-                            <span class="font-bold font-mono text-amber-300">${pt.ratio}</span>
+                            <span class="font-bold font-mono text-emerald-300">${pt.ratio}</span>
                         </div>
                     </div>
                 `;
@@ -5878,61 +5973,68 @@ export function renderFuelVraComparison(fuel, vra, assets) {
         }
     });
 
-    // 3. Render Head-to-Head Table Body
+    // 3. Render 12-Column Reconciliation Table Body
     const tbody = document.getElementById('table-pbi-fuel-vra-body');
     if (tbody) {
         if (comparisonList.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="12" class="text-center py-6 text-slate-400 font-medium">Tidak ada unit yang sesuai filter komparasi VRA & BBM.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="12" class="text-center py-6 text-slate-400 font-medium">Tidak ada unit yang sesuai filter rekonsiliasi VRA & BBM.</td></tr>';
             return;
         }
 
         tbody.innerHTML = comparisonList.slice(0, 1000).map(u => {
-            const devSign = u.deviation_pct > 0 ? `+${u.deviation_pct}%` : `${u.deviation_pct}%`;
-            const devClass = u.deviation_pct > 15 ? 'text-rose-600 font-semibold' : (u.deviation_pct <= 0 ? 'text-emerald-600 font-bold' : 'text-slate-600');
-            
+            const isBkb = u.sumber_bbm_mode === 'BKB_SITE';
+            const selSign = u.selisih_liter > 0 ? '+' : '';
+            const selClass = !isBkb
+                ? 'text-slate-400'
+                : (u.rekon_status === 'SESUAI' ? 'text-emerald-600 font-bold' : (u.rekon_status === 'DRIVER_KURANG' ? 'text-amber-600 font-bold' : 'text-rose-600 font-bold'));
+            const selText = !isBkb
+                ? 'Luar Site'
+                : `${selSign}${formatNum(u.selisih_liter, 1)} L (${u.selisih_pct > 0 ? '+' : ''}${u.selisih_pct}%)`;
+
             return `
-                <tr class="hover:bg-purple-50/70 dark:hover:bg-purple-950/40 transition text-xs border-b border-slate-100 dark:border-slate-800 cursor-pointer group" onclick="window.pns.drillToUnit('${u.kode_unit}')" title="Klik untuk membuka riwayat profil VRA & BBM unit ${u.kode_unit}">
-                    <td class="px-3.5 py-2.5 font-bold text-blue-600 dark:text-sky-400 whitespace-nowrap cursor-pointer hover:underline">
+                <tr class="hover:bg-purple-50/70 dark:hover:bg-purple-950/40 transition text-xs border-b border-slate-100 dark:border-slate-800 cursor-pointer group" onclick="window.pns.drillToUnit('${u.kode_unit}')" title="Klik untuk membuka Profil Unit ${u.kode_unit} • ${u.recommendation}">
+                    <td class="px-3 py-2 font-bold text-blue-600 dark:text-sky-400 whitespace-nowrap hover:underline">
                         <div class="flex items-center gap-1.5 font-mono">
                             <span>${u.kode_unit}</span>
                             <i class="ph-bold ph-arrow-square-out text-[11px] text-purple-500 opacity-70 group-hover:opacity-100"></i>
                         </div>
                     </td>
-                    <td class="px-3.5 py-2.5 font-semibold truncate max-w-[160px] text-slate-700 dark:text-slate-200" title="${u.nama_asset}">
-                        ${u.nama_asset || '-'}
+                    <td class="px-3 py-2 max-w-[190px]">
+                        <div class="font-semibold truncate text-slate-700 dark:text-slate-200" title="${u.nama_asset}">${u.nama_asset || '-'}</div>
+                        <div class="text-[10px] text-slate-400 truncate">${u.lokasi || '-'} • ${u.op_days || 0} hari operasi</div>
                     </td>
-                    <td class="px-3.5 py-2.5">
-                        <span class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 whitespace-nowrap">
+                    <td class="px-3 py-2">
+                        <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 whitespace-nowrap">
                             ${u.kategori || '-'}
                         </span>
                     </td>
-                    <td class="px-3.5 py-2.5 text-right font-mono font-bold text-cyan-600 dark:text-cyan-400">
-                        ${formatNum(u.total_hm, 1)}
+                    <td class="px-3 py-2 text-right font-mono font-bold text-cyan-600 dark:text-cyan-400 whitespace-nowrap">
+                        ${formatNum(u.total_hm, 1)} J
                     </td>
-                    <td class="px-3.5 py-2.5 text-right font-mono text-slate-600 dark:text-slate-400">
+                    <td class="px-3 py-2 text-right font-mono text-slate-600 dark:text-slate-400 whitespace-nowrap">
                         ${u.total_km > 0 ? formatNum(u.total_km, 0) : '-'}
                     </td>
-                    <td class="px-3.5 py-2.5 text-right font-mono font-bold text-purple-600 dark:text-purple-400">
-                        ${formatNum(u.total_liter, 0)} L
+                    <td class="px-3 py-2 text-right font-mono font-bold text-purple-600 dark:text-purple-400 whitespace-nowrap">
+                        ${isBkb ? formatNum(u.bkb_liter, 1) + ' L' : '-'}
                     </td>
-                    <td class="px-3.5 py-2.5 text-right font-mono font-semibold text-slate-700 dark:text-slate-300">
-                        ${formatRp(u.total_biaya)}
+                    <td class="px-3 py-2 text-right font-mono font-bold text-amber-600 dark:text-amber-400 whitespace-nowrap">
+                        ${u.driver_liter > 0 ? formatNum(u.driver_liter, 1) + ' L' : (u.is_electric ? '0 L' : '-')}
                     </td>
-                    <td class="px-3.5 py-2.5 text-right font-mono font-semibold text-emerald-600 dark:text-emerald-400">
-                        ${u.actual_ratio > 0 ? u.actual_ratio.toFixed(2) + ' ' + (u.ratio_unit || 'L/HM') : '-'}
+                    <td class="px-3 py-2 text-right font-mono whitespace-nowrap ${selClass}">
+                        ${selText}
                     </td>
-                    <td class="px-3.5 py-2.5 text-right font-mono text-slate-400">
-                        ${u.target_ratio > 0 ? u.target_ratio.toFixed(1) + ' ' + (u.ratio_unit || 'L/HM') : '-'}
+                    <td class="px-3 py-2 text-right font-mono font-semibold text-slate-700 dark:text-slate-300 whitespace-nowrap">
+                        ${u.total_biaya > 0 ? formatRp(u.total_biaya) : 'Rp 0'}
                     </td>
-                    <td class="px-3.5 py-2.5 text-right font-mono ${devClass}">
-                        ${u.total_hm > 0 || u.total_km > 0 ? devSign : '-'}
+                    <td class="px-3 py-2 text-right font-mono font-semibold text-emerald-600 dark:text-emerald-400 whitespace-nowrap">
+                        ${u.actual_ratio_bkb > 0 ? formatNum(u.actual_ratio_bkb, 2) + ' ' + u.ratio_unit : '-'}
                     </td>
-                    <td class="px-3.5 py-2.5 text-right font-mono font-bold text-amber-600 dark:text-amber-400">
-                        ${u.cost_per_hm > 0 ? formatRp(u.cost_per_hm) : '-'}
+                    <td class="px-3 py-2 text-right font-mono text-slate-600 dark:text-slate-300 whitespace-nowrap">
+                        ${u.actual_ratio_driver > 0 ? formatNum(u.actual_ratio_driver, 2) + ' ' + u.ratio_unit : '-'}
                     </td>
-                    <td class="px-3.5 py-2.5 text-center">
-                        <span class="px-2.5 py-0.5 rounded-full text-[10px] font-semibold border ${u.status_color}" title="${u.recommendation}">
-                            ${u.status_label}
+                    <td class="px-3 py-2 text-center whitespace-nowrap">
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold border ${u.rekon_color}" title="${u.recommendation}">
+                            ${u.rekon_label}
                         </span>
                     </td>
                 </tr>
@@ -11979,6 +12081,7 @@ window.pns = Object.assign(window.pns || {}, {
     exportFuelDetailCsv: exportFuelDetailCsv,
 
     // Fuel VRA Comparison Handlers
+    setFuelVraSourceMode: setFuelVraSourceMode,
     renderFuelVraComparison: renderFuelVraComparison,
     onFuelVraFilterChange: onFuelVraFilterChange,
     onFuelVraSearch: onFuelVraSearch,
