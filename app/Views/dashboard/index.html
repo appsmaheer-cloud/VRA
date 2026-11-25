@@ -3208,642 +3208,349 @@
                 <!-- ---------------------------------------------------- -->
                 <div id="view-vra-4" class="pns-view hidden">
 
-                    <!-- ═══ TOP NAVIGATION BAR — Premium Picker ═══ -->
-                    <div
-                        class="vra4-glass flex flex-wrap items-center justify-between px-3 sm:px-5 py-2 sm:py-3 shrink-0 gap-2.5 vra4-fade-in">
-                        <div class="flex items-center gap-2 sm:gap-3 flex-wrap">
+                    <!-- ═══ SECTION 1: COMPACT CONTROL & NAVIGATION BAR ═══ -->
+                    <div class="pns-card px-3 sm:px-4 py-2.5 flex flex-wrap items-center justify-between gap-2.5 shrink-0 border border-[#D8DCE3] dark:border-[#444444]">
+                        <div class="flex items-center gap-2 sm:gap-2.5 flex-wrap">
                             <button type="button" onclick="window.pns.switchView('view-vra-1')"
-                                class="group px-3 py-1.5 sm:px-4 sm:py-2 rounded-[12px] bg-slate-100/80 dark:bg-slate-800/80 hover:bg-cyan-600 hover:text-white dark:hover:bg-cyan-600 text-slate-600 dark:text-slate-300 text-xs font-bold transition-all duration-200 flex items-center gap-1.5 sm:gap-2 cursor-pointer shadow-sm border border-slate-200/60 dark:border-slate-700/60">
-                                <i
-                                    class="ph-bold ph-arrow-left text-sm transition-transform group-hover:-translate-x-0.5"></i>
+                                class="px-2.5 py-1.5 rounded-[4px] bg-slate-100 dark:bg-[#383838] hover:bg-[#0E5E63] hover:text-white text-slate-700 dark:text-slate-200 text-xs font-semibold border border-[#D8DCE3] dark:border-[#4A4A4A] transition flex items-center gap-1.5 cursor-pointer">
+                                <i class="ph-bold ph-arrow-left text-xs"></i>
                                 <span class="hidden sm:inline">Kembali ke Overview</span>
                                 <span class="sm:hidden">Kembali</span>
                             </button>
-                            <div
-                                class="flex items-center gap-1.5 text-[11px] font-bold text-slate-400 dark:text-slate-500">
-                                <span class="hidden sm:inline">Fleet & VRA</span>
+                            <div class="flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400">
+                                <span class="hidden sm:inline">Fleet &amp; VRA</span>
                                 <i class="ph ph-caret-right text-[9px] hidden sm:inline"></i>
-                                <span
-                                    class="text-cyan-600 dark:text-cyan-400 font-semibold uppercase tracking-wider flex items-center gap-1">
-                                    <i class="ph-bold ph-identification-card"></i> Profil Unit & TCO
+                                <span class="text-[#0E5E63] dark:text-[#2DD4BF] font-semibold uppercase tracking-wider flex items-center gap-1">
+                                    <i class="ph-bold ph-identification-card"></i> Profil Unit &amp; Dossier TCO
                                 </span>
                             </div>
                         </div>
 
-                        <div class="flex items-center gap-2 flex-wrap">
+                        <div class="flex items-center gap-1.5 sm:gap-2 flex-wrap">
                             <!-- Category Filter -->
-                            <div class="flex items-center vra4-metric-pill gap-1 px-2 py-1">
-                                <i class="ph-bold ph-funnel-simple text-cyan-500 text-xs"></i>
-                                <span
-                                    class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase hidden sm:inline">Tipe:</span>
+                            <div class="flex items-center gap-1 px-2 py-1 rounded-[4px] bg-slate-50 dark:bg-[#2A2A2A] border border-[#D8DCE3] dark:border-[#444444]">
+                                <i class="ph-bold ph-funnel-simple text-[#0E5E63] dark:text-[#2DD4BF] text-xs"></i>
+                                <span class="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase hidden sm:inline">Tipe:</span>
                                 <select id="slicer-vra4-cat-picker"
                                     onchange="window.pns.onVra4CatPickerChange(this.value)"
-                                    class="text-xs font-bold bg-transparent text-slate-700 dark:text-slate-200 focus:outline-none cursor-pointer max-w-[100px] sm:max-w-[140px] truncate">
+                                    class="text-xs font-semibold bg-transparent text-slate-800 dark:text-slate-200 focus:outline-none cursor-pointer max-w-[105px] sm:max-w-[140px] truncate">
                                     <option value="ALL">Semua Tipe</option>
                                 </select>
                             </div>
 
-                            <!-- Unit Quick Search & Dropdown -->
+                            <!-- Quick Search -->
                             <div class="relative flex items-center">
-                                <div class="flex items-center bg-white/90 dark:bg-slate-800/90 rounded-xl px-2.5 py-1 border border-cyan-500/40 shadow-xs focus-within:ring-2 focus-within:ring-cyan-500/50">
-                                    <i class="ph-bold ph-magnifying-glass text-cyan-600 dark:text-cyan-400 text-xs mr-1.5 shrink-0"></i>
+                                <div class="flex items-center bg-white dark:bg-[#383838] rounded-[4px] px-2.5 py-1 border border-[#D8DCE3] dark:border-[#4A4A4A] focus-within:border-[#0E5E63]">
+                                    <i class="ph-bold ph-magnifying-glass text-[#0E5E63] dark:text-[#2DD4BF] text-xs mr-1.5 shrink-0"></i>
                                     <input type="text" id="vra4-quick-search-input"
                                         placeholder="Cari unit..."
                                         autocomplete="off"
-                                        class="text-xs font-bold bg-transparent text-slate-800 dark:text-slate-100 placeholder:text-slate-400 placeholder:font-normal focus:outline-none w-24 sm:w-32"
+                                        class="text-xs font-semibold bg-transparent text-slate-800 dark:text-slate-100 placeholder:text-slate-400 placeholder:font-normal focus:outline-none w-24 sm:w-32"
                                         oninput="window.pns.onVra4QuickSearch(this.value)"
                                         onfocus="window.pns.onVra4QuickSearch(this.value)"
                                         onkeydown="window.pns.onVra4QuickSearchKeydown(event)">
                                 </div>
-                                <div id="vra4-quick-search-dropdown" class="hidden absolute top-full left-0 mt-1.5 w-64 sm:w-72 max-h-72 overflow-y-auto bg-white dark:bg-slate-800 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700 z-50 p-1.5 space-y-1 scrollbar-thin"></div>
+                                <div id="vra4-quick-search-dropdown" class="hidden absolute top-full left-0 mt-1 w-64 sm:w-72 max-h-72 overflow-y-auto bg-white dark:bg-[#303030] rounded-[4px] shadow-lg border border-[#D8DCE3] dark:border-[#444444] z-50 p-1.5 space-y-1 scrollbar-thin"></div>
                             </div>
 
-                            <!-- Unit Dropdown -->
-                            <div class="flex items-center vra4-metric-pill gap-1 px-2 py-1">
-                                <i class="ph-bold ph-truck text-cyan-500 text-xs"></i>
-                                <span
-                                    class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase hidden sm:inline">Pilih:</span>
+                            <!-- Unit Selector -->
+                            <div class="flex items-center gap-1 px-2 py-1 rounded-[4px] bg-slate-50 dark:bg-[#2A2A2A] border border-[#D8DCE3] dark:border-[#444444]">
+                                <i class="ph-bold ph-truck text-[#0E5E63] dark:text-[#2DD4BF] text-xs"></i>
+                                <span class="text-[10px] font-semibold text-slate-500 dark:text-slate-400 uppercase hidden sm:inline">Unit:</span>
                                 <select id="slicer-vra4-unit-select" onchange="window.pns.onVra4UnitChanged(this.value)"
-                                    class="text-xs font-bold bg-transparent text-slate-800 dark:text-slate-100 focus:outline-none cursor-pointer max-w-[130px] sm:max-w-[220px] truncate"></select>
+                                    class="text-xs font-semibold bg-transparent text-slate-800 dark:text-slate-100 focus:outline-none cursor-pointer max-w-[135px] sm:max-w-[220px] truncate"></select>
                             </div>
 
-                            <!-- Prev & Next Navigation -->
+                            <!-- Prev / Next -->
                             <div class="flex items-center gap-1">
                                 <button type="button" onclick="window.pns.prevVra4Unit()"
-                                    class="w-8 h-8 sm:w-9 sm:h-9 rounded-[12px] bg-slate-100/80 dark:bg-slate-800/80 hover:bg-cyan-600 hover:text-white dark:hover:bg-cyan-600 text-slate-500 dark:text-slate-400 transition-all duration-200 flex items-center justify-center cursor-pointer shadow-sm border border-slate-200/60 dark:border-slate-700/60"
+                                    class="w-7 h-7 sm:w-8 sm:h-8 rounded-[4px] bg-slate-100 dark:bg-[#383838] hover:bg-[#0E5E63] hover:text-white text-slate-600 dark:text-slate-300 border border-[#D8DCE3] dark:border-[#4A4A4A] transition flex items-center justify-center cursor-pointer"
                                     title="Unit Sebelumnya">
-                                    <i class="ph-bold ph-caret-left text-sm"></i>
+                                    <i class="ph-bold ph-caret-left text-xs"></i>
                                 </button>
                                 <button type="button" onclick="window.pns.nextVra4Unit()"
-                                    class="w-8 h-8 sm:w-9 sm:h-9 rounded-[12px] bg-slate-100/80 dark:bg-slate-800/80 hover:bg-cyan-600 hover:text-white dark:hover:bg-cyan-600 text-slate-500 dark:text-slate-400 transition-all duration-200 flex items-center justify-center cursor-pointer shadow-sm border border-slate-200/60 dark:border-slate-700/60"
+                                    class="w-7 h-7 sm:w-8 sm:h-8 rounded-[4px] bg-slate-100 dark:bg-[#383838] hover:bg-[#0E5E63] hover:text-white text-slate-600 dark:text-slate-300 border border-[#D8DCE3] dark:border-[#4A4A4A] transition flex items-center justify-center cursor-pointer"
                                     title="Unit Berikutnya">
-                                    <i class="ph-bold ph-caret-right text-sm"></i>
+                                    <i class="ph-bold ph-caret-right text-xs"></i>
                                 </button>
                             </div>
                         </div>
                     </div>
 
-                    <!-- ═══ HERO SECTION — Unit Identity & TCO Banner ═══ -->
-                    <div
-                        class="vra4-glass vra4-hero-gradient p-4 sm:p-6 flex flex-col lg:flex-row items-center justify-between gap-4 sm:gap-6 shrink-0 vra4-fade-in vra4-fade-in-d1">
-                        <div class="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6 flex-1 w-full min-w-0">
-                            <!-- Interactive 3D Vehicle Model -->
-                            <div class="w-full sm:w-64 h-32 shrink-0 flex items-center justify-center bg-[#F8FAFC] dark:bg-[#262626] rounded-[4px] border border-[#D8DCE3] dark:border-[#444444] mx-auto sm:mx-0 overflow-hidden"
-                                id="pbi-vra4-vehicle-svg"></div>
-                            <div class="space-y-2 flex-1 w-full min-w-0 text-center sm:text-left">
-                                <!-- Badges row -->
-                                <div class="flex flex-wrap items-center justify-center sm:justify-start gap-1.5 sm:gap-2">
-                                    <span
-                                        class="px-2.5 py-0.5 rounded-[12px] text-[10px] font-bold bg-gradient-to-r from-cyan-100 to-sky-100 text-cyan-700 dark:from-cyan-950 dark:to-sky-950 dark:text-cyan-300 uppercase shadow-xs border border-cyan-200/40 dark:border-cyan-800/40"
-                                        id="pbi-vra4-chip-kategori">-</span>
-                                    <span
-                                        class="px-2.5 py-0.5 rounded-[12px] text-[10px] font-bold bg-slate-100/80 text-slate-600 dark:bg-slate-800/80 dark:text-slate-300 shadow-xs border border-slate-200/40 dark:border-slate-700/40"
-                                        id="pbi-vra4-chip-lokasi">-</span>
-                                    <span
-                                        class="px-2.5 py-0.5 rounded-[12px] text-[10px] font-bold bg-gradient-to-r from-emerald-100 to-green-100 text-emerald-700 dark:from-emerald-950 dark:to-green-950 dark:text-emerald-300 shadow-xs border border-emerald-200/40 dark:border-emerald-800/40"
-                                        id="pbi-vra4-chip-status">-</span>
-                                </div>
-                                <!-- Unit title -->
-                                <h2 class="text-xl sm:text-2xl font-semibold text-slate-900 dark:text-white leading-tight break-words"
-                                    id="pbi-vra4-unit-title">-</h2>
-                                <p class="text-xs text-slate-500 dark:text-slate-400 font-medium truncate"
-                                    id="pbi-vra4-unit-subtitle">-</p>
+                    <!-- ═══ SECTION 2: UNIFIED 2-COLUMN UNIT DOSSIER (LEFT: REAL-PHOTO 3D & MEDIA | RIGHT: IDENTITY, KPI STRIP & SPEC TABLE) ═══ -->
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-3 items-stretch shrink-0">
 
-                                <!-- Validation Badges -->
-                                <div class="flex flex-wrap items-center justify-center sm:justify-start gap-1.5 pt-0.5">
-                                    <span id="pbi-vra4-badge-reset-km"
-                                        class="hidden px-2.5 py-0.5 rounded-[12px] text-[10px] font-bold bg-amber-100 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300 border border-amber-300/60 dark:border-amber-700 shadow-xs"></span>
-                                    <span id="pbi-vra4-badge-salah-input"
-                                        class="hidden px-2.5 py-0.5 rounded-[12px] text-[10px] font-bold bg-rose-100 text-rose-800 dark:bg-rose-950/80 dark:text-rose-300 border border-rose-300/60 dark:border-rose-700 shadow-xs"></span>
+                        <!-- LEFT COLUMN (5/12): SINGLE UNIFIED REAL-PHOTO 3D & 3-SIDE HD GALLERY -->
+                        <div id="pbi-vra4-photo-showcase" class="lg:col-span-5 h-full"></div>
+
+                        <!-- RIGHT COLUMN (7/12): MASTER IDENTITY, DIVIDED KPI STRIP, STRUCTURED SPECIFICATION TABLE & 14-DAY ACTIVITY -->
+                        <div class="lg:col-span-7 pns-card p-3.5 sm:p-4 flex flex-col justify-between gap-3 border border-[#D8DCE3] dark:border-[#444444]">
+
+                            <!-- 2A. Identity Header & Drill Actions -->
+                            <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-2.5 pb-2.5 border-b border-[#D8DCE3] dark:border-[#444444]">
+                                <div class="min-w-0 space-y-1">
+                                    <div class="flex flex-wrap items-center gap-1.5">
+                                        <span id="pbi-vra4-chip-kategori" class="px-2 py-0.5 rounded-[3px] text-[10px] font-mono font-semibold bg-teal-50 text-[#0E5E63] dark:bg-teal-950/60 dark:text-[#2DD4BF] border border-teal-200 dark:border-teal-800 uppercase">-</span>
+                                        <span id="pbi-vra4-chip-lokasi" class="px-2 py-0.5 rounded-[3px] text-[10px] font-semibold bg-slate-100 text-slate-700 dark:bg-[#383838] dark:text-slate-300 border border-[#D8DCE3] dark:border-[#4A4A4A]">-</span>
+                                        <span id="pbi-vra4-chip-status" class="px-2 py-0.5 rounded-[3px] text-[10px] font-semibold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">-</span>
+                                        <span id="pbi-vra4-badge-reset-km" class="hidden px-2 py-0.5 rounded-[3px] text-[10px] font-semibold bg-amber-50 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-200 dark:border-amber-800"></span>
+                                        <span id="pbi-vra4-badge-salah-input" class="hidden px-2 py-0.5 rounded-[3px] text-[10px] font-semibold bg-rose-50 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-200 dark:border-rose-800"></span>
+                                    </div>
+                                    <div class="flex flex-wrap items-baseline gap-2">
+                                        <h2 id="pbi-vra4-unit-title" class="text-lg sm:text-xl font-semibold font-mono text-slate-900 dark:text-white leading-tight">-</h2>
+                                        <span class="text-slate-300 dark:text-slate-600 hidden sm:inline">•</span>
+                                        <span id="pbi-vra4-spec-nama" class="text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-200 truncate">-</span>
+                                    </div>
+                                    <p id="pbi-vra4-unit-subtitle" class="text-[11px] text-slate-500 dark:text-slate-400 truncate">-</p>
                                 </div>
 
-                                <!-- Quick Action Buttons -->
-                                <div class="flex flex-wrap items-center justify-center sm:justify-start gap-2 pt-1">
-                                    <button type="button" id="btn-vra4-drill-fuel"
-                                        onclick="window.pns.drillFromVra4('fuel')"
-                                        class="group px-3 py-1.5 rounded-[10px] bg-purple-50/80 dark:bg-purple-950/40 hover:bg-purple-600 hover:text-white text-purple-700 dark:text-purple-300 text-[11px] font-bold border border-purple-200/60 dark:border-purple-800/60 transition-all duration-200 flex items-center gap-1.5 cursor-pointer shadow-xs"
-                                        title="Lihat Riwayat & Rasio BBM Unit Ini">
-                                        <i class="ph-bold ph-gas-pump"></i> Log BBM
+                                <!-- Flat Action Toolbar -->
+                                <div class="flex flex-wrap items-center gap-1.5 shrink-0">
+                                    <button type="button" id="btn-vra4-drill-fuel" onclick="window.pns.drillFromVra4('fuel')"
+                                        class="px-2.5 py-1 rounded-[4px] bg-white dark:bg-[#383838] hover:bg-[#2D4A94] hover:text-white text-slate-700 dark:text-slate-200 text-[11px] font-semibold border border-[#D8DCE3] dark:border-[#4A4A4A] transition flex items-center gap-1 cursor-pointer"
+                                        title="Riwayat &amp; Rasio BBM Unit Ini">
+                                        <i class="ph-bold ph-gas-pump text-[#2D4A94] dark:text-sky-400"></i> Log BBM
                                     </button>
-                                    <button type="button" id="btn-vra4-drill-maint"
-                                        onclick="window.pns.drillFromVra4('maint')"
-                                        class="group px-3 py-1.5 rounded-[10px] bg-amber-50/80 dark:bg-amber-950/40 hover:bg-amber-600 hover:text-white text-amber-700 dark:text-amber-300 text-[11px] font-bold border border-amber-200/60 dark:border-amber-800/60 transition-all duration-200 flex items-center gap-1.5 cursor-pointer shadow-xs"
-                                        title="Lihat Riwayat Servis & Part Unit Ini">
-                                        <i class="ph-bold ph-wrench"></i> Log Servis & Part
+                                    <button type="button" id="btn-vra4-drill-maint" onclick="window.pns.drillFromVra4('maint')"
+                                        class="px-2.5 py-1 rounded-[4px] bg-white dark:bg-[#383838] hover:bg-amber-600 hover:text-white text-slate-700 dark:text-slate-200 text-[11px] font-semibold border border-[#D8DCE3] dark:border-[#4A4A4A] transition flex items-center gap-1 cursor-pointer"
+                                        title="Riwayat Servis &amp; Suku Cadang Unit Ini">
+                                        <i class="ph-bold ph-wrench text-amber-600 dark:text-amber-400"></i> Log Servis
                                     </button>
                                     <button type="button" onclick="window.pns.openUnitStudioModal(window.pns.getCurrentUnitCode(), { initialTab: 'photos' })"
-                                        class="group px-3 py-1.5 rounded-[4px] bg-teal-50 dark:bg-teal-950/40 hover:bg-[#0E5E63] hover:text-white text-[#0E5E63] dark:text-[#2DD4BF] text-[11px] font-semibold border border-teal-200/80 dark:border-teal-800/60 transition flex items-center gap-1.5 cursor-pointer"
-                                        title="Lihat Galeri Foto HD & Model 3D">
-                                        <i class="ph-bold ph-cube"></i> Galeri HD &amp; 3D
+                                        class="px-2.5 py-1 rounded-[4px] bg-teal-50 dark:bg-teal-950/40 hover:bg-[#0E5E63] hover:text-white text-[#0E5E63] dark:text-[#2DD4BF] text-[11px] font-semibold border border-teal-200 dark:border-teal-800 transition flex items-center gap-1 cursor-pointer"
+                                        title="Layar Penuh Zoom HD &amp; Turntable 3D Foto Asli">
+                                        <i class="ph-bold ph-CornersOut ph-arrows-out-simple"></i> Studio HD (<span id="vra4-kpi-photo-count">0/3 Foto</span>)
                                     </button>
-                                    <button type="button" onclick="window.pns.openUnitPhotoModal()"
-                                        class="role-admin-only group px-3 py-1.5 rounded-[4px] bg-cyan-50/80 dark:bg-cyan-950/40 hover:bg-cyan-600 hover:text-white text-cyan-700 dark:text-cyan-300 text-[11px] font-semibold border border-cyan-200/60 dark:border-cyan-800/60 transition flex items-center gap-1.5 cursor-pointer"
-                                        title="Kelola / Upload 3 Foto Unit Kendaraan">
-                                        <i class="ph-bold ph-camera"></i> Kelola Foto
-                                    </button>
-                                    <button type="button" id="btn-vra4-drill-asset"
-                                        onclick="window.pns.drillFromVra4('asset')"
-                                        class="group px-3 py-1.5 rounded-[10px] bg-emerald-50/80 dark:bg-emerald-950/40 hover:bg-emerald-600 hover:text-white text-emerald-700 dark:text-emerald-300 text-[11px] font-bold border border-emerald-200/60 dark:border-emerald-800/60 transition-all duration-200 flex items-center gap-1.5 cursor-pointer shadow-xs"
-                                        title="Lihat Detail Aset">
-                                        <i class="ph-bold ph-identification-badge"></i> Detail Aset
+                                    <button type="button" id="btn-vra4-drill-asset" onclick="window.pns.drillFromVra4('asset')"
+                                        class="px-2.5 py-1 rounded-[4px] bg-white dark:bg-[#383838] hover:bg-emerald-600 hover:text-white text-slate-700 dark:text-slate-200 text-[11px] font-semibold border border-[#D8DCE3] dark:border-[#4A4A4A] transition flex items-center gap-1 cursor-pointer"
+                                        title="Lihat Buku Induk Aset">
+                                        <i class="ph-bold ph-identification-badge text-emerald-600 dark:text-emerald-400"></i> Detail Aset
                                     </button>
                                 </div>
                             </div>
-                        </div>
 
-                        <!-- TCO Summary — 4 Premium Metric Boxes (Grid on Mobile) -->
-                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 w-full lg:w-auto shrink-0">
-                            <div
-                                class="vra4-metric-pill text-center min-w-[85px] sm:min-w-[100px] p-2 flex flex-col justify-center border-t-2 border-t-cyan-400">
-                                <span
-                                    class="text-[8.5px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Total TCO</span>
-                                <span class="text-sm sm:text-base font-semibold text-cyan-600 dark:text-cyan-400 tracking-tight mt-0.5"
-                                    id="pbi-vra4-tco-total">Rp 0</span>
+                            <!-- 2B. Divided 6-Cell Executive KPI Strip (3x2 on Laptop, 6x1 on Ultrawide — Zero Truncation) -->
+                            <div class="grid grid-cols-2 sm:grid-cols-3 2xl:grid-cols-6 border border-[#D8DCE3] dark:border-[#444444] rounded-[4px] bg-slate-50/70 dark:bg-[#2A2A2A] divide-x divide-y divide-[#D8DCE3] dark:divide-[#444444] overflow-hidden">
+                                <div class="p-2.5">
+                                    <span class="text-[9.5px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 block truncate">Total TCO</span>
+                                    <div id="pbi-vra4-tco-total" class="text-xs sm:text-sm font-mono font-semibold text-[#0E5E63] dark:text-[#2DD4BF] mt-0.5 truncate">Rp 0</div>
+                                    <div id="pbi-vra4-badge-costkm" class="text-[10px] font-mono text-slate-500 dark:text-slate-400 truncate">Rp 0/KM</div>
+                                </div>
+                                <div class="p-2.5">
+                                    <span class="text-[9.5px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 block truncate">Belanja BBM</span>
+                                    <div id="pbi-vra4-badge-petrol" class="text-xs sm:text-sm font-mono font-semibold text-[#2D4A94] dark:text-sky-400 mt-0.5 truncate">Rp 0</div>
+                                    <div id="vra4-kpi-fuel-liter" class="text-[10px] font-mono text-slate-500 dark:text-slate-400 truncate">0 L</div>
+                                </div>
+                                <div class="p-2.5">
+                                    <span class="text-[9.5px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 block truncate">Servis &amp; Part</span>
+                                    <div id="pbi-vra4-badge-maint" class="text-xs sm:text-sm font-mono font-semibold text-rose-700 dark:text-rose-400 mt-0.5 truncate">Rp 0</div>
+                                    <div id="vra4-kpi-maint-count" class="text-[10px] font-mono text-slate-500 dark:text-slate-400 truncate">0x Servis</div>
+                                </div>
+                                <div class="p-2.5">
+                                    <span class="text-[9.5px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 block truncate">Jam &amp; Jarak</span>
+                                    <div id="vra4-kpi-hm" class="text-xs sm:text-sm font-mono font-semibold text-slate-800 dark:text-slate-100 mt-0.5 truncate">0 HM</div>
+                                    <div id="vra4-kpi-km" class="text-[10px] font-mono text-slate-500 dark:text-slate-400 truncate">0 KM</div>
+                                </div>
+                                <div class="p-2.5">
+                                    <span class="text-[9.5px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 block truncate">Rasio BBM</span>
+                                    <div class="flex items-baseline gap-1 mt-0.5">
+                                        <span id="vra4-kpi-fuel-ratio" class="text-xs sm:text-sm font-mono font-semibold text-amber-700 dark:text-amber-400 truncate">-</span>
+                                        <span id="vra4-kpi-fuel-unit" class="text-[9.5px] font-mono text-slate-500 dark:text-slate-400">KM/L</span>
+                                    </div>
+                                    <div id="pbi-vra4-fuel-deviation" class="text-[10px] font-mono text-slate-500 dark:text-slate-400 truncate">0.0%</div>
+                                </div>
+                                <div class="p-2.5">
+                                    <span class="text-[9.5px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 block truncate">Kesiapan &amp; Skor</span>
+                                    <div class="flex items-center justify-between gap-1 mt-0.5">
+                                        <span id="vra4-kpi-avail" class="text-xs sm:text-sm font-mono font-semibold text-emerald-700 dark:text-emerald-400">0%</span>
+                                        <span id="vra4-kpi-avail-status" class="text-[9px] font-semibold px-1.5 py-0.5 rounded-[3px] bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300">PRIMA</span>
+                                    </div>
+                                    <div class="text-[10px] font-mono text-slate-500 dark:text-slate-400 truncate">Kondisi: <span id="vra4-kpi-health-score" class="font-semibold text-slate-700 dark:text-slate-200">0/100</span></div>
+                                </div>
                             </div>
-                            <div
-                                class="vra4-metric-pill text-center min-w-[85px] sm:min-w-[90px] p-2 flex flex-col justify-center border-t-2 border-t-purple-400">
-                                <span
-                                    class="text-[8.5px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Petrol</span>
-                                <span class="text-xs sm:text-sm font-semibold text-purple-600 dark:text-purple-400 mt-0.5"
-                                    id="pbi-vra4-badge-petrol">Rp 0</span>
+
+                            <!-- 2C. Structured Master Specification & Asset Ledger Table -->
+                            <div class="border border-[#D8DCE3] dark:border-[#444444] rounded-[4px] overflow-hidden">
+                                <div class="px-3 py-1.5 bg-slate-100/90 dark:bg-[#282828] border-b border-[#D8DCE3] dark:border-[#444444] flex items-center justify-between gap-2">
+                                    <span class="text-[10.5px] font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                                        <i class="ph-bold ph-notebook text-[#0E5E63] dark:text-[#2DD4BF]"></i> Spesifikasi Induk Aset, Keuangan &amp; Operasional
+                                    </span>
+                                    <span id="pbi-vra4-spec-validitas-badge" class="text-[10px] font-mono font-semibold text-emerald-700 dark:text-emerald-400">Terverifikasi</span>
+                                </div>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-[#E2E8F0] dark:divide-[#3F3F3F] text-xs bg-white dark:bg-[#333333]">
+                                    <!-- Spec Left Column: Identitas, PIC & Operasi -->
+                                    <div class="divide-y divide-[#F1F5F9] dark:divide-[#3D3D3D]">
+                                        <div class="px-3 py-1.5 flex items-center justify-between gap-2">
+                                            <span class="text-[11px] text-slate-500 dark:text-slate-400 shrink-0">No. Polisi / Rangka</span>
+                                            <span id="pbi-vra4-spec-nopol" class="font-mono font-semibold text-slate-800 dark:text-slate-100 text-right truncate">-</span>
+                                        </div>
+                                        <div class="px-3 py-1.5 flex items-center justify-between gap-2">
+                                            <span class="text-[11px] text-slate-500 dark:text-slate-400 shrink-0">Tgl Perolehan &amp; Usia</span>
+                                            <span id="pbi-vra4-spec-tgl-usia" class="font-mono font-semibold text-slate-800 dark:text-slate-100 text-right truncate">-</span>
+                                        </div>
+                                        <div class="px-3 py-1.5 flex items-center justify-between gap-2">
+                                            <span class="text-[11px] text-slate-500 dark:text-slate-400 shrink-0">PIC / Pengemudi</span>
+                                            <span id="pbi-vra4-spec-pic" class="font-semibold text-slate-800 dark:text-slate-100 text-right truncate">-</span>
+                                        </div>
+                                        <div class="px-3 py-1.5 flex items-center justify-between gap-2">
+                                            <span class="text-[11px] text-slate-500 dark:text-slate-400 shrink-0">Section Penanggung Jawab</span>
+                                            <span id="pbi-vra4-spec-section" class="font-semibold text-slate-800 dark:text-slate-100 text-right truncate">-</span>
+                                        </div>
+                                        <div class="px-3 py-1.5 flex items-center justify-between gap-2">
+                                            <span class="text-[11px] text-slate-500 dark:text-slate-400 shrink-0">Status &amp; Hari Operasi</span>
+                                            <span class="font-mono font-semibold text-right truncate">
+                                                <span id="pbi-vra4-spec-pemakaian" class="text-emerald-700 dark:text-emerald-400">Aktif</span>
+                                                <span class="text-slate-400 mx-1">•</span>
+                                                <span id="pbi-vra4-active-days" class="text-slate-700 dark:text-slate-200">0 Hr</span> /
+                                                <span id="pbi-vra4-bd-days" class="text-rose-600 dark:text-rose-400">0 BD</span>
+                                            </span>
+                                        </div>
+                                        <div class="px-3 py-1.5 flex items-center justify-between gap-2">
+                                            <span class="text-[11px] text-slate-500 dark:text-slate-400 shrink-0">Odometer Awal → Akhir</span>
+                                            <span class="font-mono font-semibold text-slate-800 dark:text-slate-100 text-right truncate">
+                                                <span id="pbi-vra4-km-awal">0</span> → <span id="pbi-vra4-km-akhir">0</span>
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <!-- Spec Right Column: Keuangan, Umur Manfaat & Efisiensi -->
+                                    <div class="divide-y divide-[#F1F5F9] dark:divide-[#3D3D3D]">
+                                        <div class="px-3 py-1.5 flex items-center justify-between gap-2">
+                                            <span class="text-[11px] text-slate-500 dark:text-slate-400 shrink-0">Harga Perolehan</span>
+                                            <span id="pbi-vra4-acq-price" class="font-mono font-semibold text-slate-800 dark:text-slate-100 text-right truncate">Rp 0</span>
+                                        </div>
+                                        <div class="px-3 py-1.5 flex items-center justify-between gap-2">
+                                            <span class="text-[11px] text-slate-500 dark:text-slate-400 shrink-0">Nilai Buku Saat Ini</span>
+                                            <span id="pbi-vra4-spec-nilaibuku" class="font-mono font-semibold text-[#0E5E63] dark:text-[#2DD4BF] text-right truncate">Rp 0</span>
+                                        </div>
+                                        <div class="px-3 py-1.5 flex items-center justify-between gap-2">
+                                            <span class="text-[11px] text-slate-500 dark:text-slate-400 shrink-0">Akumulasi Penyusutan</span>
+                                            <span id="pbi-vra4-spec-penyusutan" class="font-mono font-semibold text-rose-700 dark:text-rose-400 text-right truncate">Rp 0</span>
+                                        </div>
+                                        <div class="px-3 py-1.5 flex items-center justify-between gap-2">
+                                            <span class="text-[11px] text-slate-500 dark:text-slate-400 shrink-0">Sisa Umur Manfaat</span>
+                                            <span id="pbi-vra4-remain-age" class="font-mono font-semibold text-slate-800 dark:text-slate-100 text-right truncate">0 bln</span>
+                                        </div>
+                                        <div class="px-3 py-1.5 flex items-center justify-between gap-2">
+                                            <span class="text-[11px] text-slate-500 dark:text-slate-400 shrink-0">Biaya BBM / KM</span>
+                                            <span id="pbi-vra4-spec-costfuelkm" class="font-mono font-semibold text-amber-700 dark:text-amber-400 text-right truncate">-</span>
+                                        </div>
+                                        <div class="px-3 py-1.5 flex items-center justify-between gap-2">
+                                            <span class="text-[11px] text-slate-500 dark:text-slate-400 shrink-0">Efektivitas &amp; Input Log</span>
+                                            <span class="font-mono font-semibold text-right truncate">
+                                                <span id="pbi-vra4-spec-effectiveness" class="text-[#2D4A94] dark:text-sky-400">100%</span>
+                                                <span class="text-slate-400 mx-1">•</span>
+                                                <span id="pbi-vra4-input-stat" class="text-slate-600 dark:text-slate-300">-</span>
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                            <div
-                                class="vra4-metric-pill text-center min-w-[85px] sm:min-w-[90px] p-2 flex flex-col justify-center border-t-2 border-t-amber-400">
-                                <span
-                                    class="text-[8.5px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Maintenance</span>
-                                <span class="text-xs sm:text-sm font-semibold text-amber-600 dark:text-amber-400 mt-0.5"
-                                    id="pbi-vra4-badge-maint">Rp 0</span>
+
+                            <!-- 2D. Compact 1-Row Diagnostic & 14-Day Activity Strip -->
+                            <div class="px-3 py-2 rounded-[4px] bg-slate-50 dark:bg-[#2A2A2A] border border-[#D8DCE3] dark:border-[#444444] flex flex-col xl:flex-row xl:items-center justify-between gap-2">
+                                <div class="flex flex-wrap items-center gap-2 shrink-0">
+                                    <span class="text-[10px] font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">14 Hari:</span>
+                                    <div id="pbi-vra4-calendar-heatmap" class="shrink-0 flex items-center"></div>
+                                    <div class="flex items-center gap-1.5">
+                                        <span id="pbi-vra4-badge-health" class="px-2 py-0.5 rounded-[3px] text-[10px] font-semibold">Sehat</span>
+                                        <span id="pbi-vra4-badge-risk" class="px-2 py-0.5 rounded-[3px] text-[10px] font-semibold">Risiko Rendah</span>
+                                        <span id="pbi-vra4-badge-fuel" class="px-2 py-0.5 rounded-[3px] text-[10px] font-semibold">BBM Normal</span>
+                                    </div>
+                                </div>
+                                <div id="pbi-vra4-reco-crossdomain" class="text-[11px] text-slate-600 dark:text-slate-300 leading-snug xl:text-right min-w-0">
+                                    Memuat ringkasan evaluasi unit...
+                                </div>
                             </div>
-                            <div
-                                class="vra4-metric-pill text-center min-w-[85px] sm:min-w-[90px] p-2 flex flex-col justify-center border-t-2 border-t-emerald-400">
-                                <span
-                                    class="text-[8.5px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block">Cost/KM</span>
-                                <span class="text-xs sm:text-sm font-semibold text-emerald-600 dark:text-emerald-400 mt-0.5"
-                                    id="pbi-vra4-badge-costkm">Rp 0/KM</span>
-                            </div>
+
                         </div>
                     </div>
 
-                    <!-- ═══ TABLEAU EXECUTIVE KPI STRIP (8 HIGH-DENSITY CARDS) ═══ -->
-                    <div class="grid grid-cols-2 sm:grid-cols-4 xl:grid-cols-8 gap-2.5 shrink-0 vra4-fade-in vra4-fade-in-d1">
-                        <!-- Card 1: Kesiapan Armada -->
-                        <div class="pns-card p-3 flex flex-col justify-between shadow-2xs border-t-2 border-t-sky-500 bg-white dark:bg-slate-900 rounded-xl">
-                            <span class="text-[9.5px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block truncate">Kesiapan Armada</span>
-                            <div class="my-1 flex items-baseline justify-between">
-                                <span class="text-base font-semibold font-mono text-slate-800 dark:text-slate-100" id="vra4-kpi-avail">0%</span>
-                                <span class="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-emerald-50 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400" id="vra4-kpi-avail-status">SIAGA</span>
-                            </div>
-                            <div class="text-[9px] text-slate-400 font-medium truncate pt-1 border-t border-slate-100 dark:border-slate-800 flex items-center gap-1">
-                                <i class="ph-bold ph-target text-sky-500"></i> Target: &ge; 90.0%
-                            </div>
-                        </div>
+                    <!-- ═══ SECTION 3: TABBED OPERATIONS LOG & FLEET COMPARISON TABLE PANEL ═══ -->
+                    <div class="pns-card p-3.5 sm:p-4 flex flex-col border border-[#D8DCE3] dark:border-[#444444]">
 
-                        <!-- Card 2: Jam Kerja (HM) -->
-                        <div class="pns-card p-3 flex flex-col justify-between shadow-2xs border-t-2 border-t-emerald-500 bg-white dark:bg-slate-900 rounded-xl">
-                            <span class="text-[9.5px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block truncate">Total Jam Kerja</span>
-                            <div class="my-1 flex items-baseline justify-between">
-                                <span class="text-base font-semibold font-mono text-emerald-600 dark:text-emerald-400" id="vra4-kpi-hm">0 HM</span>
-                                <span class="text-[9px] text-slate-400 font-mono" id="vra4-kpi-hm-avg">0/hr</span>
-                            </div>
-                            <div class="text-[9px] text-slate-400 font-medium truncate pt-1 border-t border-slate-100 dark:border-slate-800 flex items-center gap-1">
-                                <i class="ph-bold ph-trend-up text-emerald-500"></i> Akumulasi VRA
-                            </div>
-                        </div>
-
-                        <!-- Card 3: Jarak Tempuh (KM) -->
-                        <div class="pns-card p-3 flex flex-col justify-between shadow-2xs border-t-2 border-t-indigo-500 bg-white dark:bg-slate-900 rounded-xl">
-                            <span class="text-[9.5px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block truncate">Jarak Tempuh</span>
-                            <div class="my-1 flex items-baseline justify-between">
-                                <span class="text-base font-semibold font-mono text-indigo-600 dark:text-indigo-400" id="vra4-kpi-km">0 KM</span>
-                                <span class="text-[9px] text-slate-400 font-mono" id="vra4-kpi-km-daily">0 km/d</span>
-                            </div>
-                            <div class="text-[9px] text-slate-400 font-medium truncate pt-1 border-t border-slate-100 dark:border-slate-800 flex items-center gap-1">
-                                <i class="ph-bold ph-gauge text-indigo-500"></i> Odometer Aktif
-                            </div>
-                        </div>
-
-                        <!-- Card 4: Rasio Konsumsi BBM -->
-                        <div class="pns-card p-3 flex flex-col justify-between shadow-2xs border-t-2 border-t-amber-500 bg-white dark:bg-slate-900 rounded-xl">
-                            <span class="text-[9.5px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block truncate">Rasio BBM</span>
-                            <div class="my-1 flex items-baseline justify-between">
-                                <span class="text-base font-semibold font-mono text-amber-600 dark:text-amber-400" id="vra4-kpi-fuel-ratio">-</span>
-                                <span class="text-[9px] font-bold text-slate-400 font-mono" id="vra4-kpi-fuel-unit">L/HM</span>
-                            </div>
-                            <div class="text-[9px] text-slate-400 font-medium truncate pt-1 border-t border-slate-100 dark:border-slate-800 flex items-center gap-1">
-                                <i class="ph-bold ph-gas-pump text-amber-500"></i> Efisiensi Energi
-                            </div>
-                        </div>
-
-                        <!-- Card 5: Belanja BBM Total -->
-                        <div class="pns-card p-3 flex flex-col justify-between shadow-2xs border-t-2 border-t-purple-500 bg-white dark:bg-slate-900 rounded-xl">
-                            <span class="text-[9.5px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block truncate">Belanja BBM</span>
-                            <div class="my-1 flex items-baseline justify-between">
-                                <span class="text-base font-semibold font-mono text-purple-600 dark:text-purple-400" id="vra4-kpi-fuel-cost">Rp 0</span>
-                                <span class="text-[9px] text-slate-400 font-mono" id="vra4-kpi-fuel-liter">0 L</span>
-                            </div>
-                            <div class="text-[9px] text-slate-400 font-medium truncate pt-1 border-t border-slate-100 dark:border-slate-800 flex items-center gap-1">
-                                <i class="ph-bold ph-coins text-purple-500"></i> Solar &amp; Bensin
-                            </div>
-                        </div>
-
-                        <!-- Card 6: Maintenance & Part -->
-                        <div class="pns-card p-3 flex flex-col justify-between shadow-2xs border-t-2 border-t-rose-500 bg-white dark:bg-slate-900 rounded-xl">
-                            <span class="text-[9.5px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block truncate">Biaya MTC &amp; Part</span>
-                            <div class="my-1 flex items-baseline justify-between">
-                                <span class="text-base font-semibold font-mono text-rose-600 dark:text-rose-400" id="vra4-kpi-maint-cost">Rp 0</span>
-                                <span class="text-[9px] text-slate-400 font-mono" id="vra4-kpi-maint-count">0x</span>
-                            </div>
-                            <div class="text-[9px] text-slate-400 font-medium truncate pt-1 border-t border-slate-100 dark:border-slate-800 flex items-center gap-1">
-                                <i class="ph-bold ph-wrench text-rose-500"></i> Work Orders
-                            </div>
-                        </div>
-
-                        <!-- Card 7: Skor Kondisi -->
-                        <div class="pns-card p-3 flex flex-col justify-between shadow-2xs border-t-2 border-t-cyan-500 bg-white dark:bg-slate-900 rounded-xl">
-                            <span class="text-[9.5px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block truncate">Skor Kondisi</span>
-                            <div class="my-1 flex items-baseline justify-between">
-                                <span class="text-base font-semibold font-mono text-cyan-600 dark:text-cyan-400" id="vra4-kpi-health-score">0/100</span>
-                                <span class="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-cyan-50 text-cyan-700 dark:bg-cyan-950/60 dark:text-cyan-300" id="vra4-kpi-health-badge">PRIMA</span>
-                            </div>
-                            <div class="text-[9px] text-slate-400 font-medium truncate pt-1 border-t border-slate-100 dark:border-slate-800 flex items-center gap-1">
-                                <i class="ph-bold ph-shield-check text-cyan-500"></i> Skor Keandalan
-                            </div>
-                        </div>
-
-                        <!-- Card 8: Verifikasi Fisik 3 Foto HD & 3D -->
-                        <div onclick="window.pns.openUnitStudioModal(window.pns.getCurrentUnitCode(), { initialTab: 'photos' })" class="pns-card p-3 flex flex-col justify-between shadow-2xs border-t-2 border-t-teal-500 bg-white dark:bg-slate-900 rounded-xl cursor-pointer hover:border-teal-400 group transition-all" title="Klik untuk membuka Galeri Foto HD & Model 3D">
-                            <span class="text-[9.5px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider block truncate">Foto Kendaraan</span>
-                            <div class="my-1 flex items-baseline justify-between gap-1">
-                                <span class="text-sm sm:text-base font-semibold font-mono text-teal-600 dark:text-teal-400 whitespace-nowrap" id="vra4-kpi-photo-count">0/3 Foto</span>
-                                <span class="text-[9px] font-bold text-teal-600 dark:text-teal-400 group-hover:underline whitespace-nowrap shrink-0">Galeri →</span>
-                            </div>
-                            <div class="text-[9px] text-slate-400 font-medium truncate pt-1 border-t border-slate-100 dark:border-slate-800 flex items-center gap-1">
-                                <i class="ph-bold ph-camera text-teal-500"></i> Verifikasi Fisik
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- ═══ 3-PHOTO SHOWCASE SECTION — Physical Vehicle Verification ═══ -->
-                    <div id="pbi-vra4-photo-showcase" class="shrink-0 vra4-fade-in vra4-fade-in-d2"></div>
-
-                    <!-- ═══ COMPACT 4-CARD DECISION SCORECARD RIBBON (100% PRESERVED METRICS) ═══ -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3.5 shrink-0 vra4-fade-in vra4-fade-in-d2">
-
-                        <!-- CARD 1: Unit Kondisi Unit -->
-                        <div class="vra4-glass vra4-accent-cyan p-3.5 flex flex-col justify-between">
-                            <div>
-                                <!-- Header -->
-                                <div class="flex items-center justify-between pb-2 mb-2 border-b border-slate-200/50 dark:border-slate-700/50">
-                                    <div class="flex items-center gap-2 min-w-0">
-                                        <div class="w-7 h-7 rounded-lg bg-cyan-100 dark:bg-cyan-950/60 text-cyan-600 dark:text-cyan-400 flex items-center justify-center text-sm shrink-0 border border-cyan-200/40 dark:border-cyan-800/40">
-                                            <i class="ph-bold ph-shield-check"></i>
-                                        </div>
-                                        <div class="min-w-0">
-                                            <h3 class="text-xs font-semibold text-slate-800 dark:text-slate-200 uppercase tracking-wider truncate">Kondisi Unit</h3>
-                                            <p class="text-[9.5px] text-slate-400 dark:text-slate-500 font-medium truncate">Kesiapan & Jam Operasi</p>
-                                        </div>
-                                    </div>
-                                    <span id="pbi-vra4-badge-health" class="px-2 py-0.5 rounded-full text-[9px] font-bold shadow-2xs whitespace-nowrap">
-                                        Sehat
-                                    </span>
+                        <!-- Tabs & Inline Filter Bar -->
+                        <div class="flex flex-wrap items-center justify-between gap-2.5 pb-3 border-b border-[#D8DCE3] dark:border-[#444444] shrink-0">
+                            <div class="flex flex-wrap items-center gap-2">
+                                <div class="inline-flex bg-slate-100 dark:bg-[#282828] p-0.5 rounded-[4px] border border-[#D8DCE3] dark:border-[#444444]">
+                                    <button type="button" id="btn-vra4-tab-daily" onclick="window.pns.switchVra4TableTab('daily')"
+                                        class="px-3 py-1.5 text-xs font-semibold rounded-[3px] bg-[#0E5E63] text-white transition cursor-pointer flex items-center gap-1.5">
+                                        <i class="ph-bold ph-list-dashes"></i> Riwayat Harian Unit
+                                    </button>
+                                    <button type="button" id="btn-vra4-tab-summary" onclick="window.pns.switchVra4TableTab('summary')"
+                                        class="px-3 py-1.5 text-xs font-semibold rounded-[3px] text-slate-600 dark:text-slate-300 hover:bg-slate-200/70 dark:hover:bg-[#383838] transition cursor-pointer flex items-center gap-1.5">
+                                        <i class="ph-bold ph-table"></i> Perbandingan Seluruh Unit (28 Kolom)
+                                    </button>
                                 </div>
-
-                                <!-- Visual Meters & Score -->
-                                <div class="flex items-center justify-between gap-2 px-0.5">
-                                    <div id="pbi-vra4-donut-util" class="shrink-0"></div>
-                                    <div id="pbi-vra4-radar-health" class="shrink-0 flex items-center justify-center"></div>
-                                    <div class="flex-1 min-w-[85px] space-y-1">
-                                        <div class="flex items-center justify-between text-[10px]">
-                                            <span class="text-slate-400 dark:text-slate-500">Util:</span>
-                                            <span class="font-semibold font-mono text-slate-800 dark:text-slate-100" id="pbi-vra4-val-util">0%</span>
-                                        </div>
-                                        <div class="flex items-center justify-between text-[10px]">
-                                            <span class="text-slate-400 dark:text-slate-500">Avail:</span>
-                                            <span class="font-semibold font-mono text-slate-800 dark:text-slate-100" id="pbi-vra4-val-avail">0%</span>
-                                        </div>
-                                        <div class="flex items-center justify-between pt-1 border-t border-slate-200/40 dark:border-slate-700/40 text-[10.5px]">
-                                            <span class="text-slate-600 dark:text-slate-300 font-bold">Skor:</span>
-                                            <span class="font-semibold font-mono text-xs" id="pbi-vra4-val-healthscore">0/100</span>
-                                        </div>
-                                        <div class="vra4-score-bar h-1 mt-0.5" id="pbi-vra4-healthbar-track">
-                                            <div class="vra4-score-bar-fill bg-emerald-500" id="pbi-vra4-healthbar-fill" style="width: 0%"></div>
-                                        </div>
-                                    </div>
-                                </div>
+                                <span id="vra4-table-subtitle" class="text-[11px] font-mono font-semibold text-slate-500 dark:text-slate-400 hidden xl:inline"></span>
                             </div>
 
-                            <!-- Footer Metrics & Recommendation -->
-                            <div class="mt-2.5 pt-2 border-t border-slate-200/50 dark:border-slate-700/50 space-y-2">
-                                <div class="grid grid-cols-3 gap-1.5">
-                                    <div class="vra4-metric-pill p-1 text-center">
-                                        <span class="text-[8px] font-bold text-slate-400 dark:text-slate-500 uppercase block truncate">Tren 6B</span>
-                                        <div id="pbi-vra4-spark-util" class="w-full h-4.5 mt-0.5 flex items-center justify-center"></div>
-                                    </div>
-                                    <div class="vra4-metric-pill p-1 text-center flex flex-col justify-center">
-                                        <span class="text-[8px] font-bold text-slate-400 dark:text-slate-500 uppercase block truncate">MTBF</span>
-                                        <span class="text-[11px] font-semibold font-mono text-slate-700 dark:text-slate-200 mt-0.5 truncate" id="pbi-vra4-val-mtbf">0 jam</span>
-                                    </div>
-                                    <div class="vra4-metric-pill p-1 text-center flex flex-col justify-center">
-                                        <span class="text-[8px] font-bold text-slate-400 dark:text-slate-500 uppercase block truncate">Fuel Eff</span>
-                                        <span class="text-[11px] font-semibold font-mono text-slate-700 dark:text-slate-200 mt-0.5 truncate" id="pbi-vra4-val-fueleff">0%</span>
-                                    </div>
-                                </div>
-                                <div id="pbi-vra4-reco-health" class="vra4-reco-callout text-[10px] leading-tight font-medium p-1.5 rounded-lg">
-                                    Memuat analisa keandalan unit...
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- CARD 2: Evaluasi Biaya & Umur Pakai Scorecard -->
-                        <div class="vra4-glass vra4-accent-rose p-3.5 flex flex-col justify-between">
-                            <div>
-                                <!-- Header -->
-                                <div class="flex items-center justify-between pb-2 mb-2 border-b border-slate-200/50 dark:border-slate-700/50">
-                                    <div class="flex items-center gap-2 min-w-0">
-                                        <div class="w-7 h-7 rounded-lg bg-rose-100 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex items-center justify-center text-sm shrink-0 border border-rose-200/40 dark:border-rose-800/40">
-                                            <i class="ph-bold ph-scales"></i>
-                                        </div>
-                                        <div class="min-w-0">
-                                            <h3 class="text-xs font-semibold text-slate-800 dark:text-slate-200 uppercase tracking-wider truncate">Evaluasi Biaya & Umur Pakai</h3>
-                                            <p class="text-[9.5px] text-slate-400 dark:text-slate-500 font-medium truncate">Perbandingan Biaya Servis & Nilai Aset</p>
-                                        </div>
-                                    </div>
-                                    <span id="pbi-vra4-badge-risk" class="px-2 py-0.5 rounded-full text-[9px] font-bold shadow-2xs whitespace-nowrap">
-                                        Risiko Rendah
-                                    </span>
-                                </div>
-
-                                <!-- Visual Meters & Score -->
-                                <div class="flex items-center justify-between gap-2 px-0.5">
-                                    <div id="pbi-vra4-radar-risk" class="shrink-0 flex items-center justify-center"></div>
-                                    <div class="flex-1 min-w-[110px] space-y-1">
-                                        <div class="flex items-center justify-between text-[10.5px]">
-                                            <span class="text-slate-600 dark:text-slate-300 font-bold">Tingkat Risiko:</span>
-                                            <span class="font-semibold font-mono text-xs" id="pbi-vra4-val-riskscore">0/100</span>
-                                        </div>
-                                        <div class="vra4-score-bar h-1" id="pbi-vra4-riskbar-track">
-                                            <div class="vra4-score-bar-fill bg-emerald-500" id="pbi-vra4-riskbar-fill" style="width: 0%"></div>
-                                        </div>
-                                        <div class="flex items-center justify-between text-[9.5px] pt-0.5">
-                                            <span class="text-slate-400 dark:text-slate-500">Maint Rasio:</span>
-                                            <span class="font-bold font-mono text-slate-700 dark:text-slate-200" id="pbi-vra4-risk-issue-1">-</span>
-                                        </div>
-                                        <div class="flex items-center justify-between text-[9.5px]">
-                                            <span class="text-slate-400 dark:text-slate-500">Umur Pakai:</span>
-                                            <span class="font-bold font-mono text-slate-700 dark:text-slate-200" id="pbi-vra4-risk-issue-2">-</span>
-                                        </div>
-                                        <div class="flex items-center justify-between text-[9.5px]">
-                                            <span class="text-slate-400 dark:text-slate-500">Downtime:</span>
-                                            <span class="font-bold font-mono text-slate-700 dark:text-slate-200" id="pbi-vra4-risk-issue-3">-</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Footer Metrics & Decision -->
-                            <div class="mt-2.5 pt-2 border-t border-slate-200/50 dark:border-slate-700/50 space-y-2">
-                                <div class="grid grid-cols-3 gap-1.5">
-                                    <div class="vra4-metric-pill p-1 text-center">
-                                        <span class="text-[8px] font-bold text-slate-400 dark:text-slate-500 uppercase block truncate">Nilai Buku</span>
-                                        <span class="text-[11px] font-semibold font-mono text-purple-600 dark:text-purple-400 mt-0.5 block truncate" id="pbi-vra4-risk-bookval">Rp 0</span>
-                                    </div>
-                                    <div class="vra4-metric-pill p-1 text-center">
-                                        <span class="text-[8px] font-bold text-slate-400 dark:text-slate-500 uppercase block truncate">Total Maint</span>
-                                        <span class="text-[11px] font-semibold font-mono text-amber-600 dark:text-amber-400 mt-0.5 block truncate" id="pbi-vra4-risk-totmaint">Rp 0</span>
-                                    </div>
-                                    <div class="vra4-metric-pill p-1 text-center">
-                                        <span class="text-[8px] font-bold text-slate-400 dark:text-slate-500 uppercase block truncate">Sisa Umur</span>
-                                        <span class="text-[11px] font-semibold font-mono text-slate-700 dark:text-slate-200 mt-0.5 block truncate" id="pbi-vra4-risk-remainage">0 bln</span>
-                                    </div>
-                                </div>
-                                <div id="pbi-vra4-reco-risk" class="vra4-reco-callout text-[10px] leading-tight font-medium p-1.5 rounded-lg">
-                                    Memuat evaluasi kelayakan aset...
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- CARD 3: Pola Operasi & Anomali BBM (14 Hari) -->
-                        <div class="vra4-glass vra4-accent-amber p-3.5 flex flex-col justify-between">
-                            <div>
-                                <!-- Header -->
-                                <div class="flex items-center justify-between pb-2 mb-2 border-b border-slate-200/50 dark:border-slate-700/50">
-                                    <div class="flex items-center gap-2 min-w-0">
-                                        <div class="w-7 h-7 rounded-lg bg-amber-100 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center text-sm shrink-0 border border-amber-200/40 dark:border-amber-800/40">
-                                            <i class="ph-bold ph-calendar-check"></i>
-                                        </div>
-                                        <div class="min-w-0">
-                                            <h3 class="text-xs font-semibold text-slate-800 dark:text-slate-200 uppercase tracking-wider truncate">Aktivitas 14 Hari & BBM</h3>
-                                            <p class="text-[9.5px] text-slate-400 dark:text-slate-500 font-medium truncate">Riwayat Harian & Konsumsi BBM</p>
-                                        </div>
-                                    </div>
-                                    <span id="pbi-vra4-badge-fuel" class="px-2 py-0.5 rounded-full text-[9px] font-bold shadow-2xs whitespace-nowrap">
-                                        Normal
-                                    </span>
-                                </div>
-
-                                <!-- Visual Heatmap & Fuel Metrics -->
-                                <div class="flex items-center justify-between gap-2 px-0.5">
-                                    <div class="space-y-1">
-                                        <div class="flex items-center gap-1.5 text-[8.5px] text-slate-400">
-                                            <span class="inline-block w-2 h-2 rounded-xs bg-emerald-500"></span> Run
-                                            <span class="inline-block w-2 h-2 rounded-xs bg-amber-500"></span> Stby
-                                            <span class="inline-block w-2 h-2 rounded-xs bg-rose-500"></span> Down
-                                        </div>
-                                        <div id="pbi-vra4-calendar-heatmap" class="shrink-0"></div>
-                                    </div>
-                                    <div class="flex-1 min-w-[95px] space-y-1">
-                                        <div class="text-[9.5px] font-bold text-slate-700 dark:text-slate-200 truncate" id="pbi-vra4-fuel-avg-ratio">-</div>
-                                        <div id="pbi-vra4-spark-fuelkm" class="w-full h-5 flex items-center justify-center"></div>
-                                        <div class="flex items-center justify-between text-[9.5px] pt-1 border-t border-slate-200/40 dark:border-slate-700/40">
-                                            <span class="text-slate-400">Deviasi:</span>
-                                            <span class="font-semibold font-mono text-xs" id="pbi-vra4-fuel-deviation">0.0%</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Cost Impact Callout -->
-                            <div class="mt-2.5 pt-2 border-t border-slate-200/50 dark:border-slate-700/50">
-                                <div id="pbi-vra4-reco-fuel" class="vra4-reco-callout text-[10px] leading-tight font-medium p-1.5 rounded-lg">
-                                    Menghitung dampak deviasi bahan bakar...
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- CARD 4: Cross-Domain Unit 360° -->
-                        <div class="vra4-glass vra4-accent-indigo p-3.5 flex flex-col justify-between">
-                            <div>
-                                <!-- Header -->
-                                <div class="flex items-center justify-between pb-2 mb-2 border-b border-slate-200/50 dark:border-slate-700/50">
-                                    <div class="flex items-center gap-2 min-w-0">
-                                        <div class="w-7 h-7 rounded-lg bg-indigo-100 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-sm shrink-0 border border-indigo-200/40 dark:border-indigo-800/40">
-                                            <i class="ph-bold ph-cube"></i>
-                                        </div>
-                                        <div class="min-w-0">
-                                            <h3 class="text-xs font-semibold text-slate-800 dark:text-slate-200 uppercase tracking-wider truncate">Ringkasan Kinerja</h3>
-                                            <p class="text-[9.5px] text-slate-400 dark:text-slate-500 font-medium truncate">Gabungan Jam Kerja, Servis & BBM</p>
-                                        </div>
-                                    </div>
-                                    <span id="pbi-vra4-badge-crossdomain" class="px-2 py-0.5 rounded-full text-[9px] font-bold shadow-2xs whitespace-nowrap">
-                                        Normal
-                                    </span>
-                                </div>
-
-                                <!-- 3 Mini Donuts -->
-                                <div id="pbi-vra4-minidonuts-360" class="px-0.5 pt-0.5"></div>
-                            </div>
-
-                            <!-- Problem Score & Narrative -->
-                            <div class="mt-2.5 pt-2 border-t border-slate-200/50 dark:border-slate-700/50 space-y-1.5">
-                                <div class="flex items-center justify-between text-[10.5px]">
-                                    <span class="text-slate-500 dark:text-slate-400 font-bold flex items-center gap-1">
-                                        <i class="ph ph-crosshair text-indigo-500 text-xs"></i> Indeks Perhatian:
-                                    </span>
-                                    <span class="font-semibold font-mono text-xs" id="pbi-vra4-val-problemscore">0/100</span>
-                                </div>
-                                <div class="vra4-score-bar h-1" id="pbi-vra4-problembar-track">
-                                    <div class="vra4-score-bar-fill bg-emerald-500" id="pbi-vra4-problembar-fill" style="width: 0%"></div>
-                                </div>
-                                <div id="pbi-vra4-reco-crossdomain" class="vra4-reco-callout text-[10px] leading-tight font-medium p-1.5 rounded-lg">
-                                    Memuat korelasi analitik lintas domain...
-                                </div>
-                            </div>
-                        </div>
-
-                    </div>
-
-                    <!-- ═══ OPERATIONS LOG TABLE — Premium Interactive Table (Enlarged Widescreen View) ═══ -->
-                    <div class="vra4-glass p-5 flex flex-col min-h-[720px] vra4-fade-in vra4-fade-in-d5">
-                        <!-- Tab Switcher — Modern pill tabs -->
-                        <div
-                            class="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-slate-200/40 dark:border-slate-700/40 shrink-0">
-                            <div
-                                class="flex items-center gap-1.5 bg-slate-100/80 dark:bg-slate-800/60 p-1 rounded-[12px] backdrop-blur-sm border border-slate-200/40 dark:border-slate-700/40">
-                                <button id="btn-vra4-tab-daily" onclick="window.pns.switchVra4TableTab('daily')"
-                                    class="px-4 py-2 text-xs font-bold rounded-[12px] vra4-tab-active transition-all duration-200 cursor-pointer flex items-center gap-1.5">
-                                    <i class="ph-bold ph-list-dashes"></i> Riwayat Harian Unit
-                                </button>
-                                <button id="btn-vra4-tab-summary" onclick="window.pns.switchVra4TableTab('summary')"
-                                    class="px-4 py-2 text-xs font-bold rounded-[12px] text-slate-600 dark:text-slate-300 hover:bg-white/80 dark:hover:bg-slate-700/80 transition-all duration-200 cursor-pointer flex items-center gap-1.5">
-                                    <i class="ph-bold ph-chart-bar-horizontal"></i> Perbandingan Seluruh Unit (28 Kolom)
-                                </button>
-                            </div>
-                            <span id="vra4-table-subtitle"
-                                class="text-xs font-semibold text-slate-500 dark:text-slate-400"></span>
-                        </div>
-
-                        <!-- Filter Toolbar — Glassmorphism -->
-                        <div
-                            class="flex flex-wrap items-center justify-between gap-3 p-3.5 vra4-metric-pill mt-3 shrink-0">
-                            <div class="flex flex-wrap items-center gap-3">
-                                <!-- Year Filter -->
-                                <div class="flex items-center gap-1.5">
-                                    <span
-                                        class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center gap-1">
-                                        <i class="ph-bold ph-calendar text-cyan-500"></i> Tahun:
-                                    </span>
-                                    <select id="slicer-vra4-year" onchange="window.pns.onVra4FilterChange()"
-                                        class="text-xs font-bold bg-white/80 dark:bg-slate-900/80 border border-slate-200/60 dark:border-slate-700/60 rounded-[12px] px-3 py-1.5 text-slate-700 dark:text-slate-200 focus:outline-none cursor-pointer shadow-sm backdrop-blur-sm">
-                                        <option value="ALL">Semua Tahun</option>
-                                    </select>
-                                </div>
-                                <!-- Month Filter -->
-                                <div class="flex items-center gap-1.5">
-                                    <span
-                                        class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center gap-1">
-                                        <i class="ph-bold ph-calendar-blank text-cyan-500"></i> Bulan:
-                                    </span>
-                                    <select id="slicer-vra4-month" onchange="window.pns.onVra4FilterChange()"
-                                        class="text-xs font-bold bg-white/80 dark:bg-slate-900/80 border border-slate-200/60 dark:border-slate-700/60 rounded-[12px] px-3 py-1.5 text-slate-700 dark:text-slate-200 focus:outline-none cursor-pointer shadow-sm backdrop-blur-sm">
-                                        <option value="ALL">Semua Bulan</option>
-                                    </select>
-                                </div>
-                                <!-- Status Filter -->
-                                <div class="flex items-center gap-1.5">
-                                    <span
-                                        class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider flex items-center gap-1">
-                                        <i class="ph-bold ph-funnel text-cyan-500"></i> Status:
-                                    </span>
-                                    <select id="slicer-vra4-status" onchange="window.pns.onVra4FilterChange()"
-                                        class="text-xs font-bold bg-white/80 dark:bg-slate-900/80 border border-slate-200/60 dark:border-slate-700/60 rounded-[12px] px-3 py-1.5 text-slate-700 dark:text-slate-200 focus:outline-none cursor-pointer shadow-sm backdrop-blur-sm">
-                                        <option value="ALL" selected>Semua Status</option>
-                                        <option value="OPERATING">Operating Only</option>
-                                        <option value="STANDBY">Standby Only</option>
-                                        <option value="BREAKDOWN">Breakdown Only</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="flex items-center gap-2.5">
-                                <!-- Search -->
+                            <!-- Compact Inline Slicers -->
+                            <div class="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                                <select id="slicer-vra4-year" onchange="window.pns.onVra4FilterChange()"
+                                    class="text-xs font-semibold bg-white dark:bg-[#383838] border border-[#D8DCE3] dark:border-[#4A4A4A] rounded-[4px] px-2.5 py-1 text-slate-700 dark:text-slate-200 focus:outline-none cursor-pointer">
+                                    <option value="ALL">Semua Tahun</option>
+                                </select>
+                                <select id="slicer-vra4-month" onchange="window.pns.onVra4FilterChange()"
+                                    class="text-xs font-semibold bg-white dark:bg-[#383838] border border-[#D8DCE3] dark:border-[#4A4A4A] rounded-[4px] px-2.5 py-1 text-slate-700 dark:text-slate-200 focus:outline-none cursor-pointer">
+                                    <option value="ALL">Semua Bulan</option>
+                                </select>
+                                <select id="slicer-vra4-status" onchange="window.pns.onVra4FilterChange()"
+                                    class="text-xs font-semibold bg-white dark:bg-[#383838] border border-[#D8DCE3] dark:border-[#4A4A4A] rounded-[4px] px-2.5 py-1 text-slate-700 dark:text-slate-200 focus:outline-none cursor-pointer">
+                                    <option value="ALL" selected>Semua Status</option>
+                                    <option value="OPERATING">Operating Only</option>
+                                    <option value="STANDBY">Standby Only</option>
+                                    <option value="BREAKDOWN">Breakdown Only</option>
+                                </select>
                                 <div class="relative">
-                                    <i
-                                        class="ph-bold ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                                    <i class="ph-bold ph-magnifying-glass absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
                                     <input type="text" id="input-vra4-search"
                                         oninput="window.pns.onVra4Search(this.value)"
-                                        placeholder="Cari aktivitas, tujuan..."
-                                        class="text-xs font-medium bg-white/80 dark:bg-slate-900/80 border border-slate-200/60 dark:border-slate-700/60 rounded-[12px] pl-8 pr-4 py-1.5 text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-cyan-500/30 w-48 sm:w-56 shadow-sm backdrop-blur-sm">
+                                        placeholder="Cari aktivitas / tujuan..."
+                                        class="text-xs bg-white dark:bg-[#383838] border border-[#D8DCE3] dark:border-[#4A4A4A] rounded-[4px] pl-7 pr-2.5 py-1 text-slate-700 dark:text-slate-200 focus:outline-none focus:border-[#0E5E63] w-40 sm:w-48">
                                 </div>
-                                <!-- Reset Button -->
                                 <button type="button" onclick="window.pns.resetVra4Filters()"
-                                    class="px-3.5 py-1.5 rounded-[12px] bg-slate-200/80 dark:bg-slate-700/80 hover:bg-cyan-600 hover:text-white dark:hover:bg-cyan-600 text-slate-600 dark:text-slate-300 text-xs font-bold transition-all duration-200 flex items-center gap-1.5 cursor-pointer shadow-sm"
-                                    title="Reset Filter Transaksi">
+                                    class="px-2.5 py-1 rounded-[4px] bg-slate-100 dark:bg-[#383838] hover:bg-[#0E5E63] hover:text-white text-slate-600 dark:text-slate-300 text-xs font-semibold border border-[#D8DCE3] dark:border-[#4A4A4A] transition flex items-center gap-1 cursor-pointer"
+                                    title="Reset Filter Tabel">
                                     <i class="ph-bold ph-arrow-counter-clockwise"></i> Reset
                                 </button>
                             </div>
                         </div>
 
-                        <!-- Performance Summary Ribbon — KPI Cards -->
+                        <!-- Thin 1-Row Divided Period Totals Strip -->
                         <div id="pbi-vra4-period-performance"
-                            class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 p-3 my-3 bg-gradient-to-r from-cyan-50/50 via-slate-50/50 to-indigo-50/50 dark:from-slate-800/40 dark:via-slate-900/40 dark:to-cyan-950/30 rounded-[12px] border border-cyan-100/40 dark:border-slate-800/60 shrink-0 backdrop-blur-sm">
-                            <div class="vra4-metric-pill text-center">
-                                <span
-                                    class="text-[9px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 block">Jam
-                                    Operasi (Run)</span>
-                                <div class="text-sm font-semibold font-mono text-blue-600 dark:text-sky-400 mt-1 truncate"
-                                    id="pbi-vra4-p-run">0 Jam</div>
+                            class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 border border-[#D8DCE3] dark:border-[#444444] rounded-[4px] bg-slate-50 dark:bg-[#2A2A2A] divide-y sm:divide-y-0 divide-x divide-[#D8DCE3] dark:divide-[#444444] my-2.5 shrink-0">
+                            <div class="px-3 py-1.5 flex items-center justify-between gap-2">
+                                <span class="text-[10px] font-semibold uppercase text-slate-500 dark:text-slate-400">Jam Run</span>
+                                <span id="pbi-vra4-p-run" class="text-xs font-mono font-semibold text-[#2D4A94] dark:text-sky-400">0 Jam</span>
                             </div>
-                            <div class="vra4-metric-pill text-center">
-                                <span
-                                    class="text-[9px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 block">Downtime</span>
-                                <div class="text-sm font-semibold font-mono text-rose-600 dark:text-rose-400 mt-1 truncate"
-                                    id="pbi-vra4-p-down">0 Jam</div>
+                            <div class="px-3 py-1.5 flex items-center justify-between gap-2">
+                                <span class="text-[10px] font-semibold uppercase text-slate-500 dark:text-slate-400">Downtime</span>
+                                <span id="pbi-vra4-p-down" class="text-xs font-mono font-semibold text-rose-600 dark:text-rose-400">0 Jam</span>
                             </div>
-                            <div class="vra4-metric-pill text-center">
-                                <span
-                                    class="text-[9px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 block">Jarak
-                                    Tempuh</span>
-                                <div class="text-sm font-semibold font-mono text-emerald-600 dark:text-emerald-400 mt-1 truncate"
-                                    id="pbi-vra4-p-km">0 KM</div>
+                            <div class="px-3 py-1.5 flex items-center justify-between gap-2">
+                                <span class="text-[10px] font-semibold uppercase text-slate-500 dark:text-slate-400">Jarak</span>
+                                <span id="pbi-vra4-p-km" class="text-xs font-mono font-semibold text-emerald-700 dark:text-emerald-400">0 KM</span>
                             </div>
-                            <div class="vra4-metric-pill text-center">
-                                <span
-                                    class="text-[9px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 block">Konsumsi
-                                    BBM</span>
-                                <div class="text-sm font-semibold font-mono text-amber-600 dark:text-amber-400 mt-1 truncate"
-                                    id="pbi-vra4-p-fuel">0 L</div>
+                            <div class="px-3 py-1.5 flex items-center justify-between gap-2">
+                                <span class="text-[10px] font-semibold uppercase text-slate-500 dark:text-slate-400">BBM</span>
+                                <span id="pbi-vra4-p-fuel" class="text-xs font-mono font-semibold text-amber-700 dark:text-amber-400">0 L</span>
                             </div>
-                            <div class="vra4-metric-pill text-center">
-                                <span
-                                    class="text-[9px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 block">Biaya
-                                    Servis MTC</span>
-                                <div class="text-sm font-semibold font-mono text-purple-600 dark:text-purple-400 mt-1 truncate"
-                                    id="pbi-vra4-p-mtc">Rp 0</div>
+                            <div class="px-3 py-1.5 flex items-center justify-between gap-2">
+                                <span class="text-[10px] font-semibold uppercase text-slate-500 dark:text-slate-400">Servis MTC</span>
+                                <span id="pbi-vra4-p-mtc" class="text-xs font-mono font-semibold text-slate-800 dark:text-slate-100">Rp 0</span>
                             </div>
-                            <div class="vra4-metric-pill text-center">
-                                <span
-                                    class="text-[9px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 block">Validitas
-                                    Data</span>
-                                <div class="text-xs font-bold font-mono text-slate-700 dark:text-slate-200 mt-1 truncate"
-                                    id="pbi-vra4-p-validitas">-</div>
+                            <div class="px-3 py-1.5 flex items-center justify-between gap-2">
+                                <span class="text-[10px] font-semibold uppercase text-slate-500 dark:text-slate-400">Validitas</span>
+                                <span id="pbi-vra4-p-validitas" class="text-[11px] font-mono font-semibold text-slate-700 dark:text-slate-200 truncate">-</span>
                             </div>
                         </div>
 
-                        <!-- TAB 1: Log Progres Harian Unit Terpilih (Enlarged Height) -->
+                        <!-- TAB 1: Log Progres Harian Unit Terpilih -->
                         <div id="container-pbi-vra4-daily"
-                            class="flex-1 overflow-x-auto overflow-y-auto scrollbar-thin mt-2 rounded-xl border border-slate-200/60 dark:border-slate-700/60 shadow-xs max-h-[620px] w-full">
+                            class="flex-1 overflow-x-auto overflow-y-auto scrollbar-thin rounded-[4px] border border-[#D8DCE3] dark:border-[#444444] max-h-[560px] w-full">
                             <table id="table-pbi-vra4-daily" class="w-full text-left border-collapse text-xs whitespace-nowrap table-fixed">
-                                <thead
-                                    class="sticky top-0 z-10 bg-slate-50/95 dark:bg-slate-900/95 backdrop-blur-md text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 border-b-2 border-slate-200/60 dark:border-slate-700/60 shadow-xs select-none">
+                                <thead class="sticky top-0 z-10 bg-slate-100 dark:bg-[#282828] text-[10px] font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300 border-b border-[#D8DCE3] dark:border-[#444444] select-none">
                                     <tr>
                                         <th class="px-1.5 py-2 text-center w-[3%]">No</th>
                                         <th class="px-2 py-2 text-center w-[6.5%]">Tanggal</th>
@@ -3865,192 +3572,44 @@
                             </table>
                         </div>
 
-                        <!-- TAB 2: Matriks Lengkap Seluruh Armada (28 Kolom - Enlarged Height) -->
+                        <!-- TAB 2: Matriks Lengkap Seluruh Armada (28 Kolom) -->
                         <div id="container-pbi-vra4-summary"
-                            class="hidden flex-1 overflow-auto scrollbar-thin mt-2 h-[580px] min-h-[520px] max-h-[680px]">
-                            <table class="w-full text-left border-collapse text-xs whitespace-nowrap">
-                                <thead
-                                    class="sticky top-0 z-10 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 border-b-2 border-slate-200/60 dark:border-slate-700/60 shadow-xs">
+                            class="hidden flex-1 overflow-auto scrollbar-thin rounded-[4px] border border-[#D8DCE3] dark:border-[#444444] max-h-[560px]">
+                            <table id="table-pbi-vra4-summary" class="w-full text-left border-collapse text-xs whitespace-nowrap">
+                                <thead class="sticky top-0 z-10 bg-slate-100 dark:bg-[#282828] text-[10px] font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-300 border-b border-[#D8DCE3] dark:border-[#444444]">
                                     <tr>
-                                        <th class="px-3 py-3 min-w-[130px]">Kode Unit</th>
-                                        <th class="px-3 py-3 min-w-[180px]">Nama Asset</th>
-                                        <th class="px-3 py-3 text-center min-w-[100px]">Tgl Perolehan</th>
-                                        <th class="px-3 py-3 text-right min-w-[120px]">Harga Perolehan</th>
-                                        <th class="px-3 py-3 text-center min-w-[90px]">Std Umur</th>
-                                        <th class="px-3 py-3 text-center min-w-[90px]">Sisa Umur</th>
-                                        <th class="px-3 py-3 text-center min-w-[90px]">Umur Pakai</th>
-                                        <th class="px-3 py-3 text-right min-w-[90px]">KM Awal</th>
-                                        <th class="px-3 py-3 text-right min-w-[90px]">KM Akhir</th>
-                                        <th class="px-3 py-3 text-right min-w-[90px]">Lost KM</th>
-                                        <th class="px-3 py-3 text-center min-w-[95px]">Tgl Awal</th>
-                                        <th class="px-3 py-3 text-center min-w-[95px]">Tgl Akhir</th>
-                                        <th class="px-3 py-3 text-center min-w-[80px]">Jml Trx</th>
-                                        <th class="px-3 py-3 text-center min-w-[80px]">Jml Hari</th>
-                                        <th class="px-3 py-3 text-center min-w-[80px]">Hari BD</th>
-                                        <th class="px-3 py-3 text-center min-w-[80px]">Hari Aktif</th>
-                                        <th class="px-3 py-3 text-right min-w-[90px]">KM/Day</th>
-                                        <th class="px-3 py-3 text-right min-w-[95px]">Avg KM/Day</th>
-                                        <th class="px-3 py-3 text-right min-w-[100px]">Total Liter</th>
-                                        <th class="px-3 py-3 text-right min-w-[110px]">Cost Petrol</th>
-                                        <th class="px-3 py-3 text-right min-w-[110px]">Cost MTC</th>
-                                        <th class="px-3 py-3 text-right font-bold text-cyan-600 min-w-[120px]">Total
-                                            Cost</th>
-                                        <th class="px-3 py-3 text-center min-w-[90px]">Jml Service</th>
-                                        <th class="px-3 py-3 text-right min-w-[80px]">Lt/KM</th>
-                                        <th class="px-3 py-3 text-right min-w-[80px]">KM/Lt</th>
-                                        <th class="px-3 py-3 text-right min-w-[100px]">Petrol/KM</th>
-                                        <th class="px-3 py-3 text-right min-w-[100px]">Mtc/KM</th>
-                                        <th class="px-3 py-3 text-right font-bold text-cyan-600 min-w-[120px]">Total
-                                            Cost/KM</th>
+                                        <th class="px-3 py-2.5 min-w-[130px]">Kode Unit</th>
+                                        <th class="px-3 py-2.5 min-w-[180px]">Nama Asset</th>
+                                        <th class="px-3 py-2.5 text-center min-w-[100px]">Tgl Perolehan</th>
+                                        <th class="px-3 py-2.5 text-right min-w-[120px]">Harga Perolehan</th>
+                                        <th class="px-3 py-2.5 text-center min-w-[90px]">Std Umur</th>
+                                        <th class="px-3 py-2.5 text-center min-w-[90px]">Sisa Umur</th>
+                                        <th class="px-3 py-2.5 text-center min-w-[90px]">Umur Pakai</th>
+                                        <th class="px-3 py-2.5 text-right min-w-[90px]">KM Awal</th>
+                                        <th class="px-3 py-2.5 text-right min-w-[90px]">KM Akhir</th>
+                                        <th class="px-3 py-2.5 text-right min-w-[90px]">Lost KM</th>
+                                        <th class="px-3 py-2.5 text-center min-w-[95px]">Tgl Awal</th>
+                                        <th class="px-3 py-2.5 text-center min-w-[95px]">Tgl Akhir</th>
+                                        <th class="px-3 py-2.5 text-center min-w-[80px]">Jml Trx</th>
+                                        <th class="px-3 py-2.5 text-center min-w-[80px]">Jml Hari</th>
+                                        <th class="px-3 py-2.5 text-center min-w-[80px]">Hari BD</th>
+                                        <th class="px-3 py-2.5 text-center min-w-[80px]">Hari Aktif</th>
+                                        <th class="px-3 py-2.5 text-right min-w-[90px]">KM/Day</th>
+                                        <th class="px-3 py-2.5 text-right min-w-[95px]">Avg KM/Day</th>
+                                        <th class="px-3 py-2.5 text-right min-w-[100px]">Total Liter</th>
+                                        <th class="px-3 py-2.5 text-right min-w-[110px]">Cost Petrol</th>
+                                        <th class="px-3 py-2.5 text-right min-w-[110px]">Cost MTC</th>
+                                        <th class="px-3 py-2.5 text-right font-semibold text-[#0E5E63] dark:text-[#2DD4BF] min-w-[120px]">Total Cost</th>
+                                        <th class="px-3 py-2.5 text-center min-w-[90px]">Jml Service</th>
+                                        <th class="px-3 py-2.5 text-right min-w-[80px]">Lt/KM</th>
+                                        <th class="px-3 py-2.5 text-right min-w-[80px]">KM/Lt</th>
+                                        <th class="px-3 py-2.5 text-right min-w-[100px]">Petrol/KM</th>
+                                        <th class="px-3 py-2.5 text-right min-w-[100px]">Mtc/KM</th>
+                                        <th class="px-3 py-2.5 text-right font-semibold text-[#0E5E63] dark:text-[#2DD4BF] min-w-[120px]">Total Cost/KM</th>
                                     </tr>
                                 </thead>
                                 <tbody id="table-pbi-vra4-summary-body"></tbody>
                             </table>
-                        </div>
-                    </div>
-
-                    <!-- ═══ Spesifikasi & Informasi Unit ═══ -->
-                    <div class="vra4-glass p-6 vra4-fade-in vra4-fade-in-d4">
-                        <div
-                            class="flex items-center justify-between pb-4 mb-4 border-b border-slate-200/40 dark:border-slate-700/40">
-                            <div class="flex items-center gap-3">
-                                <div
-                                    class="w-10 h-10 rounded-[12px] bg-gradient-to-br from-cyan-100 to-sky-100 dark:from-cyan-950/60 dark:to-sky-950/60 text-cyan-600 dark:text-cyan-400 flex items-center justify-center text-base shrink-0 shadow-sm border border-cyan-200/40 dark:border-cyan-800/40">
-                                    <i class="ph-bold ph-identification-card"></i>
-                                </div>
-                                <div>
-                                    <h3
-                                        class="text-sm font-semibold text-slate-800 dark:text-slate-100 tracking-tight">Spesifikasi & Informasi Unit</h3>
-                                    <p class="text-[11px] text-slate-400 dark:text-slate-500 font-medium mt-0.5">
-                                        Data identitas kendaraan, penanggung jawab (PIC), nilai aset, dan efisiensi operasional</p>
-                                </div>
-                            </div>
-                            <div class="flex items-center gap-2">
-                                <span id="pbi-vra4-spec-validitas-badge"
-                                    class="px-3 py-1.5 rounded-[12px] text-[10px] font-bold bg-emerald-100/80 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200/40 dark:border-emerald-800/40 shadow-sm">
-                                    ✅ Data Terverifikasi
-                                </span>
-                            </div>
-                        </div>
-
-                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                            <!-- Group 1: Identitas & Dokumen -->
-                            <div class="vra4-spec-group space-y-3">
-                                <span
-                                    class="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 block border-b border-slate-200/40 dark:border-slate-700/40 pb-1.5 flex items-center gap-1.5">
-                                    <i class="ph-bold ph-tag text-cyan-500"></i> Identitas & Dokumen
-                                </span>
-                                <div>
-                                    <span class="text-[10px] text-slate-400 dark:text-slate-500 block font-medium">Merk
-                                        / Tipe Detail:</span>
-                                    <span
-                                        class="font-bold text-sm text-slate-800 dark:text-slate-100 block truncate mt-0.5"
-                                        id="pbi-vra4-spec-nama">-</span>
-                                </div>
-                                <div>
-                                    <span class="text-[10px] text-slate-400 dark:text-slate-500 block font-medium">No.
-                                        Polisi / Rangka:</span>
-                                    <span
-                                        class="font-mono font-bold text-sm text-slate-800 dark:text-slate-100 block mt-0.5"
-                                        id="pbi-vra4-spec-nopol">-</span>
-                                </div>
-                                <div>
-                                    <span class="text-[10px] text-slate-400 dark:text-slate-500 block font-medium">Tgl
-                                        Perolehan & Usia:</span>
-                                    <span class="font-bold text-sm text-slate-700 dark:text-slate-300 block mt-0.5"
-                                        id="pbi-vra4-spec-tgl-usia">-</span>
-                                </div>
-                            </div>
-
-                            <!-- Group 2: Organisasi & PIC -->
-                            <div class="vra4-spec-group space-y-3">
-                                <span
-                                    class="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 block border-b border-slate-200/40 dark:border-slate-700/40 pb-1.5 flex items-center gap-1.5">
-                                    <i class="ph-bold ph-user-circle text-blue-500"></i> PIC & Penugasan
-                                </span>
-                                <div>
-                                    <span class="text-[10px] text-slate-400 dark:text-slate-500 block font-medium">PIC /
-                                        Pengemudi Unit:</span>
-                                    <span
-                                        class="font-bold text-sm text-slate-800 dark:text-slate-100 block truncate mt-0.5"
-                                        id="pbi-vra4-spec-pic">-</span>
-                                </div>
-                                <div>
-                                    <span
-                                        class="text-[10px] text-slate-400 dark:text-slate-500 block font-medium">Penanggung
-                                        Jawab Section:</span>
-                                    <span
-                                        class="font-bold text-sm text-slate-800 dark:text-slate-100 block truncate mt-0.5"
-                                        id="pbi-vra4-spec-section">-</span>
-                                </div>
-                                <div>
-                                    <span
-                                        class="text-[10px] text-slate-400 dark:text-slate-500 block font-medium">Status
-                                        Pemakaian:</span>
-                                    <span class="font-bold text-sm text-emerald-600 dark:text-emerald-400 block mt-0.5"
-                                        id="pbi-vra4-spec-pemakaian">-</span>
-                                </div>
-                            </div>
-
-                            <!-- Group 3: Keuangan & Nilai Buku -->
-                            <div class="vra4-spec-group space-y-3">
-                                <span
-                                    class="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 block border-b border-slate-200/40 dark:border-slate-700/40 pb-1.5 flex items-center gap-1.5">
-                                    <i class="ph-bold ph-calculator text-purple-500"></i> Keuangan & Nilai Buku
-                                </span>
-                                <div>
-                                    <span class="text-[10px] text-slate-400 dark:text-slate-500 block font-medium">Nilai
-                                        Buku Saat Ini:</span>
-                                    <span
-                                        class="font-mono font-bold text-sm text-purple-600 dark:text-purple-400 block mt-0.5"
-                                        id="pbi-vra4-spec-nilaibuku">Rp 0</span>
-                                </div>
-                                <div>
-                                    <span
-                                        class="text-[10px] text-slate-400 dark:text-slate-500 block font-medium">Akumulasi
-                                        Penyusutan:</span>
-                                    <span
-                                        class="font-mono font-bold text-sm text-rose-600 dark:text-rose-400 block mt-0.5"
-                                        id="pbi-vra4-spec-penyusutan">Rp 0</span>
-                                </div>
-                                <div>
-                                    <span
-                                        class="text-[10px] text-slate-400 dark:text-slate-500 block font-medium">Kondisi
-                                        Fisik:</span>
-                                    <span class="font-bold text-sm text-slate-700 dark:text-slate-300 block mt-0.5"
-                                        id="pbi-vra4-spec-kondisi">-</span>
-                                </div>
-                            </div>
-
-                            <!-- Group 4: Efisiensi & Kinerja -->
-                            <div class="vra4-spec-group space-y-3">
-                                <span
-                                    class="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 block border-b border-slate-200/40 dark:border-slate-700/40 pb-1.5 flex items-center gap-1.5">
-                                    <i class="ph-bold ph-gauge text-emerald-500"></i> Efisiensi & Kinerja
-                                </span>
-                                <div>
-                                    <span class="text-[10px] text-slate-400 dark:text-slate-500 block font-medium">Rasio
-                                        Konsumsi BBM:</span>
-                                    <span
-                                        class="font-mono font-bold text-sm text-emerald-600 dark:text-emerald-400 block mt-0.5"
-                                        id="pbi-vra4-spec-rasiobbm">-</span>
-                                </div>
-                                <div>
-                                    <span class="text-[10px] text-slate-400 dark:text-slate-500 block font-medium">Biaya
-                                        BBM / KM:</span>
-                                    <span
-                                        class="font-mono font-bold text-sm text-amber-600 dark:text-amber-400 block mt-0.5"
-                                        id="pbi-vra4-spec-costfuelkm">Rp 0/KM</span>
-                                </div>
-                                <div>
-                                    <span
-                                        class="text-[10px] text-slate-400 dark:text-slate-500 block font-medium">Schedule
-                                        Effectiveness:</span>
-                                    <span
-                                        class="font-mono font-bold text-sm text-blue-600 dark:text-sky-400 block mt-0.5"
-                                        id="pbi-vra4-spec-effectiveness">-</span>
-                                </div>
-                            </div>
                         </div>
                     </div>
 
@@ -9742,7 +9301,7 @@
     <!-- ==================================================== -->
     <!-- POWER BI APPLICATION SCRIPT -->
     <!-- ==================================================== -->
-    <script type="module" src="./public/js/pbi_main.js?v=20261124"></script>
+    <script type="module" src="./public/js/pbi_main.js?v=20261124_r2"></script>
 
     <script>
         document.addEventListener("DOMContentLoaded", function () {

@@ -1,31 +1,25 @@
 /**
- * PNS VRA & FLEET ENTERPRISE — HD VEHICLE PHOTO & 3D STUDIO MODULE
- * 1. Tampak Depan / Eksterior Utama
- * 2. Tampak Samping / Kabin & Odometer
- * 3. Kompartemen Mesin / Bak / Belakang
- *
- * Features:
- * - Synchronous preloaded HD manifest (./cache/unit_photos/manifest.json + GitHub Raw CDN fallback)
- * - HD client-side compression up to 1600px @ 0.90 JPEG for admin uploads
- * - 3D Spatial Carousel Showcase (Grid HD <-> Stage 3D toggle)
- * - Interactive HD Lightbox (1x/2x zoom + pan, arrow navigation, EXIF/resolution badge) + 3D Orbit Studio
+ * PNS VRA & FLEET ENTERPRISE — UNIFIED REAL-PHOTO 3D & HD GALLERY MODULE
+ * Single unified media controller for Profil Unit (#view-vra-4) & Studio Lightbox:
+ * - Preloads ./cache/unit_photos/manifest.json synchronously on startup
+ * - Renders ONE unified Media Card (Interactive 3D Real-Photo Perspective + 3-Side Filmstrip)
+ * - Full-resolution HD Lightbox with 2x Zoom/Pan & Real-Photo 3D Turntable Tab
  */
 
 import {
-    mountUnit3DViewer,
-    detectUnitModelType,
-    getUnitModelLabel
-} from './pbi_unit_3d.js?v=20261124';
+    mountRealPhoto3DViewer,
+    buildEmptyPhotoBlueprintSvg
+} from './pbi_unit_3d.js?v=20261124_r2';
 
 const PHOTO_STORAGE_PREFIX = 'pns_unit_photos_v1_';
 const GITHUB_RAW_BASE = 'https://raw.githubusercontent.com/appsmaheer-cloud/VRA/main';
 
-// Runtime manifest cache hydrated from ./cache/unit_photos/manifest.json
 const _manifestMap = new Map();
 let _manifestLoaded = false;
 let _manifestLoadingPromise = null;
-let _showcaseViewMode = 'grid'; // 'grid' | 'stage3d'
-let _stage3dActiveSlot = 1;
+let _showcaseViewMode = '3d'; // '3d' (Real-Photo 3D Stage) | 'grid' (3-Side Flat Strip)
+let _activeSlotByUnit = new Map();
+let _current3dInstance = null;
 
 function resolvePhotoUrl(rawUrl) {
     if (!rawUrl || typeof rawUrl !== 'string') return rawUrl;
@@ -35,16 +29,13 @@ function resolvePhotoUrl(rawUrl) {
     const cleanRel = rawUrl.replace(/^\.\//, '');
     const host = (typeof window !== 'undefined' && window.location) ? window.location.hostname : '';
     const proto = (typeof window !== 'undefined' && window.location) ? window.location.protocol : '';
-    const isGas = host.includes('googleusercontent.com') || host.includes('script.google.com') || typeof google !== 'undefined' && google?.script?.run;
+    const isGas = host.includes('googleusercontent.com') || host.includes('script.google.com') || (typeof google !== 'undefined' && google?.script?.run);
     if (isGas || proto === 'file:') {
         return `${GITHUB_RAW_BASE}/${cleanRel}`;
     }
     return rawUrl;
 }
 
-/**
- * Preload lightweight photo manifest once so every unit lookup is synchronous & instant.
- */
 export function ensurePhotosManifest() {
     if (_manifestLoaded) return Promise.resolve(_manifestMap);
     if (_manifestLoadingPromise) return _manifestLoadingPromise;
@@ -84,7 +75,6 @@ export function ensurePhotosManifest() {
 
         if (_manifestLoaded && typeof window !== 'undefined') {
             window.dispatchEvent(new CustomEvent('pns:photos-manifest-ready', { detail: { count: _manifestMap.size } }));
-            // Re-render current VRA-4 unit showcase & photo count pill immediately if visible
             const curUnit = window.pns?.getCurrentUnitCode ? window.pns.getCurrentUnitCode() : '';
             if (curUnit) {
                 renderUnitPhotoShowcase(curUnit);
@@ -101,37 +91,21 @@ export function ensurePhotosManifest() {
     return _manifestLoadingPromise;
 }
 
-// Kick off manifest hydration immediately on load
 if (typeof window !== 'undefined') {
     ensurePhotosManifest();
 }
 
-const makeSvgUri = (title, subtitle, color, circleColor, iconPath) => {
+const makeEmptySlotSvgUri = (label) => {
     const isDark = typeof document !== 'undefined' && document.documentElement && document.documentElement.classList.contains('dark');
-    const bgFill = isDark ? '#303030' : '#f8fafc';
-    const borderStroke = isDark ? '#444444' : '#d8dce3';
-    const textFill = isDark ? '#e5e7eb' : '#334155';
-    const subTextFill = isDark ? '#9ca3af' : '#64748b';
-    const darkCircleColor = isDark ? '#3b3b3b' : circleColor;
-
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 260" width="400" height="260">
-        <rect width="400" height="260" rx="6" fill="${bgFill}" stroke="${borderStroke}" stroke-width="1.5" stroke-dasharray="5,5"/>
-        <circle cx="200" cy="100" r="30" fill="${darkCircleColor}"/>
-        <g transform="translate(184, 84)" fill="${color}">${iconPath}</g>
-        <text x="200" y="158" font-family="Inter,Segoe UI,sans-serif" font-size="13" font-weight="600" fill="${textFill}" text-anchor="middle">${title}</text>
-        <text x="200" y="178" font-family="Inter,Segoe UI,sans-serif" font-size="11" font-weight="400" fill="${subTextFill}" text-anchor="middle">${subtitle}</text>
+    const bgFill = isDark ? '#262626' : '#f8fafc';
+    const stroke = isDark ? '#444444' : '#d8dce3';
+    const txt = isDark ? '#9ca3af' : '#64748b';
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 200" width="320" height="200">
+        <rect width="320" height="200" rx="4" fill="${bgFill}" stroke="${stroke}" stroke-width="1.5" stroke-dasharray="4,4"/>
+        <text x="160" y="98" font-family="Inter,Segoe UI,sans-serif" font-size="12" font-weight="600" fill="${txt}" text-anchor="middle">${label}</text>
+        <text x="160" y="118" font-family="Inter,Segoe UI,sans-serif" font-size="10.5" fill="${txt}" opacity="0.75" text-anchor="middle">Belum ada foto</text>
     </svg>`;
     return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
-};
-
-const getPlaceholder = (slotKey, isAdmin = false) => {
-    const defs = {
-        photo1: { title: 'Foto 1: Tampak Depan / Eksterior', color: '#0e5e63', circle: '#e0f2fe', path: '<path d="M16 4C9.37 4 4 9.37 4 16s5.37 12 12 12 12-5.37 12-12S22.63 4 16 4zm0 6c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.4c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/>' },
-        photo2: { title: 'Foto 2: Samping / Kabin / Meter', color: '#0284c7', circle: '#ecfdf5', path: '<path d="M16 6c-5.52 0-10 4.48-10 10s4.48 10 10 10 10-4.48 10-10S21.52 6 16 6zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/>' },
-        photo3: { title: 'Foto 3: Mesin / Bak / Belakang', color: '#475569', circle: '#f1f5f9', path: '<path d="M6 8h20v14H6V8zm2 2v10h16V10H8zm4 12h8v2h-8v-2z"/>' }
-    };
-    const item = defs[slotKey] || defs.photo1;
-    return makeSvgUri(item.title, isAdmin ? 'Klik untuk unggah foto HD' : 'Dokumentasi foto belum tersedia', item.color, item.circle, item.path);
 };
 
 let activeModalUnitCode = null;
@@ -139,18 +113,9 @@ let currentEditingPhotos = { photo1: null, photo2: null, photo3: null, updated_a
 
 function countSlots(obj) {
     if (!obj) return 0;
-    let c = 0;
-    if (obj.photo1) c++;
-    if (obj.photo2) c++;
-    if (obj.photo3) c++;
-    return c;
+    return (obj.photo1 ? 1 : 0) + (obj.photo2 ? 1 : 0) + (obj.photo3 ? 1 : 0);
 }
 
-/**
- * Retrieve merged HD manifest + local Admin overrides for a vehicle unit.
- * @param {string} unitCode
- * @returns {Object} { unit, photo1, photo2, photo3, slots, count, hd_count, quality_tier, note, updated_at }
- */
 export function getUnitPhotos(unitCode) {
     if (!unitCode) return { photo1: null, photo2: null, photo3: null, slots: {}, updated_at: null, count: 0, hd_count: 0, quality_tier: 'EMPTY' };
     const norm = String(unitCode).trim().toUpperCase();
@@ -180,7 +145,6 @@ export function getUnitPhotos(unitCode) {
         return { ...baseManifest, count: countSlots(baseManifest) };
     }
 
-    // Background server hydration for non-manifest local uploads (when on PHP server)
     const host = (typeof window !== 'undefined' && window.location) ? window.location.hostname : '';
     const canPhpApi = (typeof window !== 'undefined' && window.location)
         && (window.location.protocol === 'http:' || window.location.protocol === 'https:')
@@ -213,9 +177,6 @@ export function getUnitPhotos(unitCode) {
     return { unit: norm, photo1: null, photo2: null, photo3: null, slots: {}, updated_at: null, count: 0, hd_count: 0, quality_tier: 'EMPTY' };
 }
 
-/**
- * Save photos for a vehicle unit (Admin action)
- */
 export function saveUnitPhotos(unitCode, photosObj) {
     if (!unitCode) return;
     const norm = String(unitCode).trim().toUpperCase();
@@ -230,15 +191,7 @@ export function saveUnitPhotos(unitCode, photosObj) {
 
     try {
         localStorage.setItem(PHOTO_STORAGE_PREFIX + norm, JSON.stringify(record));
-    } catch (e) {
-        if (typeof Swal !== 'undefined') {
-            Swal.fire({
-                icon: 'warning',
-                title: 'Kapasitas Penyimpanan Penuh',
-                text: 'Penyimpanan lokal penuh. Unggahan tetap disinkronkan ke server.'
-            });
-        }
-    }
+    } catch (e) {}
 
     fetch('./api/asset/photos.php', {
         method: 'POST',
@@ -260,9 +213,6 @@ export function saveUnitPhotos(unitCode, photosObj) {
     }
 }
 
-/**
- * Compress an uploaded image to HD JPEG standard (max 1600px, quality 0.90)
- */
 export function compressImageFile(file, maxDim = 1600, quality = 0.90) {
     return new Promise((resolve, reject) => {
         if (!file || !file.type.startsWith('image/')) {
@@ -275,15 +225,9 @@ export function compressImageFile(file, maxDim = 1600, quality = 0.90) {
                 let w = img.width;
                 let h = img.height;
                 if (w > h) {
-                    if (w > maxDim) {
-                        h = Math.round((h * maxDim) / w);
-                        w = maxDim;
-                    }
-                } else {
-                    if (h > maxDim) {
-                        w = Math.round((w * maxDim) / h);
-                        h = maxDim;
-                    }
+                    if (w > maxDim) { h = Math.round((h * maxDim) / w); w = maxDim; }
+                } else if (h > maxDim) {
+                    w = Math.round((w * maxDim) / h); h = maxDim;
                 }
                 const canvas = document.createElement('canvas');
                 canvas.width = w;
@@ -302,9 +246,6 @@ export function compressImageFile(file, maxDim = 1600, quality = 0.90) {
     });
 }
 
-/**
- * Open 3-Photo Admin Upload/Manage Modal
- */
 export function openUnitPhotoModal(unitCode, unitTitle = '') {
     if (window.pns?.getUserRole && window.pns.getUserRole() === 'public') {
         const targetCode = unitCode || (window.pns?.getCurrentUnitCode ? window.pns.getCurrentUnitCode() : 'PNS-MBL-02');
@@ -323,7 +264,7 @@ export function openUnitPhotoModal(unitCode, unitTitle = '') {
     const titleEl = document.getElementById('modal-photo-unit-title');
     const subEl = document.getElementById('modal-photo-unit-subtitle');
     if (titleEl) titleEl.textContent = activeModalUnitCode;
-    if (subEl) subEl.textContent = unitTitle || 'Kelola Foto Dokumentasi HD (Maks 1600px)';
+    if (subEl) subEl.textContent = unitTitle || 'Kelola 3 Sudut Foto Fisik HD (Maks 1600px)';
 
     currentEditingPhotos = getUnitPhotos(activeModalUnitCode);
     updateModalSlotPreview(1, currentEditingPhotos.photo1);
@@ -350,20 +291,14 @@ function updateModalSlotPreview(slotIndex, dataUrl) {
     const statusPill = document.getElementById(`slot-status-pill-${slotIndex}`);
 
     if (dataUrl) {
-        if (imgEl) {
-            imgEl.src = dataUrl;
-            imgEl.classList.remove('hidden');
-        }
+        if (imgEl) { imgEl.src = dataUrl; imgEl.classList.remove('hidden'); }
         if (emptyEl) emptyEl.classList.add('hidden');
         if (delBtn) delBtn.classList.remove('hidden');
         if (statusPill) {
             statusPill.innerHTML = '<span class="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-700 bg-emerald-50 dark:bg-emerald-950/70 dark:text-emerald-300 px-2 py-0.5 rounded-[4px] border border-emerald-200 dark:border-emerald-800"><i class="ph-bold ph-check"></i> Terisi</span>';
         }
     } else {
-        if (imgEl) {
-            imgEl.src = '';
-            imgEl.classList.add('hidden');
-        }
+        if (imgEl) { imgEl.src = ''; imgEl.classList.add('hidden'); }
         if (emptyEl) emptyEl.classList.remove('hidden');
         if (delBtn) delBtn.classList.add('hidden');
         if (statusPill) {
@@ -398,7 +333,6 @@ export async function onSlotFileInputChange(slotIndex, event) {
             renderUnitPhotoShowcase(activeModalUnitCode);
         }
     } catch (err) {
-        console.error('Gagal memproses gambar:', err);
         alert('Gagal membaca gambar. Gunakan format JPEG atau PNG.');
     }
     event.target.value = '';
@@ -425,46 +359,72 @@ export function saveAllModalPhotos() {
             icon: 'success',
             title: 'Foto HD Tersimpan',
             text: `Dokumentasi foto unit ${activeModalUnitCode} berhasil diperbarui.`,
-            timer: 2000,
+            timer: 1800,
             showConfirmButton: false
         });
     }
 }
 
 // ---------------------------------------------------------------------------
-// SHOWCASE VIEW RENDERER (Grid HD & Interactive Stage 3D)
+// UNIFIED DOSSIER MEDIA VIEWER (SINGLE LOCATION IN PROFIL UNIT)
 // ---------------------------------------------------------------------------
-function formatResBadge(slotMeta, hasPhoto) {
-    if (!hasPhoto) return '<span class="text-[10px] text-slate-400">Kosong</span>';
-    if (!slotMeta || !slotMeta.width || !slotMeta.height) {
-        return '<span class="text-[10px] font-mono font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-1.5 py-0.5 rounded-[3px] border border-emerald-200 dark:border-emerald-800">Tersimpan</span>';
-    }
-    const dimText = `${slotMeta.width}×${slotMeta.height}`;
-    if (slotMeta.is_hd) {
-        return `<span class="text-[9.5px] font-mono font-semibold text-[#0E5E63] dark:text-[#2DD4BF] bg-teal-50 dark:bg-teal-950/50 px-1.5 py-0.5 rounded-[3px] border border-teal-200 dark:border-teal-800" title="${dimText} px (${slotMeta.kb || 0} KB)">${dimText} HD</span>`;
-    }
-    return `<span class="text-[9.5px] font-mono font-semibold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/50 px-1.5 py-0.5 rounded-[3px] border border-amber-200 dark:border-amber-800" title="Di bawah standar HD 720p (${dimText} px)">${dimText} Low-Res</span>`;
-}
-
 function getSlotTitle(photos, idx) {
-    const defaultTitles = ['', '1. Tampak Depan / Eksterior', '2. Tampak Samping / Kabin', '3. Mesin / Bak / Belakang'];
+    const defaults = ['', '1. Tampak Depan', '2. Tampak Samping', '3. Mesin / Belakang'];
     const meta = photos?.slots?.[`photo${idx}`];
     if (meta && meta.label) return `${idx}. ${meta.label}`;
-    return defaultTitles[idx];
+    return defaults[idx];
+}
+
+function buildSlotsArray(photos) {
+    return [1, 2, 3].map(idx => {
+        const key = `photo${idx}`;
+        const meta = photos.slots ? photos.slots[key] : null;
+        const hasPhoto = Boolean(photos[key]);
+        const title = getSlotTitle(photos, idx);
+        const dimText = (meta && meta.width && meta.height)
+            ? `${meta.width}×${meta.height} ${meta.is_hd ? 'HD' : 'Low-Res'}`
+            : (hasPhoto ? 'Tersimpan' : 'Kosong');
+        return {
+            idx,
+            key,
+            src: photos[key] || makeEmptySlotSvgUri(title),
+            hasPhoto,
+            title,
+            meta,
+            isHd: Boolean(meta?.is_hd),
+            dimText
+        };
+    });
 }
 
 export function setPhotoShowcaseMode(mode, unitCode) {
-    _showcaseViewMode = mode === 'stage3d' ? 'stage3d' : 'grid';
+    _showcaseViewMode = (mode === 'grid') ? 'grid' : '3d';
     renderUnitPhotoShowcase(unitCode || (window.pns?.getCurrentUnitCode ? window.pns.getCurrentUnitCode() : ''));
 }
 
-export function stepStage3DSlot(deltaOrSlot, unitCode, absolute = false) {
-    if (absolute) {
-        _stage3dActiveSlot = Math.max(1, Math.min(3, Number(deltaOrSlot) || 1));
+export function selectShowcaseSlot(unitCode, slotIdx) {
+    const norm = String(unitCode || '').trim().toUpperCase();
+    const n = Math.max(1, Math.min(3, Number(slotIdx) || 1));
+    _activeSlotByUnit.set(norm, n);
+    if (_showcaseViewMode === '3d' && _current3dInstance) {
+        _current3dInstance.selectSlot(n);
+        updateThumbHighlight(norm, n);
     } else {
-        _stage3dActiveSlot = ((_stage3dActiveSlot - 1 + deltaOrSlot + 3) % 3) + 1;
+        previewSlotShowcase(norm, n);
     }
-    renderUnitPhotoShowcase(unitCode || (window.pns?.getCurrentUnitCode ? window.pns.getCurrentUnitCode() : ''));
+}
+
+function updateThumbHighlight(norm, activeIdx) {
+    const container = document.getElementById('pbi-vra4-photo-showcase');
+    if (!container) return;
+    container.querySelectorAll('[data-thumb-slot]').forEach(btn => {
+        const sIdx = Number(btn.getAttribute('data-thumb-slot'));
+        if (sIdx === activeIdx) {
+            btn.className = 'group relative rounded-[4px] border-2 border-[#0E5E63] dark:border-[#2DD4BF] bg-teal-50/40 dark:bg-teal-950/30 overflow-hidden cursor-pointer text-left transition';
+        } else {
+            btn.className = 'group relative rounded-[4px] border border-[#D8DCE3] dark:border-[#444444] bg-white dark:bg-[#2A2A2A] opacity-80 hover:opacity-100 overflow-hidden cursor-pointer text-left transition';
+        }
+    });
 }
 
 export function renderUnitPhotoShowcase(unitCode) {
@@ -473,150 +433,112 @@ export function renderUnitPhotoShowcase(unitCode) {
 
     const norm = String(unitCode || '').trim().toUpperCase();
     const photos = getUnitPhotos(norm);
-    const isAdmin = !(window.pns?.getUserRole && window.pns.getUserRole() === 'public');
-    const dateStr = photos.updated_at
-        ? new Date(photos.updated_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })
-        : 'Belum Diperbarui';
+    const slotsData = buildSlotsArray(photos);
+    const activeSlot = _activeSlotByUnit.get(norm) || 1;
 
-    const slotsData = [1, 2, 3].map(idx => {
-        const key = `photo${idx}`;
-        const meta = photos.slots ? photos.slots[key] : null;
-        return {
-            idx,
-            key,
-            src: photos[key] || getPlaceholder(key, isAdmin),
-            hasPhoto: Boolean(photos[key]),
-            title: getSlotTitle(photos, idx),
-            meta,
-            resBadge: formatResBadge(meta, Boolean(photos[key]))
-        };
-    });
-
-    const headerHtml = `
-        <div class="flex flex-wrap items-center justify-between pb-2.5 border-b border-[#D8DCE3] dark:border-[#444444] gap-2">
-            <div class="flex items-center gap-2 min-w-0">
-                <span class="w-6 h-6 rounded-[4px] bg-[#0E5E63] text-white font-semibold text-xs flex items-center justify-center shrink-0">
-                    <i class="ph-bold ph-images"></i>
-                </span>
-                <div class="min-w-0">
-                    <div class="flex items-center gap-2 flex-wrap">
-                        <span class="font-semibold text-xs sm:text-sm text-slate-900 dark:text-white tracking-tight">Dokumentasi Foto HD &amp; Tampilan 3D</span>
-                        <span class="px-1.5 py-0.5 rounded-[3px] text-[10px] font-mono font-semibold ${photos.count === 3 ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800' : (photos.count > 0 ? 'bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800' : 'bg-slate-100 text-slate-500 border border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700')}">${photos.count || 0}/3 Foto</span>
-                        ${photos.quality_tier === 'LOW_RES' ? '<span class="px-1.5 py-0.5 rounded-[3px] text-[10px] font-mono font-semibold bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800">Perlu Update HD</span>' : ''}
-                    </div>
-                    <span class="text-[11px] text-slate-500 dark:text-slate-400 block truncate">Klik foto untuk Zoom HD 2× atau beralih ke Stage 3D &amp; Model 3D</span>
-                </div>
-            </div>
-            <div class="flex items-center flex-wrap gap-1.5">
-                <div class="inline-flex border border-[#D8DCE3] dark:border-[#444444] rounded-[4px] bg-slate-50 dark:bg-[#262626] p-0.5">
-                    <button type="button" onclick="window.pns.setPhotoShowcaseMode('grid','${norm}')" class="px-2 py-1 text-[11px] font-semibold rounded-[3px] transition cursor-pointer ${_showcaseViewMode === 'grid' ? 'bg-[#0E5E63] text-white' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-200/70 dark:hover:bg-slate-700'}">
-                        <i class="ph-bold ph-grid-four mr-1"></i>Grid HD
-                    </button>
-                    <button type="button" onclick="window.pns.setPhotoShowcaseMode('stage3d','${norm}')" class="px-2 py-1 text-[11px] font-semibold rounded-[3px] transition cursor-pointer ${_showcaseViewMode === 'stage3d' ? 'bg-[#0E5E63] text-white' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-200/70 dark:hover:bg-slate-700'}">
-                        <i class="ph-bold ph-cube mr-1"></i>Stage 3D
-                    </button>
-                </div>
-                <button type="button" onclick="window.pns.openUnitStudioModal('${norm}', { initialTab: '3d' })" class="flex items-center gap-1 px-2.5 py-1 rounded-[4px] text-[11px] font-semibold bg-white dark:bg-[#383838] text-[#2D4A94] dark:text-[#60A5FA] border border-[#D8DCE3] dark:border-[#444444] hover:bg-slate-100 dark:hover:bg-slate-700 transition cursor-pointer">
-                    <i class="ph-bold ph-cube-transparent"></i> Model 3D
-                </button>
-                <button type="button" onclick="window.pns.openUnitPhotoModal('${norm}')" class="role-admin-only flex items-center gap-1 px-2.5 py-1 rounded-[4px] text-[11px] font-semibold bg-white dark:bg-[#383838] text-[#0E5E63] dark:text-[#2DD4BF] border border-[#D8DCE3] dark:border-[#444444] hover:bg-slate-100 dark:hover:bg-slate-700 transition cursor-pointer">
-                    <i class="ph-bold ph-pencil-simple"></i> Kelola
-                </button>
-            </div>
-        </div>
-    `;
-
-    const noteHtml = photos.note ? `
-        <div class="px-3 py-1.5 rounded-[4px] bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 text-[11px] text-amber-800 dark:text-amber-300 flex items-center gap-2">
-            <i class="ph-bold ph-warning-circle shrink-0"></i>
-            <span>${photos.note}</span>
-        </div>
-    ` : '';
-
-    let bodyHtml = '';
-    if (_showcaseViewMode === 'stage3d') {
-        const cards3d = slotsData.map(s => {
-            let offset = s.idx - _stage3dActiveSlot;
-            if (offset > 1) offset -= 3;
-            if (offset < -1) offset += 3;
-            const isCenter = offset === 0;
-            const translateX = offset * 52;
-            const translateZ = isCenter ? 0 : -110;
-            const rotateY = offset * -28;
-            const opacity = isCenter ? 1 : 0.72;
-            const zIndex = isCenter ? 20 : 10;
-            return `
-                <div onclick="${isCenter ? `window.pns.previewSlotShowcase('${norm}', ${s.idx})` : `window.pns.stepStage3DSlot(${s.idx}, '${norm}', true)`}"
-                    style="transform: translateX(${translateX}%) translateZ(${translateZ}px) rotateY(${rotateY}deg); opacity: ${opacity}; z-index: ${zIndex}; transition: transform 0.35s cubic-bezier(0.22,1,0.36,1), opacity 0.35s ease;"
-                    class="absolute inset-y-2 left-1/2 -ml-[38%] sm:-ml-[24%] w-[76%] sm:w-[48%] rounded-[4px] border ${isCenter ? 'border-[#0E5E63] dark:border-[#2DD4BF]' : 'border-[#D8DCE3] dark:border-[#444444]'} bg-white dark:bg-[#2b2b2b] overflow-hidden cursor-pointer flex flex-col">
-                    <div class="relative flex-1 bg-slate-100 dark:bg-[#222222] overflow-hidden flex items-center justify-center">
-                        <img src="${s.src}" alt="${s.title}" class="w-full h-full object-contain">
-                        <span class="absolute top-2 right-2 px-1.5 py-0.5 rounded-[3px] text-[9.5px] font-mono font-semibold bg-white/90 dark:bg-[#303030]/90 text-slate-700 dark:text-slate-200 border border-[#D8DCE3] dark:border-[#444444]">
-                            ${s.meta?.width ? `${s.meta.width}×${s.meta.height}` : `Slot ${s.idx}`}
-                        </span>
-                    </div>
-                    <div class="px-2.5 py-1.5 bg-white dark:bg-[#303030] border-t border-[#D8DCE3] dark:border-[#444444] flex items-center justify-between gap-2 shrink-0">
-                        <span class="text-[11px] font-semibold text-slate-800 dark:text-slate-200 truncate">${s.title}</span>
-                        ${isCenter ? '<span class="text-[10px] font-semibold text-[#0E5E63] dark:text-[#2DD4BF]">Klik Zoom HD</span>' : ''}
-                    </div>
-                </div>
-            `;
-        }).join('');
-
-        bodyHtml = `
-            <div class="relative rounded-[4px] border border-[#D8DCE3] dark:border-[#444444] bg-[#F8FAFC] dark:bg-[#262626] p-3">
-                <div class="relative h-[260px] sm:h-[300px] overflow-hidden" style="perspective: 1100px; transform-style: preserve-3d;">
-                    ${cards3d}
-                </div>
-                <div class="flex items-center justify-between pt-2 border-t border-[#D8DCE3] dark:border-[#444444] mt-2">
-                    <button type="button" onclick="window.pns.stepStage3DSlot(-1, '${norm}', false)" class="px-2.5 py-1 rounded-[4px] text-xs font-semibold border border-[#D8DCE3] dark:border-[#444444] bg-white dark:bg-[#383838] text-slate-700 dark:text-slate-200 hover:bg-slate-100 cursor-pointer">
-                        <i class="ph-bold ph-caret-left mr-1"></i>Sudut Sebelumnya
-                    </button>
-                    <div class="flex items-center gap-1.5">
-                        ${[1,2,3].map(n => `<button type="button" onclick="window.pns.stepStage3DSlot(${n}, '${norm}', true)" class="px-2 py-0.5 rounded-[3px] text-[10px] font-mono font-semibold cursor-pointer ${n === _stage3dActiveSlot ? 'bg-[#0E5E63] text-white' : 'bg-slate-200/70 dark:bg-slate-700 text-slate-600 dark:text-slate-300'}">Sisi ${n}</button>`).join('')}
-                    </div>
-                    <button type="button" onclick="window.pns.stepStage3DSlot(1, '${norm}', false)" class="px-2.5 py-1 rounded-[4px] text-xs font-semibold border border-[#D8DCE3] dark:border-[#444444] bg-white dark:bg-[#383838] text-slate-700 dark:text-slate-200 hover:bg-slate-100 cursor-pointer">
-                        Sudut Berikutnya<i class="ph-bold ph-caret-right ml-1"></i>
-                    </button>
-                </div>
-            </div>
-        `;
-    } else {
-        bodyHtml = `
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-                ${slotsData.map(s => `
-                    <div class="group relative rounded-[4px] border border-[#D8DCE3] dark:border-[#444444] overflow-hidden bg-slate-50 dark:bg-[#2a2a2a] flex flex-col cursor-pointer" onclick="window.pns.previewSlotShowcase('${norm}', ${s.idx})">
-                        <div class="aspect-[4/3] w-full overflow-hidden relative bg-slate-200 dark:bg-[#222222] flex items-center justify-center">
-                            <img src="${s.src}" alt="${s.title}" class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105">
-                            <div class="absolute inset-0 bg-slate-900/45 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-xs font-semibold gap-1.5">
-                                <i class="ph-bold ph-magnifying-glass-plus text-base"></i> Perbesar HD
-                            </div>
-                        </div>
-                        <div class="px-2.5 py-2 flex items-center justify-between gap-1.5 bg-white dark:bg-[#303030] border-t border-[#D8DCE3] dark:border-[#444444]">
-                            <span class="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate">${s.title}</span>
-                            ${s.resBadge}
-                        </div>
-                    </div>
-                `).join('')}
-            </div>
-        `;
-    }
+    const countBadgeCls = photos.count === 3
+        ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800'
+        : (photos.count > 0
+            ? 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800'
+            : 'bg-slate-100 text-slate-500 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700');
 
     container.innerHTML = `
-        <div class="clean-card p-3.5 sm:p-4 space-y-3 border border-[#D8DCE3] dark:border-[#444444]">
-            ${headerHtml}
-            ${noteHtml}
-            ${bodyHtml}
-            <div class="flex items-center justify-between text-[10.5px] text-slate-400 dark:text-slate-500 pt-1">
-                <span>Status Arsip: ${dateStr} • Unit: <span class="font-mono font-semibold text-slate-600 dark:text-slate-300">${norm}</span></span>
-                <span>HD Standard: maks 1600px JPEG</span>
+        <div class="pns-card p-3 sm:p-3.5 h-full flex flex-col justify-between gap-2.5 border border-[#D8DCE3] dark:border-[#444444]">
+            <!-- Media Card Header -->
+            <div class="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-[#D8DCE3] dark:border-[#444444]">
+                <div class="flex items-center gap-1.5 min-w-0">
+                    <i class="ph-bold ph-cube-focus text-[#0E5E63] dark:text-[#2DD4BF] text-sm shrink-0"></i>
+                    <span class="text-xs font-semibold text-slate-900 dark:text-white truncate">Visual 3D &amp; Foto Fisik</span>
+                    <span class="px-1.5 py-0.5 rounded-[3px] text-[10px] font-mono font-semibold border ${countBadgeCls}">${photos.count || 0}/3</span>
+                    ${photos.quality_tier === 'LOW_RES' ? '<span class="px-1.5 py-0.5 rounded-[3px] text-[9.5px] font-mono font-semibold bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/50 dark:text-amber-300 dark:border-amber-800">Low-Res</span>' : ''}
+                </div>
+                <div class="flex items-center gap-1">
+                    <div class="inline-flex border border-[#D8DCE3] dark:border-[#444444] rounded-[4px] bg-slate-50 dark:bg-[#262626] p-0.5">
+                        <button type="button" onclick="window.pns.setPhotoShowcaseMode('3d','${norm}')" class="px-2 py-0.5 text-[10.5px] font-semibold rounded-[3px] cursor-pointer ${_showcaseViewMode === '3d' ? 'bg-[#0E5E63] text-white' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-slate-700'}">
+                            3D Perspektif
+                        </button>
+                        <button type="button" onclick="window.pns.setPhotoShowcaseMode('grid','${norm}')" class="px-2 py-0.5 text-[10.5px] font-semibold rounded-[3px] cursor-pointer ${_showcaseViewMode === 'grid' ? 'bg-[#0E5E63] text-white' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-slate-700'}">
+                            3 Sisi
+                        </button>
+                    </div>
+                    <button type="button" onclick="window.pns.openUnitPhotoModal('${norm}')" class="role-admin-only px-2 py-1 rounded-[4px] text-[10.5px] font-semibold bg-white dark:bg-[#383838] text-[#0E5E63] dark:text-[#2DD4BF] border border-[#D8DCE3] dark:border-[#444444] hover:bg-slate-100 cursor-pointer" title="Unggah / Ganti 3 Foto Unit">
+                        <i class="ph-bold ph-camera"></i> Kelola
+                    </button>
+                </div>
+            </div>
+
+            ${photos.note ? `
+            <div class="px-2.5 py-1.5 rounded-[4px] bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 text-[10.5px] text-amber-800 dark:text-amber-300 flex items-start gap-1.5 leading-snug">
+                <i class="ph-bold ph-warning-circle shrink-0 mt-0.5"></i>
+                <span>${photos.note}</span>
+            </div>` : ''}
+
+            <!-- Main Stage: Real-Photo 3D Perspective OR 3-Side Grid -->
+            ${_showcaseViewMode === '3d' ? `
+                <div id="vra4-real3d-stage-host" class="w-full flex-1 min-h-[255px] flex flex-col"></div>
+            ` : `
+                <div class="grid grid-cols-3 gap-2">
+                    ${slotsData.map(s => `
+                        <div onclick="window.pns.previewSlotShowcase('${norm}', ${s.idx})" class="group relative rounded-[4px] border border-[#D8DCE3] dark:border-[#444444] overflow-hidden bg-slate-100 dark:bg-[#222222] cursor-pointer flex flex-col">
+                            <div class="aspect-[4/3] w-full overflow-hidden relative">
+                                <img src="${s.src}" alt="${s.title}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200">
+                            </div>
+                            <div class="p-1.5 bg-white dark:bg-[#303030] border-t border-[#D8DCE3] dark:border-[#444444]">
+                                <span class="text-[10.5px] font-semibold text-slate-800 dark:text-slate-200 block truncate">${s.title}</span>
+                                <span class="text-[9.5px] font-mono ${s.isHd ? 'text-[#0E5E63] dark:text-[#2DD4BF]' : 'text-slate-400'} block truncate">${s.dimText}</span>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `}
+
+            <!-- Unified 3-Angle Thumbnail Strip -->
+            <div class="grid grid-cols-3 gap-2 pt-0.5">
+                ${slotsData.map(s => {
+                    const isAct = s.idx === activeSlot && _showcaseViewMode === '3d';
+                    const cls = isAct
+                        ? 'border-2 border-[#0E5E63] dark:border-[#2DD4BF] bg-teal-50/40 dark:bg-teal-950/30'
+                        : 'border border-[#D8DCE3] dark:border-[#444444] bg-white dark:bg-[#2A2A2A] opacity-85 hover:opacity-100';
+                    return `
+                        <button type="button" data-thumb-slot="${s.idx}"
+                            onclick="window.pns.selectShowcaseSlot('${norm}', ${s.idx})"
+                            ondblclick="window.pns.previewSlotShowcase('${norm}', ${s.idx})"
+                            class="group relative rounded-[4px] ${cls} overflow-hidden cursor-pointer text-left transition flex items-center gap-2 p-1.5"
+                            title="${s.title} (${s.dimText}) — Klik untuk fokus 3D, klik 2x / tombol Zoom untuk layar penuh">
+                            <img src="${s.src}" alt="${s.title}" class="w-11 h-8 object-cover rounded-[2px] bg-slate-200 dark:bg-slate-800 shrink-0">
+                            <div class="min-w-0 flex-1">
+                                <span class="text-[10.5px] font-semibold text-slate-800 dark:text-slate-200 block truncate">${s.title}</span>
+                                <span class="text-[9px] font-mono ${s.hasPhoto ? (s.isHd ? 'text-[#0E5E63] dark:text-[#2DD4BF]' : 'text-amber-600 dark:text-amber-400') : 'text-slate-400'} block truncate">${s.dimText}</span>
+                            </div>
+                        </button>
+                    `;
+                }).join('')}
             </div>
         </div>
     `;
+
+    if (_showcaseViewMode === '3d') {
+        const stageHost = document.getElementById('vra4-real3d-stage-host');
+        _current3dInstance = mountRealPhoto3DViewer(stageHost, {
+            unitCode: norm,
+            slots: slotsData,
+            activeSlot,
+            tall: false,
+            onActiveSlotChange: (newSlotIdx) => {
+                _activeSlotByUnit.set(norm, newSlotIdx);
+                updateThumbHighlight(norm, newSlotIdx);
+            },
+            onZoom: (slotIdx) => {
+                openUnitStudioModal(norm, { slot: slotIdx, initialTab: 'photos' });
+            }
+        });
+    } else {
+        _current3dInstance = null;
+    }
 }
 
 // ---------------------------------------------------------------------------
-// HD PHOTO LIGHTBOX & 3D INTERACTIVE STUDIO MODAL
+// FULLSCREEN HD LIGHTBOX & REAL-PHOTO 3D STUDIO MODAL
 // ---------------------------------------------------------------------------
 let _studioState = { unitCode: '', slot: 1, zoom: false, tab: 'photos', tx: 0, ty: 0 };
 
@@ -635,21 +557,21 @@ function ensureStudioModalDom() {
                 <div class="flex items-center gap-2 min-w-0">
                     <span class="px-2 py-0.5 rounded-[3px] bg-[#0E5E63] text-white font-mono text-xs font-semibold" id="studio-unit-badge">-</span>
                     <div class="min-w-0">
-                        <h3 class="text-xs sm:text-sm font-semibold truncate" id="studio-title">Inspeksi Foto HD &amp; Model 3D</h3>
+                        <h3 class="text-xs sm:text-sm font-semibold truncate" id="studio-title">Inspeksi Foto HD &amp; 3D</h3>
                         <p class="text-[10.5px] text-slate-400 font-mono truncate" id="studio-meta">-</p>
                     </div>
                 </div>
                 <div class="flex items-center gap-1.5">
                     <div class="inline-flex bg-slate-800 rounded-[3px] p-0.5 border border-slate-700">
                         <button type="button" id="studio-tab-photos" class="px-2.5 py-1 rounded-[2px] text-[11px] font-semibold bg-[#0E5E63] text-white cursor-pointer">
-                            <i class="ph-bold ph-image mr-1"></i>Foto HD
+                            <i class="ph-bold ph-magnifying-glass-plus mr-1"></i>Zoom HD
                         </button>
                         <button type="button" id="studio-tab-3d" class="px-2.5 py-1 rounded-[2px] text-[11px] font-semibold text-slate-300 hover:text-white cursor-pointer">
-                            <i class="ph-bold ph-cube mr-1"></i>Model 3D
+                            <i class="ph-bold ph-cube-focus mr-1"></i>3D Foto Asli
                         </button>
                     </div>
                     <button type="button" id="studio-zoom-btn" class="px-2 py-1 rounded-[3px] text-[11px] font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 cursor-pointer" title="Toggle Zoom 2x">
-                        <i class="ph-bold ph-magnifying-glass-plus mr-1"></i>Zoom 2×
+                        Zoom 2×
                     </button>
                     <a id="studio-download-btn" href="#" download class="px-2 py-1 rounded-[3px] text-[11px] font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 cursor-pointer inline-flex items-center" title="Unduh Foto HD">
                         <i class="ph-bold ph-download-simple"></i>
@@ -663,10 +585,10 @@ function ensureStudioModalDom() {
             <div id="studio-pane-photos" class="flex-1 flex flex-col min-h-0 bg-slate-100 dark:bg-[#1f1f1f]">
                 <div id="studio-img-viewport" class="relative flex-1 min-h-[320px] sm:min-h-[440px] flex items-center justify-center overflow-hidden select-none">
                     <img id="studio-main-img" src="" alt="Preview HD" class="max-w-full max-h-[65vh] object-contain transition-transform duration-150">
-                    <button type="button" id="studio-prev-btn" class="absolute left-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-[4px] bg-slate-900/75 hover:bg-slate-900 text-white border border-slate-700 flex items-center justify-center cursor-pointer" title="Foto Sebelumnya">
+                    <button type="button" id="studio-prev-btn" class="absolute left-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-[4px] bg-slate-900/75 hover:bg-slate-900 text-white border border-slate-700 flex items-center justify-center cursor-pointer">
                         <i class="ph-bold ph-caret-left text-base"></i>
                     </button>
-                    <button type="button" id="studio-next-btn" class="absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-[4px] bg-slate-900/75 hover:bg-slate-900 text-white border border-slate-700 flex items-center justify-center cursor-pointer" title="Foto Berikutnya">
+                    <button type="button" id="studio-next-btn" class="absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-[4px] bg-slate-900/75 hover:bg-slate-900 text-white border border-slate-700 flex items-center justify-center cursor-pointer">
                         <i class="ph-bold ph-caret-right text-base"></i>
                     </button>
                 </div>
@@ -676,7 +598,7 @@ function ensureStudioModalDom() {
             <div id="studio-pane-3d" class="hidden flex-1 p-3 sm:p-4 bg-slate-50 dark:bg-[#242424] flex flex-col gap-2">
                 <div id="studio-3d-canvas-host" class="w-full"></div>
                 <p class="text-[11px] text-slate-500 dark:text-slate-400">
-                    Seret model ke kiri/kanan/atas untuk memutar 360° atau gunakan tombol sudut kamera di kiri bawah.
+                    Arahkan kursor atau geser kiri/kanan pada foto asli untuk memutar perspektif 3D antar sudut kendaraan.
                 </p>
             </div>
         </div>
@@ -690,19 +612,16 @@ function ensureStudioModalDom() {
     };
     el.querySelector('#studio-close-btn').addEventListener('click', close);
     el.addEventListener('click', (e) => { if (e.target === el) close(); });
-
     el.querySelector('#studio-tab-photos').addEventListener('click', () => switchStudioTab('photos'));
     el.querySelector('#studio-tab-3d').addEventListener('click', () => switchStudioTab('3d'));
     el.querySelector('#studio-prev-btn').addEventListener('click', () => stepStudioSlot(-1));
     el.querySelector('#studio-next-btn').addEventListener('click', () => stepStudioSlot(1));
     el.querySelector('#studio-zoom-btn').addEventListener('click', () => {
         _studioState.zoom = !_studioState.zoom;
-        _studioState.tx = 0;
-        _studioState.ty = 0;
+        _studioState.tx = 0; _studioState.ty = 0;
         applyStudioZoom();
     });
 
-    // Click/drag pan inside zoomed HD image
     const viewport = el.querySelector('#studio-img-viewport');
     let panning = false, px = 0, py = 0;
     viewport.addEventListener('mousedown', (e) => {
@@ -747,46 +666,38 @@ function renderStudioContents() {
     const el = ensureStudioModalDom();
     const norm = _studioState.unitCode;
     const photos = getUnitPhotos(norm);
-    const slot = _studioState.slot;
-    const key = `photo${slot}`;
-    const isAdmin = !(window.pns?.getUserRole && window.pns.getUserRole() === 'public');
-    const src = photos[key] || getPlaceholder(key, isAdmin);
-    const meta = photos.slots ? photos.slots[key] : null;
-    const slotTitle = getSlotTitle(photos, slot);
+    const slotsData = buildSlotsArray(photos);
+    const s = slotsData[_studioState.slot - 1] || slotsData[0];
 
     el.querySelector('#studio-unit-badge').textContent = norm || '-';
-    el.querySelector('#studio-title').textContent = slotTitle;
-    el.querySelector('#studio-meta').textContent = meta && meta.width
-        ? `${meta.width}×${meta.height} px • ${meta.kb || 0} KB • ${meta.is_hd ? 'Resolusi HD' : 'Resolusi Rendah'} (${meta.source_file || ''})`
-        : (photos[key] ? 'Dokumentasi Unit Tersimpan' : 'Slot Foto Belum Terisi');
+    el.querySelector('#studio-title').textContent = s.title;
+    el.querySelector('#studio-meta').textContent = s.meta && s.meta.width
+        ? `${s.meta.width}×${s.meta.height} px • ${s.meta.kb || 0} KB • ${s.meta.is_hd ? 'Resolusi HD' : 'Resolusi Rendah'}`
+        : (s.hasPhoto ? 'Foto Unit Tersimpan' : 'Belum Ada Foto Fisik');
 
     const img = el.querySelector('#studio-main-img');
-    img.src = src;
+    img.src = s.src;
     applyStudioZoom();
 
     const dlBtn = el.querySelector('#studio-download-btn');
-    if (photos[key]) {
-        dlBtn.href = src;
-        dlBtn.setAttribute('download', `${norm}_slot${slot}.jpg`);
+    if (s.hasPhoto) {
+        dlBtn.href = s.src;
+        dlBtn.setAttribute('download', `${norm}_slot${s.idx}.jpg`);
         dlBtn.classList.remove('hidden');
     } else {
         dlBtn.classList.add('hidden');
     }
 
-    const thumbs = el.querySelector('#studio-thumbs');
-    thumbs.innerHTML = [1, 2, 3].map(n => {
-        const k = `photo${n}`;
-        const tSrc = photos[k] || getPlaceholder(k, isAdmin);
-        const tLabel = getSlotTitle(photos, n);
-        const activeCls = n === slot
+    el.querySelector('#studio-thumbs').innerHTML = slotsData.map(it => {
+        const activeCls = it.idx === s.idx
             ? 'border-[#0E5E63] dark:border-[#2DD4BF] bg-teal-50/40 dark:bg-teal-950/30'
             : 'border-[#D8DCE3] dark:border-[#444444] bg-white dark:bg-[#303030] opacity-80 hover:opacity-100';
         return `
-            <button type="button" onclick="window.pns.selectStudioSlot(${n})" class="flex items-center gap-2 p-1.5 rounded-[4px] border text-left transition cursor-pointer ${activeCls}">
-                <img src="${tSrc}" alt="${tLabel}" class="w-12 h-9 object-cover rounded-[2px] bg-slate-200 dark:bg-slate-800 shrink-0">
+            <button type="button" onclick="window.pns.selectStudioSlot(${it.idx})" class="flex items-center gap-2 p-1.5 rounded-[4px] border text-left transition cursor-pointer ${activeCls}">
+                <img src="${it.src}" alt="${it.title}" class="w-12 h-9 object-cover rounded-[2px] bg-slate-200 dark:bg-slate-800 shrink-0">
                 <div class="min-w-0 flex-1">
-                    <span class="text-[11px] font-semibold text-slate-800 dark:text-slate-200 block truncate">${tLabel}</span>
-                    ${formatResBadge(photos.slots?.[k], Boolean(photos[k]))}
+                    <span class="text-[11px] font-semibold text-slate-800 dark:text-slate-200 block truncate">${it.title}</span>
+                    <span class="text-[9.5px] font-mono ${it.isHd ? 'text-[#0E5E63] dark:text-[#2DD4BF]' : 'text-slate-400'} block truncate">${it.dimText}</span>
                 </div>
             </button>
         `;
@@ -808,14 +719,19 @@ function switchStudioTab(tab) {
         tab3d.className = 'px-2.5 py-1 rounded-[2px] text-[11px] font-semibold bg-[#0E5E63] text-white cursor-pointer';
         tabP.className = 'px-2.5 py-1 rounded-[2px] text-[11px] font-semibold text-slate-300 hover:text-white cursor-pointer';
         zoomBtn.classList.add('hidden');
-        const host = el.querySelector('#studio-3d-canvas-host');
-        const kat = window.pns?.getCurrentUnitCategory ? window.pns.getCurrentUnitCategory(_studioState.unitCode) : '';
-        mountUnit3DViewer(host, {
+        const photos = getUnitPhotos(_studioState.unitCode);
+        mountRealPhoto3DViewer(el.querySelector('#studio-3d-canvas-host'), {
             unitCode: _studioState.unitCode,
-            kategori: kat,
-            compact: false
+            slots: buildSlotsArray(photos),
+            activeSlot: _studioState.slot,
+            tall: true,
+            autoOrbit: false,
+            onZoom: (slotIdx) => {
+                _studioState.slot = slotIdx;
+                switchStudioTab('photos');
+            }
         });
-        el.querySelector('#studio-title').textContent = `${getUnitModelLabel(detectUnitModelType(kat, _studioState.unitCode))} — ${_studioState.unitCode}`;
+        el.querySelector('#studio-title').textContent = `Perspektif 3D Foto Asli — ${_studioState.unitCode}`;
     } else {
         pane3d.classList.add('hidden');
         paneP.classList.remove('hidden');
@@ -828,17 +744,13 @@ function switchStudioTab(tab) {
 
 export function selectStudioSlot(slot) {
     _studioState.slot = Math.max(1, Math.min(3, Number(slot) || 1));
-    _studioState.zoom = false;
-    _studioState.tx = 0;
-    _studioState.ty = 0;
+    _studioState.zoom = false; _studioState.tx = 0; _studioState.ty = 0;
     renderStudioContents();
 }
 
 export function stepStudioSlot(delta) {
     _studioState.slot = ((_studioState.slot - 1 + delta + 3) % 3) + 1;
-    _studioState.zoom = false;
-    _studioState.tx = 0;
-    _studioState.ty = 0;
+    _studioState.zoom = false; _studioState.tx = 0; _studioState.ty = 0;
     renderStudioContents();
 }
 
@@ -846,9 +758,7 @@ export function openUnitStudioModal(unitCode, opts = {}) {
     const norm = String(unitCode || (window.pns?.getCurrentUnitCode ? window.pns.getCurrentUnitCode() : 'PNS-MBL-02')).trim().toUpperCase();
     _studioState.unitCode = norm;
     _studioState.slot = opts.slot || 1;
-    _studioState.zoom = false;
-    _studioState.tx = 0;
-    _studioState.ty = 0;
+    _studioState.zoom = false; _studioState.tx = 0; _studioState.ty = 0;
     const el = ensureStudioModalDom();
     el.classList.remove('hidden');
     el.classList.add('flex');
@@ -868,18 +778,13 @@ export function previewFullPhoto(imgSrc, title = 'Pratinjau Foto Unit') {
         return;
     }
     if (typeof Swal !== 'undefined') {
-        Swal.fire({
-            title,
-            imageUrl: imgSrc,
-            imageAlt: title,
-            showCloseButton: true,
-            confirmButtonText: 'Tutup',
-            confirmButtonColor: '#0E5E63'
-        });
+        Swal.fire({ title, imageUrl: imgSrc, imageAlt: title, showCloseButton: true, confirmButtonText: 'Tutup', confirmButtonColor: '#0E5E63' });
     } else {
         window.open(imgSrc, '_blank');
     }
 }
+
+export function stepStage3DSlot() {}
 
 if (typeof window !== 'undefined') {
     window.pns = window.pns || {};
@@ -897,5 +802,7 @@ if (typeof window !== 'undefined') {
     window.pns.openUnitStudioModal = openUnitStudioModal;
     window.pns.selectStudioSlot = selectStudioSlot;
     window.pns.setPhotoShowcaseMode = setPhotoShowcaseMode;
+    window.pns.selectShowcaseSlot = selectShowcaseSlot;
     window.pns.stepStage3DSlot = stepStage3DSlot;
+    window.pns.buildEmptyPhotoBlueprintSvg = buildEmptyPhotoBlueprintSvg;
 }

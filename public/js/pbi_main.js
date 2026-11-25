@@ -13,12 +13,14 @@ import {
     saveAllModalPhotos,
     renderUnitPhotoShowcase,
     previewFullPhoto,
+    previewSlotShowcase,
     openUnitStudioModal,
     setPhotoShowcaseMode,
+    selectShowcaseSlot,
     stepStage3DSlot,
     selectStudioSlot
-} from './pbi_unit_photos.js?v=20261124';
-import { buildIsometricVehicleSvg, mountUnit3DViewer } from './pbi_unit_3d.js?v=20261124';
+} from './pbi_unit_photos.js?v=20261124_r2';
+import { buildIsometricVehicleSvg, mountUnit3DViewer } from './pbi_unit_3d.js?v=20261124_r2';
 
 import { 
     enrichAssets, 
@@ -3931,15 +3933,17 @@ function switchVra4TableTab(tab) {
     const btnSummary = document.getElementById('btn-vra4-tab-summary');
     const cDaily = document.getElementById('container-pbi-vra4-daily');
     const cSummary = document.getElementById('container-pbi-vra4-summary');
+    const actCls = 'px-3 py-1.5 text-xs font-semibold rounded-[3px] bg-[#0E5E63] text-white transition cursor-pointer flex items-center gap-1.5';
+    const idleCls = 'px-3 py-1.5 text-xs font-semibold rounded-[3px] text-slate-600 dark:text-slate-300 hover:bg-slate-200/70 dark:hover:bg-[#383838] transition cursor-pointer flex items-center gap-1.5';
     
     if (tab === 'daily') {
-        if (btnDaily) btnDaily.className = 'px-3 py-1.5 text-xs font-bold rounded-lg bg-cyan-600 text-white shadow-2xs transition cursor-pointer';
-        if (btnSummary) btnSummary.className = 'px-3 py-1.5 text-xs font-bold rounded-lg text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-700 transition cursor-pointer';
+        if (btnDaily) btnDaily.className = actCls;
+        if (btnSummary) btnSummary.className = idleCls;
         if (cDaily) cDaily.classList.remove('hidden');
         if (cSummary) cSummary.classList.add('hidden');
     } else {
-        if (btnSummary) btnSummary.className = 'px-3 py-1.5 text-xs font-bold rounded-lg bg-cyan-600 text-white shadow-2xs transition cursor-pointer';
-        if (btnDaily) btnDaily.className = 'px-3 py-1.5 text-xs font-bold rounded-lg text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-700 transition cursor-pointer';
+        if (btnSummary) btnSummary.className = actCls;
+        if (btnDaily) btnDaily.className = idleCls;
         if (cDaily) cDaily.classList.add('hidden');
         if (cSummary) cSummary.classList.remove('hidden');
     }
@@ -4026,31 +4030,35 @@ function renderVra4CompositeDecisionCards(unit, unitVraList, summaryData, fuel, 
     const healthBadgeEl = document.getElementById('pbi-vra4-badge-health');
     if (healthBadgeEl) {
         if (healthScore >= 70) {
-            healthBadgeEl.className = 'px-2.5 py-1 rounded-full text-[10px] font-semibold shadow-2xs bg-emerald-100 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800';
-            healthBadgeEl.innerHTML = '<i class="ph-bold ph-check-circle mr-1"></i>Sehat';
+            healthBadgeEl.className = 'px-2 py-0.5 rounded-[3px] text-[10px] font-semibold bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800';
+            healthBadgeEl.innerHTML = 'Sehat';
         } else if (healthScore >= 45) {
-            healthBadgeEl.className = 'px-2.5 py-1 rounded-full text-[10px] font-semibold shadow-2xs bg-amber-100 dark:bg-amber-950/50 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800';
-            healthBadgeEl.innerHTML = '<i class="ph-bold ph-warning-circle mr-1"></i>Perlu Perhatian';
+            healthBadgeEl.className = 'px-2 py-0.5 rounded-[3px] text-[10px] font-semibold bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800';
+            healthBadgeEl.innerHTML = 'Perhatian';
         } else {
-            healthBadgeEl.className = 'px-2.5 py-1 rounded-full text-[10px] font-semibold shadow-2xs bg-rose-100 dark:bg-rose-950/50 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-800';
-            healthBadgeEl.innerHTML = '<i class="ph-bold ph-x-circle mr-1"></i>Kritis';
+            healthBadgeEl.className = 'px-2 py-0.5 rounded-[3px] text-[10px] font-semibold bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800';
+            healthBadgeEl.innerHTML = 'Kritis';
         }
     }
 
-    renderSvgDonut('#pbi-vra4-donut-util', utilRatio, {
-        size: 56,
-        stroke: 7,
-        fg: healthScore >= 70 ? '#10b981' : (healthScore >= 45 ? '#f59e0b' : '#f43f5e'),
-        bg: isDark ? '#1e293b' : '#e0f2fe',
-        centerText: Math.round(utilRatio * 100) + '%'
-    });
+    if (document.getElementById('pbi-vra4-donut-util')) {
+        renderSvgDonut('#pbi-vra4-donut-util', utilRatio, {
+            size: 56,
+            stroke: 7,
+            fg: healthScore >= 70 ? '#10b981' : (healthScore >= 45 ? '#f59e0b' : '#f43f5e'),
+            bg: isDark ? '#1e293b' : '#e0f2fe',
+            centerText: Math.round(utilRatio * 100) + '%'
+        });
+    }
 
-    renderSvgRadarChart('#pbi-vra4-radar-health', ['Util', 'Avail', 'MTBF', 'Fuel'], [utilRatio, availRatio, mtbfNorm, fuelNorm], {
-        size: 82,
-        strokeWidth: 1.8,
-        color: healthScore >= 70 ? '#10b981' : (healthScore >= 45 ? '#f59e0b' : '#f43f5e'),
-        fillOpacity: 0.25
-    });
+    if (document.getElementById('pbi-vra4-radar-health')) {
+        renderSvgRadarChart('#pbi-vra4-radar-health', ['Util', 'Avail', 'MTBF', 'Fuel'], [utilRatio, availRatio, mtbfNorm, fuelNorm], {
+            size: 82,
+            strokeWidth: 1.8,
+            color: healthScore >= 70 ? '#10b981' : (healthScore >= 45 ? '#f59e0b' : '#f43f5e'),
+            fillOpacity: 0.25
+        });
+    }
 
     setElText('pbi-vra4-val-util', (utilRatio * 100).toFixed(1) + '%');
     setElText('pbi-vra4-val-avail', (availRatio * 100).toFixed(1) + '%');
@@ -4059,37 +4067,32 @@ function renderVra4CompositeDecisionCards(unit, unitVraList, summaryData, fuel, 
     setElText('pbi-vra4-val-fueleff', unit.km_per_lt > 0 ? `${unit.km_per_lt.toFixed(1)} KM/L` : (unit.liter_per_hm > 0 ? `${unit.liter_per_hm.toFixed(1)} L/H` : `${Math.round(fuelNorm * 100)}%`));
 
     // Monthly utilization trend for Sparkline
-    const monthlyOpsMap = new Map();
-    (unitVraList || []).forEach(v => {
-        if (v.tanggal && v.tanggal.length >= 7) {
-            const ym = v.tanggal.substring(0, 7);
-            const isAktif = (v.aktif === undefined || v.aktif === null || Number(v.aktif) === 1 || String(v.aktif) === '1');
-            if (isAktif) {
-                const h = Number(v.jam_kerja_calc || v.durasi || 0);
-                monthlyOpsMap.set(ym, (monthlyOpsMap.get(ym) || 0) + h);
+    if (document.getElementById('pbi-vra4-spark-util')) {
+        const monthlyOpsMap = new Map();
+        (unitVraList || []).forEach(v => {
+            if (v.tanggal && v.tanggal.length >= 7) {
+                const ym = v.tanggal.substring(0, 7);
+                const isAktif = (v.aktif === undefined || v.aktif === null || Number(v.aktif) === 1 || String(v.aktif) === '1');
+                if (isAktif) {
+                    const h = Number(v.jam_kerja_calc || v.durasi || 0);
+                    monthlyOpsMap.set(ym, (monthlyOpsMap.get(ym) || 0) + h);
+                }
             }
+        });
+        const sortedMonths = Array.from(monthlyOpsMap.keys()).sort();
+        let utilSparkData = sortedMonths.slice(-6).map(m => monthlyOpsMap.get(m) || 0);
+        if (utilSparkData.length < 2) {
+            const baseH = (unit.total_operating_jam || 100) / 6;
+            utilSparkData = [baseH * 0.8, baseH * 0.9, baseH * 1.1, baseH * 0.95, baseH * 1.05, baseH];
         }
-    });
-    const sortedMonths = Array.from(monthlyOpsMap.keys()).sort();
-    let utilSparkData = sortedMonths.slice(-6).map(m => monthlyOpsMap.get(m) || 0);
-    if (utilSparkData.length < 2) {
-        const baseH = (unit.total_operating_jam || 100) / 6;
-        utilSparkData = [baseH * 0.8, baseH * 0.9, baseH * 1.1, baseH * 0.95, baseH * 1.05, baseH];
+        renderSvgSparkline('#pbi-vra4-spark-util', utilSparkData, { color: '#0284c7', width: 68, height: 18 });
     }
-    renderSvgSparkline('#pbi-vra4-spark-util', utilSparkData, { color: '#0284c7', width: 68, height: 18 });
 
     const recoHealthEl = document.getElementById('pbi-vra4-reco-health');
     if (recoHealthEl) {
-        if (healthScore >= 70) {
-            recoHealthEl.className = 'p-2.5 rounded-xl text-[11px] leading-relaxed border font-medium bg-emerald-50/70 dark:bg-emerald-950/20 text-emerald-800 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/60';
-            recoHealthEl.innerHTML = `Kondisi Baik: Utilisasi (${(utilRatio * 100).toFixed(0)}%) dan availability (${(availRatio * 100).toFixed(0)}%) optimal. Jadwal servis preventif berjalan baik tanpa catatan kerusakan kritis.`;
-        } else if (healthScore >= 45) {
-            recoHealthEl.className = 'p-2.5 rounded-xl text-[11px] leading-relaxed border font-medium bg-amber-50/70 dark:bg-amber-950/20 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-800/60';
-            recoHealthEl.innerHTML = `Perlu Perhatian: Terdeteksi fluktuasi operasional atau ${unit.hari_breakdown || 0} hari breakdown. Jadwalkan inspeksi sistem pendingin, transmisi, & filter berkala.`;
-        } else {
-            recoHealthEl.className = 'p-2.5 rounded-xl text-[11px] leading-relaxed border font-medium bg-rose-50/70 dark:bg-rose-950/20 text-rose-800 dark:text-rose-300 border-rose-200 dark:border-rose-800/60';
-            recoHealthEl.innerHTML = `Perlu Pengecekan: Health Score di bawah batas toleransi (${healthScore}/100) dengan MTBF rendah. Prioritaskan audit mekanikal komprehensif atau penjadwalan overhaul.`;
-        }
+        recoHealthEl.textContent = healthScore >= 70
+            ? `Kondisi Baik: Utilisasi ${(utilRatio * 100).toFixed(0)}% & availability ${(availRatio * 100).toFixed(0)}% optimal.`
+            : `Perhatian: Terdeteksi ${unit.hari_breakdown || 0} hari breakdown, jadwalkan inspeksi berkala.`;
     }
 
     // -----------------------------------------------------------------
@@ -4098,7 +4101,7 @@ function renderVra4CompositeDecisionCards(unit, unitVraList, summaryData, fuel, 
     const usefulLifeMonths = Math.max(1, (unit.standar_umur_tahun || 5) * 12);
     const ageNorm = Math.min(1, Math.max(0.05, (unit.umur_pakai_bulan || 1) / usefulLifeMonths));
     const maintRatio = (unit.cost_maintenance || 0) / Math.max(1, unit.harga_perolehan || 1);
-    const costNorm = Math.min(1, Math.max(0.05, maintRatio / 0.7)); // 70% of price is threshold 1.0
+    const costNorm = Math.min(1, Math.max(0.05, maintRatio / 0.7));
     const downNorm = Math.min(1, Math.max(0.05, (unit.hari_breakdown || 0) / totalDays));
     const critNorm = Math.min(1, Math.max(0.15, (unit.total_cost_per_km > 12000 || unit.hari_breakdown > 4) ? 0.85 : 0.35));
     const riskScore = Math.round(((ageNorm + costNorm + downNorm + critNorm) / 4) * 100);
@@ -4106,23 +4109,25 @@ function renderVra4CompositeDecisionCards(unit, unitVraList, summaryData, fuel, 
     const riskBadgeEl = document.getElementById('pbi-vra4-badge-risk');
     if (riskBadgeEl) {
         if (riskScore >= 65) {
-            riskBadgeEl.className = 'px-2.5 py-1 rounded-full text-[10px] font-semibold shadow-2xs bg-rose-100 dark:bg-rose-950/50 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-800';
-            riskBadgeEl.innerHTML = '<i class="ph-bold ph-shield-warning mr-1"></i>Risiko Tinggi';
+            riskBadgeEl.className = 'px-2 py-0.5 rounded-[3px] text-[10px] font-semibold bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800';
+            riskBadgeEl.innerHTML = 'Risiko Tinggi';
         } else if (riskScore >= 40) {
-            riskBadgeEl.className = 'px-2.5 py-1 rounded-full text-[10px] font-semibold shadow-2xs bg-amber-100 dark:bg-amber-950/50 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800';
-            riskBadgeEl.innerHTML = '<i class="ph-bold ph-shield mr-1"></i>Risiko Sedang';
+            riskBadgeEl.className = 'px-2 py-0.5 rounded-[3px] text-[10px] font-semibold bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800';
+            riskBadgeEl.innerHTML = 'Risiko Sedang';
         } else {
-            riskBadgeEl.className = 'px-2.5 py-1 rounded-full text-[10px] font-semibold shadow-2xs bg-emerald-100 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800';
-            riskBadgeEl.innerHTML = '<i class="ph-bold ph-shield-check mr-1"></i>Risiko Rendah';
+            riskBadgeEl.className = 'px-2 py-0.5 rounded-[3px] text-[10px] font-semibold bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800';
+            riskBadgeEl.innerHTML = 'Risiko Rendah';
         }
     }
 
-    renderSvgRadarChart('#pbi-vra4-radar-risk', ['Umur', 'Biaya', 'Down', 'Kritikal'], [ageNorm, costNorm, downNorm, critNorm], {
-        size: 82,
-        strokeWidth: 1.8,
-        color: riskScore >= 65 ? '#f43f5e' : (riskScore >= 40 ? '#f59e0b' : '#10b981'),
-        fillOpacity: 0.25
-    });
+    if (document.getElementById('pbi-vra4-radar-risk')) {
+        renderSvgRadarChart('#pbi-vra4-radar-risk', ['Umur', 'Biaya', 'Down', 'Kritikal'], [ageNorm, costNorm, downNorm, critNorm], {
+            size: 82,
+            strokeWidth: 1.8,
+            color: riskScore >= 65 ? '#f43f5e' : (riskScore >= 40 ? '#f59e0b' : '#10b981'),
+            fillOpacity: 0.25
+        });
+    }
 
     setElHtml('pbi-vra4-val-riskscore', `<span class="${riskScore >= 65 ? 'text-rose-600 dark:text-rose-400' : (riskScore >= 40 ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400')} font-semibold">${riskScore}/100</span>`);
     setElText('pbi-vra4-risk-issue-1', `${(maintRatio * 100).toFixed(1)}% Nilai Aset`);
@@ -4131,20 +4136,6 @@ function renderVra4CompositeDecisionCards(unit, unitVraList, summaryData, fuel, 
     setElText('pbi-vra4-risk-bookval', formatRp(unit.nilai_buku || 0));
     setElText('pbi-vra4-risk-totmaint', formatRp(unit.cost_maintenance || 0));
     setElText('pbi-vra4-risk-remainage', `${unit.sisa_umur_bulan || 0} bln`);
-
-    const recoRiskEl = document.getElementById('pbi-vra4-reco-risk');
-    if (recoRiskEl) {
-        if (maintRatio >= 0.70 || ageNorm >= 0.90) {
-            recoRiskEl.className = 'p-2.5 rounded-xl text-[11px] leading-relaxed border font-medium bg-rose-50/70 dark:bg-rose-950/20 text-rose-800 dark:text-rose-300 border-rose-200 dark:border-rose-800/60';
-            recoRiskEl.innerHTML = `Saran: Evaluasi Peremajaan Unit. Akumulasi biaya servis (${formatRp(unit.cost_maintenance)}) telah melampaui ambang batas ekonomis (${(maintRatio * 100).toFixed(0)}% harga perolehan). Direkomendasikan evaluasi peremajaan unit.`;
-        } else if (riskScore >= 40) {
-            recoRiskEl.className = 'p-2.5 rounded-xl text-[11px] leading-relaxed border font-medium bg-amber-50/70 dark:bg-amber-950/20 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-800/60';
-            recoRiskEl.innerHTML = `Saran: Pantau Jadwal Servis Rutin. Pertahankan jadwal perbaikan preventif ketat, batasi pekerjaan beban berat (heavy load) ekstrem guna mencegah lonjakan biaya bengkel.`;
-        } else {
-            recoRiskEl.className = 'p-2.5 rounded-xl text-[11px] leading-relaxed border font-medium bg-emerald-50/70 dark:bg-emerald-950/20 text-emerald-800 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/60';
-            recoRiskEl.innerHTML = `Status: Layak Operasi. Rasio beban pemeliharaan aman (${(maintRatio * 100).toFixed(1)}%), sisa umur manfaat ekonomis masih memadai (${unit.sisa_umur_bulan || 0} bulan).`;
-        }
-    }
 
     // -----------------------------------------------------------------
     // CARD 3: 14-DAY ACTIVITY & FUEL ANOMALY TRACKER
@@ -4184,9 +4175,9 @@ function renderVra4CompositeDecisionCards(unit, unitVraList, summaryData, fuel, 
     }
 
     renderSvgCalendarHeatmap('#pbi-vra4-calendar-heatmap', last14Days, {
-        cols: 7,
-        cellSize: 13,
-        gap: 3,
+        cols: 14,
+        cellSize: 11,
+        gap: 2,
         days: 14
     });
 
@@ -4202,27 +4193,29 @@ function renderVra4CompositeDecisionCards(unit, unitVraList, summaryData, fuel, 
         fuelDevPct = ((catAvgKmLt - unit.km_per_lt) / catAvgKmLt) * 100;
     }
 
-    const rawFuel = fuel || [];
-    const isAlreadyFiltered = rawFuel.length > 0 && rawFuel.length < 500 && String(rawFuel[0].no_asset_manual || rawFuel[0].kode_unit || '').trim() === selectedUnitCode;
-    const unitFuelRecords = (isAlreadyFiltered ? rawFuel.slice() : rawFuel.filter(f => String(f.no_asset_manual || f.kode_unit || '').trim() === selectedUnitCode))
-        .sort((a, b) => new Date(a.tanggal_bkb || a.tanggal || 0) - new Date(b.tanggal_bkb || b.tanggal || 0));
-    let fuelSparkValues = unitFuelRecords.slice(-8).map(f => Number(f.jumlah_bkb_fix) || 0).filter(v => v > 0);
-    if (fuelSparkValues.length < 2) {
-        fuelSparkValues = [35, 42, 38, 48, 40, 46];
+    if (document.getElementById('pbi-vra4-spark-fuelkm')) {
+        const rawFuel = fuel || [];
+        const isAlreadyFiltered = rawFuel.length > 0 && rawFuel.length < 500 && String(rawFuel[0].no_asset_manual || rawFuel[0].kode_unit || '').trim() === selectedUnitCode;
+        const unitFuelRecords = (isAlreadyFiltered ? rawFuel.slice() : rawFuel.filter(f => String(f.no_asset_manual || f.kode_unit || '').trim() === selectedUnitCode))
+            .sort((a, b) => new Date(a.tanggal_bkb || a.tanggal || 0) - new Date(b.tanggal_bkb || b.tanggal || 0));
+        let fuelSparkValues = unitFuelRecords.slice(-8).map(f => Number(f.jumlah_bkb_fix) || 0).filter(v => v > 0);
+        if (fuelSparkValues.length < 2) {
+            fuelSparkValues = [35, 42, 38, 48, 40, 46];
+        }
+        renderSvgSparkline('#pbi-vra4-spark-fuelkm', fuelSparkValues, { color: '#f59e0b', width: 75, height: 20 });
     }
-    renderSvgSparkline('#pbi-vra4-spark-fuelkm', fuelSparkValues, { color: '#f59e0b', width: 75, height: 20 });
 
     const fuelBadgeEl = document.getElementById('pbi-vra4-badge-fuel');
     if (fuelBadgeEl) {
         if (fuelDevPct > 15) {
-            fuelBadgeEl.className = 'px-2.5 py-1 rounded-full text-[10px] font-semibold shadow-2xs bg-rose-100 dark:bg-rose-950/50 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-800';
-            fuelBadgeEl.innerHTML = '<i class="ph-bold ph-warning mr-1"></i>Boros';
+            fuelBadgeEl.className = 'px-2 py-0.5 rounded-[3px] text-[10px] font-semibold bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800';
+            fuelBadgeEl.innerHTML = 'BBM Boros';
         } else if (fuelDevPct < -5) {
-            fuelBadgeEl.className = 'px-2.5 py-1 rounded-full text-[10px] font-semibold shadow-2xs bg-emerald-100 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800';
-            fuelBadgeEl.innerHTML = '<i class="ph-bold ph-trend-up mr-1"></i>Sangat Efisien';
+            fuelBadgeEl.className = 'px-2 py-0.5 rounded-[3px] text-[10px] font-semibold bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800';
+            fuelBadgeEl.innerHTML = 'BBM Efisien';
         } else {
-            fuelBadgeEl.className = 'px-2.5 py-1 rounded-full text-[10px] font-semibold shadow-2xs bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700';
-            fuelBadgeEl.innerHTML = '<i class="ph-bold ph-check mr-1"></i>Normal';
+            fuelBadgeEl.className = 'px-2 py-0.5 rounded-[3px] text-[10px] font-semibold bg-slate-100 dark:bg-[#383838] text-slate-700 dark:text-slate-300 border border-[#D8DCE3] dark:border-[#4A4A4A]';
+            fuelBadgeEl.innerHTML = 'BBM Normal';
         }
     }
 
@@ -4231,87 +4224,36 @@ function renderVra4CompositeDecisionCards(unit, unitVraList, summaryData, fuel, 
     const devEl = document.getElementById('pbi-vra4-fuel-deviation');
     if (devEl) {
         if (fuelDevPct > 15) {
-            devEl.innerHTML = `<span class="text-rose-600 dark:text-rose-400 font-bold">+${fuelDevPct.toFixed(1)}% (Boros)</span>`;
+            devEl.innerHTML = `<span class="text-rose-600 dark:text-rose-400 font-semibold">Dev +${fuelDevPct.toFixed(1)}%</span>`;
         } else if (fuelDevPct > 0) {
-            devEl.innerHTML = `<span class="text-amber-600 dark:text-amber-400 font-bold">+${fuelDevPct.toFixed(1)}% (Di atas Avg)</span>`;
+            devEl.innerHTML = `<span class="text-amber-600 dark:text-amber-400 font-semibold">Dev +${fuelDevPct.toFixed(1)}%</span>`;
         } else {
-            devEl.innerHTML = `<span class="text-emerald-600 dark:text-emerald-400 font-bold">${fuelDevPct.toFixed(1)}% (Optimal)</span>`;
+            devEl.innerHTML = `<span class="text-emerald-600 dark:text-emerald-400 font-semibold">Dev ${fuelDevPct.toFixed(1)}%</span>`;
         }
     }
 
-    const recoFuelEl = document.getElementById('pbi-vra4-reco-fuel');
-    if (recoFuelEl) {
-        if (fuelDevPct > 10) {
-            const costImpact = Math.round((unit.cost_petrol || 0) * (fuelDevPct / 100));
-            recoFuelEl.className = 'p-2.5 rounded-xl text-[11px] leading-relaxed border font-medium bg-amber-50/70 dark:bg-amber-950/20 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-800/60';
-            recoFuelEl.innerHTML = `Catatan BBM: Konsumsi BBM lebih boros +${fuelDevPct.toFixed(1)}% vs baseline kategori. Estimasi beban pembengkakan biaya BBM: <b>${formatRp(costImpact)}</b>. Disarankan pengecekan nozzle & filter solar.`;
-        } else {
-            recoFuelEl.className = 'p-2.5 rounded-xl text-[11px] leading-relaxed border font-medium bg-emerald-50/70 dark:bg-emerald-950/20 text-emerald-800 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/60';
-            recoFuelEl.innerHTML = `Konsumsi BBM Normal: Efisiensi konsumsi bahan bakar sesuai dengan baseline standar operasional kategori <b>${catGroup}</b>. Tidak ditemukan kebocoran kuota BBM.`;
-        }
+    if (document.getElementById('pbi-vra4-minidonuts-360')) {
+        const miniDonutsData = [
+            { domain: 'VRA', pct: utilRatio, color: '#0284c7', bg: isDark ? '#1e293b' : '#e0f2fe', centerText: Math.round(utilRatio * 100) + '%', subText: `${Math.round(unit.total_operating_jam || 0)} Jam` },
+            { domain: 'MAINT', pct: Math.min(1, Math.max(0.1, (unit.jumlah_service || 0) / 8)), color: '#f43f5e', bg: isDark ? '#1e293b' : '#ffe4e6', centerText: `${unit.jumlah_service || 0}x`, subText: formatRp(unit.cost_maintenance || 0) },
+            { domain: 'FUEL', pct: Math.min(1, Math.max(0.1, fuelNorm)), color: '#10b981', bg: isDark ? '#1e293b' : '#d1fae5', centerText: unit.km_per_lt > 0 ? unit.km_per_lt.toFixed(1) : Math.round(fuelNorm * 100) + '%', subText: `${formatNum(unit.total_liter || 0)} L` }
+        ];
+        renderSvgMiniDonutGroup('#pbi-vra4-minidonuts-360', miniDonutsData, { size: 48, stroke: 6 });
     }
-
-    // -----------------------------------------------------------------
-    // CARD 4: CROSS-DOMAIN UNIT 360° SYNTHESIS
-    // -----------------------------------------------------------------
-    const miniDonutsData = [
-        {
-            domain: 'VRA',
-            pct: utilRatio,
-            color: '#0284c7',
-            bg: isDark ? '#1e293b' : '#e0f2fe',
-            centerText: Math.round(utilRatio * 100) + '%',
-            subText: `${Math.round(unit.total_operating_jam || 0)} Jam`
-        },
-        {
-            domain: 'MAINT',
-            pct: Math.min(1, Math.max(0.1, (unit.jumlah_service || 0) / 8)),
-            color: '#f43f5e',
-            bg: isDark ? '#1e293b' : '#ffe4e6',
-            centerText: `${unit.jumlah_service || 0}x`,
-            subText: formatRp(unit.cost_maintenance || 0)
-        },
-        {
-            domain: 'FUEL',
-            pct: Math.min(1, Math.max(0.1, fuelNorm)),
-            color: '#10b981',
-            bg: isDark ? '#1e293b' : '#d1fae5',
-            centerText: unit.km_per_lt > 0 ? unit.km_per_lt.toFixed(1) : Math.round(fuelNorm * 100) + '%',
-            subText: `${formatNum(unit.total_liter || 0)} L`
-        }
-    ];
-    renderSvgMiniDonutGroup('#pbi-vra4-minidonuts-360', miniDonutsData, { size: 48, stroke: 6 });
-
-    const problemScore = Math.round(((1 - utilRatio) * 0.4 + (costNorm) * 0.35 + (downNorm) * 0.25) * 100);
-
-    const crossBadgeEl = document.getElementById('pbi-vra4-badge-crossdomain');
-    if (crossBadgeEl) {
-        if (problemScore > 50) {
-            crossBadgeEl.className = 'px-2.5 py-1 rounded-full text-[10px] font-semibold shadow-2xs bg-rose-100 dark:bg-rose-950/50 text-rose-700 dark:text-rose-400 border border-rose-200 dark:border-rose-800';
-            crossBadgeEl.innerHTML = '<i class="ph-bold ph-warning mr-1"></i>Perlu Cek';
-        } else if (problemScore > 30) {
-            crossBadgeEl.className = 'px-2.5 py-1 rounded-full text-[10px] font-semibold shadow-2xs bg-amber-100 dark:bg-amber-950/50 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800';
-            crossBadgeEl.innerHTML = '<i class="ph-bold ph-info mr-1"></i>Perhatian Sedang';
-        } else {
-            crossBadgeEl.className = 'px-2.5 py-1 rounded-full text-[10px] font-semibold shadow-2xs bg-emerald-100 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800';
-            crossBadgeEl.innerHTML = '<i class="ph-bold ph-check mr-1"></i>Baik';
-        }
-    }
-
-    setElHtml('pbi-vra4-val-problemscore', `<span class="${problemScore > 50 ? 'text-rose-600 dark:text-rose-400' : (problemScore > 30 ? 'text-amber-600 dark:text-amber-400' : 'text-emerald-600 dark:text-emerald-400')} font-semibold">${problemScore}/100</span>`);
 
     const recoCrossEl = document.getElementById('pbi-vra4-reco-crossdomain');
     if (recoCrossEl) {
         let crossNarrative = '';
         if (unit.cost_maintenance > unit.cost_petrol && unit.hari_breakdown > 0) {
-            crossNarrative = `Catatan: Biaya servis (${formatRp(unit.cost_maintenance)}) melampaui biaya BBM (${formatRp(unit.cost_petrol)}) akibat ${unit.hari_breakdown} hari downtime. Korelasi menunjukkan unit rentan breakdown saat beban operasional tinggi; butuh mitigasi servis preventif terjadwal.`;
+            crossNarrative = `Biaya servis (${formatRp(unit.cost_maintenance)}) > BBM (${formatRp(unit.cost_petrol)}) dengan ${unit.hari_breakdown} hari BD — jadwalkan preventif.`;
         } else if (utilRatio > 0.8 && unit.cost_maintenance < unit.cost_petrol) {
-            crossNarrative = `Catatan: Sinergi operasional sangat baik. Jam kerja produktif tinggi (${formatNum(unit.total_operating_jam, 0)} Jam) diimbangi biaya pemeliharaan yang efisien (${formatRp(unit.cost_maintenance)}), menghasilkan Cost/KM optimal (${formatRp(unit.total_cost_per_km)}/KM).`;
+            crossNarrative = `Operasional produktif (${formatNum(unit.total_operating_jam, 0)} Jam) dengan beban servis terkendali (${formatRp(unit.total_cost_per_km)}/KM).`;
         } else {
-            crossNarrative = `Catatan: Unit membukukan total TCO ${formatRp(unit.total_cost)} (BBM: ${formatRp(unit.cost_petrol)}, Maint: ${formatRp(unit.cost_maintenance)}). Pola korelasi operasional dan biaya berada pada standar wajar armada.`;
+            crossNarrative = `Rasio pemeliharaan ${(maintRatio * 100).toFixed(1)}% harga aset • Sisa umur ekonomis ${unit.sisa_umur_bulan || 0} bln.`;
         }
-        recoCrossEl.className = 'p-2.5 rounded-xl text-[11px] leading-relaxed border font-medium bg-indigo-50/70 dark:bg-indigo-950/20 text-indigo-900 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800/60';
-        recoCrossEl.innerHTML = crossNarrative;
+        recoCrossEl.className = 'text-[11px] text-slate-600 dark:text-slate-300 leading-snug xl:text-right min-w-0 truncate';
+        recoCrossEl.textContent = crossNarrative;
+        recoCrossEl.title = crossNarrative;
     }
 }
 
@@ -4453,21 +4395,6 @@ function renderVra4(assets, vra, fuel, maint) {
 
     const subtitleEl = document.getElementById('vra4-table-subtitle');
     if (subtitleEl) subtitleEl.innerText = `Unit: ${unit.kode_unit} (${unit.nama_asset_detail || unit.nama_asset || unit.kode_unit})`;
-
-    const svgEl = document.getElementById('pbi-vra4-vehicle-svg');
-    if (svgEl) {
-        const unitCatInfo = `${unit.sub_kategori || ''} ${unit.nama_asset_detail || unit.nama_asset || ''} ${unit.kode_kategori || ''}`;
-        const mounted = mountUnit3DViewer(svgEl, {
-            unitCode: unit.kode_unit,
-            kategori: unitCatInfo,
-            isDark,
-            compact: true,
-            onExpand: () => openUnitStudioModal(unit.kode_unit, { initialTab: '3d' })
-        });
-        if (!mounted) {
-            svgEl.innerHTML = getVehicleSvgByType(unitCatInfo, unit.kode_unit, isDark);
-        }
-    }
 
     setElText('pbi-vra4-cost-per-km', unit.total_cost_per_km > 0 ? formatRp(unit.total_cost_per_km) + '/KM' : 'Rp 0/KM');
     setElText('pbi-vra4-tot-liter', formatNum(unit.total_liter, 0) + ' L');
@@ -11817,8 +11744,10 @@ window.pns = Object.assign(window.pns || {}, {
     saveAllModalPhotos,
     renderUnitPhotoShowcase,
     previewFullPhoto,
+    previewSlotShowcase,
     openUnitStudioModal,
     setPhotoShowcaseMode,
+    selectShowcaseSlot,
     stepStage3DSlot,
     selectStudioSlot,
     getCurrentUnitCode: () => {
